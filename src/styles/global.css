@@ -95,6 +95,12 @@ body {
   will-change: transform;
   /* 先読み用の <video> がはみ出して枠の外に映らないようにする */
   overflow: hidden;
+  /*
+    指での横スワイプを自分で処理する。
+    これが無いとブラウザがスクロールとして拾ってしまい、
+    pointercancel が飛んでスワイプが成立しない。
+  */
+  touch-action: none;
 }
 .card.settling { transition: transform 160ms ease-out; }
 
@@ -109,6 +115,8 @@ body {
   object-fit: cover;
   background: #000;
   filter: brightness(var(--gate-brightness));
+  /* iOS では <video> 自身が指の操作を吸ってしまうので、カードに通す */
+  pointer-events: none;
 }
 
 /* フィルムの縁（パーフォレーション） */

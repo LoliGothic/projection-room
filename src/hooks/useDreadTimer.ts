@@ -24,12 +24,19 @@ export function useDreadTimer(active: boolean, resetKey: number, onDark: () => v
   useEffect(() => {
     if (!active) return
 
-    const started = performance.now()
+    let started = performance.now()
+    let previous = started
     let raf = 0
     let fired = false
     let last = -1
 
     const tick = (now: number) => {
+      // 画面を離れているあいだ rAF は止まる。戻ってきたときに
+      // その分を足してしまうと、いきなり暗闇エンドになってしまう
+      const gap = now - previous
+      if (gap > 1000) started += gap - 32
+      previous = now
+
       const dread = dreadAt(now - started)
       // 毎フレーム setState しないよう、値が実質変わったときだけ更新する
       const quantized = Math.round(dread.intensity * 200)

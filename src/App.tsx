@@ -33,6 +33,22 @@ export default function App() {
     void load()
   }, [load])
 
+  // ホームボタンやタブ切り替えで画面を離れたら、音と映像を止める
+  useEffect(() => {
+    const onVisibility = () => {
+      void audio.setHidden(document.hidden)
+      if (document.hidden) {
+        for (const v of document.querySelectorAll('video')) v.pause()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    window.addEventListener('pagehide', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      window.removeEventListener('pagehide', onVisibility)
+    }
+  }, [])
+
   useEffect(() => {
     audio.setVolume(volume)
   }, [volume])

@@ -203,6 +203,63 @@ describe('画面が実際に動く', () => {
     }
   })
 
+  it('指でのドラッグ（ポインタ操作）で回答できる', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toPlaying()
+
+    const clip = activeClip()!
+    const card = document.querySelector('.card') as HTMLElement
+    expect(card).toBeTruthy()
+
+    // 本物なら右へ、AI なら左へ引く
+    const dir = clip.isAI ? -1 : 1
+    await act(async () => {
+      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 200 })
+      fireEvent.pointerMove(card, { pointerId: 1, clientX: 200 + dir * 40, clientY: 202 })
+      fireEvent.pointerMove(card, { pointerId: 1, clientX: 200 + dir * 140, clientY: 204 })
+      fireEvent.pointerUp(card, { pointerId: 1, clientX: 200 + dir * 140, clientY: 204 })
+    })
+
+    // 正解なので巻の節目へ進んでいる
+    await runCutscenes()
+    await waitFor(() => expect(activeClip()).toBeTruthy())
+    expect(activeClip()!.id).not.toBe(clip.id)
+  })
+
+  it('途中で操作を横取りされたら（pointercancel）回答しない', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toPlaying()
+
+    const before = activeClip()!.id
+    const card = document.querySelector('.card') as HTMLElement
+    await act(async () => {
+      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 200 })
+      fireEvent.pointerMove(card, { pointerId: 1, clientX: 340, clientY: 200 })
+      fireEvent.pointerCancel(card, { pointerId: 1, clientX: 340, clientY: 200 })
+    })
+
+    expect(activeClip()!.id).toBe(before)
+    expect(document.querySelector('.loopcut')).toBeNull()
+  })
+
+  it('画面を離れると映像が止まる', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toPlaying()
+
+    const shown = [...document.querySelectorAll('.card video')].find(
+      (v) => (v as HTMLElement).style.opacity === '1',
+    ) as HTMLVideoElement
+    expect(shown).toBeTruthy()
+
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    expect(shown.pause).toHaveBeenCalled()
+
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => false })
+  })
+
   it('上映をやめてタイトルに戻れる（2回押すまで戻らない）', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     await toPlaying()

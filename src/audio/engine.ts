@@ -256,6 +256,25 @@ class AudioEngine {
     this.play(this.rewind, 0.5)
   }
 
+  /**
+   * 画面が隠れたら音を止める。
+   * ホームボタンで戻ったりタブを切り替えたとき、AudioContext は
+   * 勝手には止まらないので明示的に止める必要がある。
+   */
+  async setHidden(hidden: boolean): Promise<void> {
+    const ctx = this.ctx
+    if (!ctx) return
+    try {
+      if (hidden) {
+        if (ctx.state === 'running') await ctx.suspend()
+      } else if (ctx.state === 'suspended') {
+        await ctx.resume()
+      }
+    } catch {
+      /* 端末側の都合で失敗しても遊べるので握りつぶす */
+    }
+  }
+
   /** 画面を離れるときなど */
   dispose() {
     if (this.creakTimer !== null) window.clearTimeout(this.creakTimer)

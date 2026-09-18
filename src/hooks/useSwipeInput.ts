@@ -67,6 +67,14 @@ export function useSwipeInput(onCommit: (v: Verdict) => void, enabled: boolean) 
     [commit],
   )
 
+  /** 途中でブラウザに操作を横取りされたときは、確定させずに戻す */
+  const onPointerCancel = useCallback(() => {
+    start.current = null
+    axis.current = 'none'
+    setDx(0)
+    setDragging(false)
+  }, [])
+
   useEffect(() => {
     if (!enabled) return
     const onKey = (e: KeyboardEvent) => {
@@ -85,6 +93,6 @@ export function useSwipeInput(onCommit: (v: Verdict) => void, enabled: boolean) 
     dx,
     dragging,
     progress,
-    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp },
+    handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel },
   }
 }
