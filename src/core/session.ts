@@ -2,6 +2,7 @@ import type { Clip, Verdict } from './types'
 import type { Rng } from './rng'
 import { createQueue, fillBuffer, type QueueState } from './clipQueue'
 import { applyAnswer, applyDarkness, applyReplay, createProgress, type Progress } from './progress'
+import { resolveEnding } from './endings'
 import { RULES } from '../config/tuning'
 import { intertitleFor, type Intertitle } from '../config/intertitles.data'
 
@@ -105,10 +106,14 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
 
     case 'darkness': {
       if (s.phase.name !== 'playing') return s
+      const progress = applyDarkness(s.progress)
       return {
         ...s,
-        progress: applyDarkness(s.progress),
-        phase: { name: 'ending', endingId: 'darkness' },
+        progress,
+        phase: {
+          name: 'ending',
+          endingId: resolveEnding(progress.stats, 'darkness')?.id ?? 'darkness',
+        },
       }
     }
 
@@ -136,7 +141,15 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
             },
           }
         case 'escaped':
-          return { ...s, progress, deck, phase: { name: 'ending', endingId: 'dawn' } }
+          return {
+            ...s,
+            progress,
+            deck,
+            phase: {
+              name: 'ending',
+              endingId: resolveEnding(progress.stats, 'escape')?.id ?? 'dawn',
+            },
+          }
         case 'loop':
           return { ...s, progress, deck, phase: { name: 'loopCut' } }
       }

@@ -1,12 +1,17 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { isCorrect, type Verdict } from './core/types'
 import { currentClip } from './core/session'
+import { endingById } from './config/endings.data'
 import { audio } from './audio/engine'
 import { useGame } from './state/gameStore'
+import { useRecords } from './state/recordsStore'
 import { useSettings } from './state/settingsStore'
+import { EndingScreen } from './components/screens/EndingScreen'
+import { GalleryScreen } from './components/screens/GalleryScreen'
 import { GameScreen } from './components/screens/GameScreen'
 import { IntertitleScreen } from './components/screens/IntertitleScreen'
 import { LoopCutScreen } from './components/screens/LoopCutScreen'
+import { RecapScreen } from './components/screens/RecapScreen'
 import { TitleScreen } from './components/screens/TitleScreen'
 
 export default function App() {
@@ -14,6 +19,8 @@ export default function App() {
   const error = useGame((s) => s.error)
   const load = useGame((s) => s.load)
   const send = useGame((s) => s.send)
+  const goto = useGame((s) => s.goto)
+  const finishRun = useRecords((s) => s.finishRun)
   const volume = useSettings((s) => s.volume)
   const muted = useSettings((s) => s.muted)
 
@@ -28,12 +35,29 @@ export default function App() {
     audio.setMuted(muted)
   }, [muted])
 
-  const phaseName = session?.phase.name
+  const phase = session?.phase
+  const phaseName = phase?.name
 
   // 巻の節目とミス演出のあいだは映写機を止める
   useEffect(() => {
     audio.setProjectorRunning(phaseName === 'playing')
   }, [phaseName])
+
+  // エンディングに到達したら記録する
+  const endingId = phase?.name === 'ending' ? phase.endingId : null
+  const stats = session?.progress.stats
+  useEffect(() => {
+    if (!endingId || !stats) return
+    finishRun(endingId, stats, endingById(endingId)?.trigger === 'escape')
+    // エンディングに入った瞬間の 1 回だけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [endingId])
+
+  const clipsById = useMemo(() => {
+    const m = new Map<string, import('./core/types').Clip>()
+    for (const c of session?.pool ?? []) m.set(c.id, c)
+    return m
+  }, [session?.pool])
 
   const onStart = useCallback(() => {
     void audio.unlock()
@@ -57,6 +81,7 @@ export default function App() {
   const onReplay = useCallback(() => send({ type: 'replay' }), [send])
   const onDarkness = useCallback(() => send({ type: 'darkness' }), [send])
   const onCutsceneDone = useCallback(() => send({ type: 'cutsceneDone' }), [send])
+  const toTitle = useCallback(() => goto({ name: 'title' }), [goto])
 
   if (error) {
     return (
@@ -73,7 +98,7 @@ export default function App() {
     )
   }
 
-  if (!session) {
+  if (!session || !phase) {
     return (
       <div className="theatre">
         <p className="center-message">フィルムを巻いています…</p>
@@ -81,12 +106,12 @@ export default function App() {
     )
   }
 
-  const { phase } = session
-
   return (
     <div className="theatre">
       <div className="stage">
-        {phase.name === 'title' && <TitleScreen onStart={onStart} />}
+        {phase.name === 'title' && (
+          <TitleScreen onStart={onStart} onGallery={() => goto({ name: 'gallery' })} />
+        )}
 
         {phase.name === 'playing' && (
           <GameScreen
@@ -104,17 +129,28 @@ export default function App() {
         {phase.name === 'loopCut' && <LoopCutScreen onDone={onCutsceneDone} />}
 
         {phase.name === 'ending' && (
-          <p className="center-message">
-            （エンディング: {phase.endingId}）
-            <br />
-            段階4で実装します
-            <br />
-            <br />
-            <button type="button" className="title-start" onClick={onStart}>
-              もう一度
-            </button>
-          </p>
+          <EndingScreen
+            endingId={phase.endingId}
+            clip={
+              endingById(phase.endingId)?.clipId
+                ? clipsById.get(endingById(phase.endingId)!.clipId!)
+                : undefined
+            }
+            onRecap={() => goto({ name: 'recap' })}
+            onTitle={toTitle}
+          />
         )}
+
+        {phase.name === 'recap' && (
+          <RecapScreen
+            mistakes={session.progress.stats.mistakes}
+            clipsById={clipsById}
+            stats={session.progress.stats}
+            onBack={toTitle}
+          />
+        )}
+
+        {phase.name === 'gallery' && <GalleryScreen onBack={toTitle} />}
       </div>
     </div>
   )

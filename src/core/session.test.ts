@@ -114,16 +114,25 @@ describe('session', () => {
     expect(replayed.progress.reel).toBe(1)
   })
 
-  it('全8巻を通過すると脱出のエンディングになる', () => {
+  it('一度もループせずに全8巻を通過すると真エンドになる', () => {
     let s = started()
     for (let i = 0; i < RULES.totalReels * RULES.clipsPerReel; i++) {
       s = skipCutscenes(answerCorrectly(s))
     }
-    expect(s.phase).toEqual({ name: 'ending', endingId: 'dawn' })
+    expect(s.phase).toEqual({ name: 'ending', endingId: 'true' })
     expect(s.progress.stats.loops).toBe(0)
   })
 
-  it('不穏タイマーを使い切ると、第1巻に戻らずそのまま終わる', () => {
+  it('ループを挟んで通過すると夜明けエンドになる', () => {
+    let s = skipCutscenes(answerWrongly(started()))
+    for (let i = 0; i < RULES.totalReels * RULES.clipsPerReel; i++) {
+      s = skipCutscenes(answerCorrectly(s))
+    }
+    expect(s.phase).toEqual({ name: 'ending', endingId: 'dawn' })
+    expect(s.progress.stats.loops).toBe(1)
+  })
+
+  it('不穏タイマーを使い切ると、第1巻に戻らず暗闇エンドで終わる', () => {
     const s = send(started(), { type: 'darkness' })
     expect(s.phase).toEqual({ name: 'ending', endingId: 'darkness' })
     expect(s.progress.stats.wentDark).toBe(true)

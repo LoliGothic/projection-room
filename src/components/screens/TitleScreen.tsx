@@ -2,10 +2,11 @@ import { Projector } from '../game/Projector'
 
 interface Props {
   onStart: () => void
+  onGallery: () => void
 }
 
-/** タイトル画面。段階5で設定・クレジット・エンディング一覧への導線を足す。 */
-export function TitleScreen({ onStart }: Props) {
+/** タイトル画面。段階5で設定・クレジットへの導線を足す。 */
+export function TitleScreen({ onStart, onGallery }: Props) {
   return (
     <div className="title-screen">
       <div className="title-projector">
@@ -20,6 +21,11 @@ export function TitleScreen({ onStart }: Props) {
       <button type="button" className="title-start" onClick={onStart}>
         上映を始める
       </button>
+      <nav className="title-menu">
+        <button type="button" className="ghost-button" onClick={onGallery}>
+          上映記録
+        </button>
+      </nav>
     </div>
   )
 }

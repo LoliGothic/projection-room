@@ -392,3 +392,178 @@ body {
 }
 
 .gate-wrap { position: relative; width: 100%; }
+
+/* ---- パネル（振り返り・一覧・設定・クレジット） ---- */
+.panel {
+  grid-row: 1 / -1;
+  overflow-y: auto;
+  padding: 2rem 1.5rem calc(2.5rem + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+  background: #050403;
+  -webkit-overflow-scrolling: touch;
+}
+.panel-title {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  color: var(--amber);
+  font-weight: 400;
+  margin: 0;
+  text-align: center;
+}
+.panel-subtitle {
+  font-family: var(--serif);
+  font-size: 0.9rem;
+  letter-spacing: 0.24em;
+  color: var(--bone);
+  font-weight: 400;
+  margin: 0 0 0.5rem;
+}
+.panel-note {
+  font-size: 0.76rem;
+  line-height: 1.9;
+  color: #6b6459;
+  margin: 0;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.9rem;
+  border: 1px solid #221e18;
+}
+.stat-grid div { text-align: center; }
+.stat-grid dt { font-size: 0.66rem; letter-spacing: 0.1em; color: #6b6459; }
+.stat-grid dd {
+  margin: 0.35rem 0 0;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  color: var(--bone);
+}
+
+/* ---- エンディング ---- */
+.ending { flex-direction: column; gap: 1.6rem; }
+.ending-clip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.22;
+  filter: grayscale(1) contrast(1.1);
+}
+.ending-final { position: relative; text-align: center; }
+.ending-title {
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  color: var(--amber);
+  font-weight: 400;
+  margin: 0.8rem 0 2rem;
+}
+.ending-actions { display: flex; flex-direction: column; gap: 0.9rem; align-items: center; }
+
+.ghost-button {
+  padding: 0.7rem 1.6rem;
+  background: none;
+  border: 1px solid #2f2a22;
+  color: #857d70;
+  font-family: var(--serif);
+  font-size: 0.84rem;
+  letter-spacing: 0.22em;
+  cursor: pointer;
+}
+.ghost-button:hover:not(:disabled) { color: var(--amber-dim); border-color: var(--amber-dim); }
+.ghost-button:disabled { opacity: 0.35; cursor: default; }
+
+.ending-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.ending-row {
+  border-left: 2px solid #241f19;
+  padding: 0.6rem 0 0.6rem 0.9rem;
+}
+.ending-row.found { border-left-color: var(--amber-dim); }
+.ending-name {
+  display: block;
+  font-family: var(--serif);
+  font-size: 0.98rem;
+  letter-spacing: 0.16em;
+  color: #5d574e;
+}
+.ending-row.found .ending-name { color: var(--bone); }
+.ending-hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.74rem;
+  line-height: 1.9;
+  color: #5d574e;
+}
+
+/* ---- 振り返り ---- */
+.recap-nav { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; }
+.recap-count { font-size: 0.78rem; color: #6b6459; letter-spacing: 0.1em; }
+.recap-video {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #000;
+  border: 1px solid #221e18;
+}
+.recap-meta { display: flex; flex-direction: column; gap: 0.5rem; }
+.recap-verdict {
+  font-family: var(--serif);
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: var(--burn);
+  margin: 0;
+}
+.recap-line { margin: 0; font-size: 0.8rem; line-height: 1.8; color: var(--bone); }
+.recap-line span {
+  display: inline-block;
+  min-width: 5.2em;
+  color: #6b6459;
+  font-size: 0.72rem;
+}
+.recap-line a { color: var(--amber-dim); word-break: break-all; }
+.recap-note {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #221e18;
+  font-size: 0.78rem;
+  line-height: 1.9;
+  color: #9a9285;
+}
+
+/* ---- セーブコード ---- */
+.save-block { display: flex; flex-direction: column; gap: 0.6rem; }
+.save-code {
+  display: block;
+  padding: 0.7rem;
+  border: 1px solid #2f2a22;
+  background: #0a0908;
+  color: var(--amber);
+  font-size: 0.86rem;
+  letter-spacing: 0.12em;
+  text-align: center;
+  user-select: all;
+  word-break: break-all;
+}
+.save-row { display: flex; gap: 0.5rem; }
+.save-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem;
+  background: #0a0908;
+  border: 1px solid #2f2a22;
+  color: var(--bone);
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+.save-input:focus { outline: 1px solid var(--amber-dim); }
+
+.title-menu { display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center; margin-top: 0.6rem; }
