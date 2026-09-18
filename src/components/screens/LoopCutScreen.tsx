@@ -19,6 +19,7 @@ interface Props {
 export function LoopCutScreen({ onDone }: Props) {
   const [step, setStep] = useState<Step>('burn')
   const lightFx = useSettings((s) => s.lightFx)
+  const reduceFlashing = useSettings((s) => s.reduceFlashing)
 
   useEffect(() => {
     const a = window.setTimeout(() => setStep('black'), CUTSCENE.burnMs)
@@ -36,7 +37,7 @@ export function LoopCutScreen({ onDone }: Props) {
 
   return (
     <div className={`loopcut ${step}`} role="presentation">
-      {step === 'burn' && <BurnHole durationMs={CUTSCENE.burnMs} light={lightFx} />}
+      {step === 'burn' && <BurnHole durationMs={CUTSCENE.burnMs} light={lightFx} dim={reduceFlashing} />}
       {step === 'rewind' && (
         <>
           <span className="rewind-streaks" aria-hidden="true" />
