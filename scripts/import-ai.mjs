@@ -33,9 +33,7 @@ const DURATION = 10
 const TRIM_LEFT = 56
 const TRIM_TOP = 52
 /** 生成ツール名。clips/ai-meta.json で個別に上書きできる */
-const DEFAULT_TOOL = '（生成ツール名を入れてください）'
-/** 振り返り画面に出す解説。分かった手がかりを書き足してください */
-const DEFAULT_NOTE = '（AIと見抜ける手がかりを書いてください）'
+const DEFAULT_TOOL = 'Seedance 2.0 Mini'
 /* ------------------------- */
 
 const args = process.argv.slice(2)
@@ -113,9 +111,11 @@ async function main() {
       work: m.work ?? `gen-${id}`,
       title: m.title ?? '生成クリップ',
       tool: m.tool ?? DEFAULT_TOOL,
-      sourceUrl: '',
       license: m.license ?? '自作（AI生成）',
-      note: m.note ?? DEFAULT_NOTE,
+      // note（見抜く手がかり）と sourceUrl は、書けることが無ければ持たせない。
+      // 振り返り画面は値が無ければその行を出さない
+      ...(m.note ? { note: m.note } : {}),
+      ...(m.sourceUrl ? { sourceUrl: m.sourceUrl } : {}),
     })
     console.log(`  ${file} → ${id}.mp4`)
   }
@@ -130,16 +130,7 @@ async function main() {
   }
 
   await writeFile(jsonPath, JSON.stringify({ version: 1, clips }, null, 2) + '\n', 'utf8')
-  console.log(`\n完了: AI ${ai.length}本 / 本物 ${realClips.length}本`)
-
-  const needsMeta = ai.filter((c) => c.note === DEFAULT_NOTE).length
-  if (needsMeta > 0) {
-    console.warn(
-      `\n注意: ${needsMeta}本 の解説が未記入です。` +
-        `\n  振り返り画面に出る文章なので、public/clips.json の note を埋めるか、` +
-        `\n  ${path.relative(root, inDir)}/ai-meta.json に書いてから取り込み直してください。`,
-    )
-  }
+  console.log(`\n完了: AI ${ai.length}本 / 本物 ${realClips.length}本（${DEFAULT_TOOL}）`)
 }
 
 main().catch((err) => {
