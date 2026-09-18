@@ -52,7 +52,11 @@ body {
   height: 100%;
   display: grid;
   grid-template-rows: 1fr auto 1fr;
-  align-items: center;
+  /*
+    align-items は既定の stretch のままにする。center にすると上下の余白が
+    「内容の高さ」に縮んで行の中央に置かれ、余白を基準に置いた要素
+    （やめるボタン・映写機の光・人影）が画面の端まで届かなくなる。
+  */
   padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   overflow: hidden;
 }
@@ -736,8 +740,8 @@ body {
 /* 上映をやめてタイトルへ戻る。誤爆しないよう控えめに置く */
 .quit-link {
   position: absolute;
-  top: calc(0.6rem + env(safe-area-inset-top));
-  left: 0.7rem;
+  top: 0.5rem;
+  left: 0.6rem;
   z-index: 5;
   background: none;
   border: 0;
