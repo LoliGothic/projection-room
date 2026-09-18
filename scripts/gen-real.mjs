@@ -236,7 +236,7 @@ function entryFor(film, id, start) {
     year: film.year,
     director: film.director,
     sourceUrl: '',
-    license: 'Public Domain（入手元URLを clips.json に追記してください）',
+    license: 'Public Domain',
     note: `${film.title}（${film.year}）より ${Math.floor(start / 60)}分${start % 60}秒あたり`,
   }
 }

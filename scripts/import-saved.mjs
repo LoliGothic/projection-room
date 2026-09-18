@@ -189,7 +189,7 @@ async function main() {
       ...(meta.year ? { year: meta.year } : {}),
       ...(meta.director ? { director: meta.director } : {}),
       sourceUrl: info?.sourceUrl || '',
-      license: info?.license || 'Public Domain（入手元URLを clips.json に追記してください）',
+      license: info?.license || 'Public Domain',
       note:
         info?.memo ||
         (at !== undefined
