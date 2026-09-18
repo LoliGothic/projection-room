@@ -27,9 +27,9 @@ const DURATION = 10
 const FPS = 18
 const WIDTH = 480
 const HEIGHT = 360
-const CONTRAST = 1.32
+const CONTRAST = 1.18
 const NOISE = 14          // フィルム粒子の強さ
-const VIGNETTE = 'PI/4.2' // 周辺減光の強さ（小さいほど強い）
+const VIGNETTE = 'PI/3.4' // 周辺減光の強さ（小さいほど強い）
 /* ------------------------------------ */
 
 function arg(name, fallback = undefined) {
@@ -72,7 +72,9 @@ const filters = [
   `crop=${WIDTH}:${HEIGHT}`,
   'setsar=1',
   'format=gray',
-  `eq=contrast=${CONTRAST}:brightness=-0.03:gamma=0.96`,
+  // 転写によって露出がばらばらなので、まず自動で階調を伸ばして揃える
+  'normalize=blackpt=black:whitept=white:smoothing=40',
+  `eq=contrast=${CONTRAST}:brightness=0.02:gamma=1.02`,
   `noise=alls=${NOISE}:allf=t+u`,
   `vignette=${VIGNETTE}`,
 ].join(',')

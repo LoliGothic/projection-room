@@ -9,7 +9,7 @@
  * ID はシードから決定的に作るので、再実行しても同じ結果になる。
  */
 import { execFile } from 'node:child_process'
-import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -29,6 +29,8 @@ const SEED = seedArg >= 0 ? Number(args[seedArg + 1]) : 20260918
 const FORCE = args.includes('--force')
 // 既に生成済みなら何もしない（docker compose 起動時に毎回走らせても無駄にならないように）
 const SKIP_IF_PRESENT = args.includes('--if-missing')
+// 本物側を gen:real で実映像に差し替えたあと、AI役だけ作り直したいとき
+const AI_ONLY = args.includes('--ai-only')
 
 /** 決定的な乱数（xorshift32） */
 function makeRng(seed) {
@@ -127,12 +129,22 @@ async function main() {
       return
     }
   }
-  await rm(outDir, { recursive: true, force: true })
+  // gen:real で作った実映像を残したまま AI 役だけ作り直す
+  let keep = []
+  if (AI_ONLY) {
+    const db = JSON.parse(await readFile(jsonPath, 'utf8').catch(() => '{"clips":[]}'))
+    keep = db.clips.filter((c) => !c.isAI)
+    for (const c of db.clips.filter((c) => c.isAI)) {
+      await rm(path.join(root, 'public', c.src), { force: true })
+    }
+  } else {
+    await rm(outDir, { recursive: true, force: true })
+  }
   await mkdir(outDir, { recursive: true })
 
   const jobs = []
 
-  for (const w of REAL_WORKS) {
+  if (!AI_ONLY) for (const w of REAL_WORKS) {
     w.scenes.forEach((source, i) => {
       jobs.push({
         id: makeId(),
@@ -191,7 +203,7 @@ async function main() {
   )
   process.stdout.write('\n')
 
-  const clips = jobs.map((j) => ({
+  const made = jobs.map((j) => ({
     id: j.id,
     // 配信先が未定のため相対パスで保持し、実行時に BASE_URL と連結する
     src: `clips/${j.id}.mp4`,
@@ -199,6 +211,14 @@ async function main() {
     work: j.work,
     ...j.meta,
   }))
+
+  // --ai-only のときは、残した本物と交互に近い並びにする
+  const clips = []
+  const max = Math.max(keep.length, made.length)
+  for (let i = 0; i < max; i++) {
+    if (keep[i]) clips.push(keep[i])
+    if (made[i]) clips.push(made[i])
+  }
 
   await writeFile(jsonPath, JSON.stringify({ version: 1, clips }, null, 2) + '\n', 'utf8')
 
