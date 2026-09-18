@@ -100,7 +100,14 @@ export function VideoStage({ current, turn, preload, onAnswer, enabled, fx, ligh
               playsInline
               preload="auto"
               disablePictureInPicture
-              style={{ opacity: i === activeSlot ? 1 : 0, zIndex: i === activeSlot ? 1 : 0 }}
+              // 3枚を必ず重ねる。ここを外すと先読み分が縦に並び、
+              // 枠の下（操作案内のあたり）に映ってしまう
+              style={{
+                position: 'absolute',
+                inset: 0,
+                opacity: i === activeSlot ? 1 : 0,
+                zIndex: i === activeSlot ? 1 : 0,
+              }}
             />
           )
         })}

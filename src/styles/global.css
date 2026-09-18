@@ -89,10 +89,16 @@ body {
   inset: 0;
   transform-origin: 50% 130%;
   will-change: transform;
+  /* 先読み用の <video> がはみ出して枠の外に映らないようにする */
+  overflow: hidden;
 }
 .card.settling { transition: transform 160ms ease-out; }
 
 .card video {
+  /* 現在の1枚と先読み2枚を重ねる。
+     絶対配置にしないと3枚が縦に並び、先読み分が枠の下にはみ出して映ってしまう */
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;

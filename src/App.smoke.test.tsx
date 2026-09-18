@@ -145,6 +145,34 @@ describe('画面が実際に動く', () => {
     expect(document.querySelectorAll('.card video')).toHaveLength(RULES.preloadAhead + 1)
   })
 
+  it('先読み用の <video> が枠の外にはみ出さない（重ねて配置されている）', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toPlaying()
+
+    // 絶対配置でないと 3 枚が縦に並び、枠の下（操作案内のあたり）に映ってしまう
+    for (const v of document.querySelectorAll('.card video')) {
+      const style = (v as HTMLElement).style
+      expect(style.position).toBe('absolute')
+      expect(style.inset).toBe('0px')
+    }
+  })
+
+  it('回答するたびにスロットが変わっても、表示中の1枚だけが見えている', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toPlaying()
+
+    // スロットは 3 つを順に使い回すので、3 回ぶん確かめれば一巡する
+    for (let i = 0; i < 4; i++) {
+      const videos = [...document.querySelectorAll('.card video')] as HTMLElement[]
+      const visible = videos.filter((v) => v.style.opacity === '1')
+      expect(visible).toHaveLength(1)
+      expect(visible[0].getAttribute('src')).toBeTruthy()
+
+      await answer(true)
+      await runCutscenes()
+    }
+  })
+
   it('上映記録・設定・クレジットを開いて戻れる', async () => {
     await toTitle()
     for (const [open, heading] of [
