@@ -40,8 +40,8 @@ export const SWIPE = {
 export const CUTSCENE = {
   /** 巻の節目の暗転＋字幕カード（ms） */
   intertitleMs: 2600,
-  /** ミス時：映写機が止まって焦げ跡が広がる（ms） */
-  burnMs: 900,
+  /** ミス時：映写機が止まって焦げ跡が広がり穴が開く（ms） */
+  burnMs: 1500,
   /** ミス時：暗転（ms） */
   blackoutMs: 500,
   /** ミス時：巻き戻し（ms） */

@@ -298,35 +298,44 @@ body {
 .loopcut.burn { background: transparent; }
 .loopcut.black,
 .loopcut.rewind { background: #000; }
-.loopcut .scorch {
-  width: 58%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    #000 0%, #000 34%,
-    #1a0c04 34%, #3b1a08 42%,
-    #7a3410 52%, #c4552f 60%,
-    rgba(196, 85, 47, 0.35) 68%,
-    transparent 76%
-  );
-  animation: scorch-open 900ms ease-in forwards;
-}
-@keyframes scorch-open {
-  from { transform: scale(0.08); opacity: 0.9; }
-  to { transform: scale(1.5); opacity: 1; }
+.burn-hole {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
+/* 巻き戻し：フィルムが高速で逆に流れる */
 .loopcut .rewind-streaks {
   position: absolute;
   inset: 0;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(255, 255, 255, 0.055) 0 2px,
+    rgba(255, 255, 255, 0.05) 0 2px,
     transparent 2px 9px
   );
-  animation: rewind-run 220ms linear infinite;
+  animation: rewind-run 200ms linear infinite;
 }
+/* コマの境目が上へ飛んでいく */
+.loopcut .rewind-frames {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.85) 0 6px,
+      rgba(255, 255, 255, 0.07) 6px 8px,
+      transparent 8px 58px
+    );
+  animation: rewind-frames 130ms linear infinite;
+  mix-blend-mode: screen;
+}
+@keyframes rewind-frames {
+  from { background-position-y: 0; }
+  to { background-position-y: -58px; }
+}
+
 @keyframes rewind-run { from { background-position-y: 0; } to { background-position-y: 90px; } }
 
 /* ---- タイトル ---- */

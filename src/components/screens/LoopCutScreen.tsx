@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { audio } from '../../audio/engine'
 import { CUTSCENE } from '../../config/tuning'
 import { useTimeout } from '../../hooks/useTimeout'
+import { useSettings } from '../../state/settingsStore'
+import { BurnHole } from '../game/BurnHole'
 
 type Step = 'burn' | 'black' | 'rewind'
 
@@ -16,6 +18,7 @@ interface Props {
  */
 export function LoopCutScreen({ onDone }: Props) {
   const [step, setStep] = useState<Step>('burn')
+  const lightFx = useSettings((s) => s.lightFx)
 
   useEffect(() => {
     const a = window.setTimeout(() => setStep('black'), CUTSCENE.burnMs)
@@ -33,8 +36,13 @@ export function LoopCutScreen({ onDone }: Props) {
 
   return (
     <div className={`loopcut ${step}`} role="presentation">
-      {step === 'burn' && <span className="scorch" aria-hidden="true" />}
-      {step === 'rewind' && <span className="rewind-streaks" aria-hidden="true" />}
+      {step === 'burn' && <BurnHole durationMs={CUTSCENE.burnMs} light={lightFx} />}
+      {step === 'rewind' && (
+        <>
+          <span className="rewind-streaks" aria-hidden="true" />
+          <span className="rewind-frames" aria-hidden="true" />
+        </>
+      )}
     </div>
   )
 }
