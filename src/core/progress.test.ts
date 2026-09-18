@@ -23,15 +23,36 @@ function clearClips(p: Progress, n: number): Progress {
 describe('applyAnswer', () => {
   it('本物を映写すると正解', () => {
     const { progress, outcome } = applyAnswer(createProgress(), real, 'project')
-    expect(outcome).toEqual({ kind: 'next' })
-    expect(progress.clearedInReel).toBe(1)
+    expect(outcome.kind).not.toBe('loop')
+    expect(progress.clearedInReel).toBe(RULES.clipsPerReel === 1 ? 0 : 1)
     expect(progress.stats.correct).toBe(1)
     expect(progress.stats.presented).toBe(1)
   })
 
   it('AI を焼き捨てると正解', () => {
     const { outcome } = applyAnswer(createProgress(), ai, 'burn')
-    expect(outcome).toEqual({ kind: 'next' })
+    expect(outcome.kind).not.toBe('loop')
+  })
+
+  it('1巻1本なら、1本正解するたびに次の巻へ進む', () => {
+    const rules = { totalReels: 8, clipsPerReel: 1 }
+    const r = applyAnswer(createProgress(), real, 'project', rules)
+    expect(r.outcome).toEqual({ kind: 'reelCleared', reel: 2 })
+    expect(r.progress.reel).toBe(2)
+  })
+
+  it('1巻に複数本あるなら、途中は同じ巻に留まる', () => {
+    const rules = { totalReels: 8, clipsPerReel: 3 }
+    let p = createProgress()
+    for (let i = 0; i < 2; i++) {
+      const r = applyAnswer(p, real, 'project', rules)
+      expect(r.outcome).toEqual({ kind: 'next' })
+      p = r.progress
+    }
+    expect(applyAnswer(p, real, 'project', rules).outcome).toEqual({
+      kind: 'reelCleared',
+      reel: 2,
+    })
   })
 
   it('本物を焼き捨てるとミスになり、第1巻に戻る', () => {

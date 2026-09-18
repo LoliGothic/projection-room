@@ -66,10 +66,17 @@ export function createProgress(): Progress {
   return { reel: 1, clearedInReel: 0, stats: createStats() }
 }
 
+/** 巻の構成。既定は config/tuning.ts の RULES。テストで差し替えられるように受け取る */
+export interface ReelRules {
+  totalReels: number
+  clipsPerReel: number
+}
+
 export function applyAnswer(
   p: Progress,
   clip: Clip,
   verdict: Verdict,
+  rules: ReelRules = RULES,
 ): { progress: Progress; outcome: Outcome } {
   const stats: Stats = { ...p.stats, presented: p.stats.presented + 1 }
 
@@ -88,11 +95,11 @@ export function applyAnswer(
   stats.correct++
   const cleared = p.clearedInReel + 1
 
-  if (cleared < RULES.clipsPerReel) {
+  if (cleared < rules.clipsPerReel) {
     return { progress: { ...p, clearedInReel: cleared, stats }, outcome: { kind: 'next' } }
   }
 
-  if (p.reel >= RULES.totalReels) {
+  if (p.reel >= rules.totalReels) {
     return {
       progress: { reel: p.reel, clearedInReel: cleared, stats },
       outcome: { kind: 'escaped' },

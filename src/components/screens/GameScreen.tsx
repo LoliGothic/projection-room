@@ -64,11 +64,14 @@ export function GameScreen({ session, onAnswer, onReplay, onDarkness, interactiv
         {!settings.reduceFlashing && <CrossingShadow />}
         <Projector speed={projectorSpeed(dread)} stopped={!interactive} onReplay={replay} />
         <div className="reel-label">{reelLabel(reel)}</div>
-        <div className="reel-dots" aria-label={`この巻 ${clearedInReel}/${RULES.clipsPerReel}`}>
-          {Array.from({ length: RULES.clipsPerReel }, (_, i) => (
-            <span key={i} className={i < clearedInReel ? 'dot on' : 'dot'} />
-          ))}
-        </div>
+        {/* 1巻1本のときは常に 0/1 で意味がないので出さない */}
+        {RULES.clipsPerReel > 1 && (
+          <div className="reel-dots" aria-label={`この巻 ${clearedInReel}/${RULES.clipsPerReel}`}>
+            {Array.from({ length: RULES.clipsPerReel }, (_, i) => (
+              <span key={i} className={i < clearedInReel ? 'dot on' : 'dot'} />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="gate-wrap" ref={gate}>

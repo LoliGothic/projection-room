@@ -58,12 +58,13 @@ describe('session', () => {
     expect(preloadClips(s)).toHaveLength(RULES.preloadAhead)
   })
 
-  it('回答すると間を置かず次の動画に進み、先読みも補充される', () => {
+  it('回答すると次の動画に進み、先読みも補充される', () => {
     const s = started()
     const first = currentClip(s)!
     const next = answerCorrectly(s)
 
-    expect(next.phase.name).toBe('playing')
+    // 1巻1本なら巻の節目（字幕カード）、複数本なら続けてプレイ
+    expect(['playing', 'intertitle']).toContain(next.phase.name)
     expect(currentClip(next)!.id).not.toBe(first.id)
     expect(preloadClips(next)).toHaveLength(RULES.preloadAhead)
   })

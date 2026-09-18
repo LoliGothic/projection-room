@@ -4,10 +4,10 @@
  */
 
 export const RULES = {
-  /** 全何巻で脱出か */
+  /** 全何巻で脱出か。連続で正解すべき本数は totalReels * clipsPerReel */
   totalReels: 8,
   /** 1巻あたり何本正しくさばけば次の巻へ進むか */
-  clipsPerReel: 3,
+  clipsPerReel: 1,
   /** 同じ種類（本物/AI）が連続してよい最大本数。5本以上連続しない＝4 */
   maxSameKindRun: 4,
   /** 先読みする本数 */
