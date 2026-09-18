@@ -173,6 +173,21 @@ describe('画面が実際に動く', () => {
     }
   })
 
+  it('映写機のリールが自分の中心で回る構造になっている', async () => {
+    await toTitle()
+
+    const reels = [...document.querySelectorAll('.projector .reel')]
+    expect(reels.length).toBeGreaterThan(0)
+
+    for (const reel of reels) {
+      // 回転するグループに位置指定が混ざると、transform-origin の解決が
+      // viewBox 基準になり 2 つのリールが映写機の中心を軸に公転してしまう。
+      // 位置決めは親、回転は子、と分けておく
+      expect(reel.getAttribute('transform')).toBeNull()
+      expect(reel.parentElement?.getAttribute('transform')).toMatch(/^translate\(/)
+    }
+  })
+
   it('上映記録・設定・クレジットを開いて戻れる', async () => {
     await toTitle()
     for (const [open, heading] of [

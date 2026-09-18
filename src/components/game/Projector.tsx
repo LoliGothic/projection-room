@@ -29,25 +29,35 @@ export function Projector({ speed = 1, stopped = false, onReplay }: Props) {
         {/* 本体 */}
         <rect x="18" y="16" width="52" height="18" rx="2" className="body" />
         <rect x="64" y="19" width="10" height="12" rx="1" className="body" />
-        {/* リール */}
-        <g className="reel" style={style} transform="translate(30 12)">
-          <circle r="10" className="reel-rim" />
-          <circle r="2.4" className="reel-hub" />
-          <g className="reel-spokes">
-            <rect x="-0.9" y="-9" width="1.8" height="5" />
-            <rect x="-0.9" y="4" width="1.8" height="5" />
-            <rect x="-9" y="-0.9" width="5" height="1.8" />
-            <rect x="4" y="-0.9" width="5" height="1.8" />
+        {/*
+          リール。位置決めは外側の <g> が持ち、回転するのは内側の <g> だけにする。
+          こうすると回転の軸が内側の <g> 自身の原点（＝リールの中心）になる。
+          1つの <g> に translate と回転を同居させると transform-origin の解決が
+          ブラウザによって viewBox 基準になり、2つのリールが映写機の中心を軸に
+          公転してしまう。
+        */}
+        <g transform="translate(30 12)">
+          <g className="reel" style={style}>
+            <circle r="10" className="reel-rim" />
+            <circle r="2.4" className="reel-hub" />
+            <g className="reel-spokes">
+              <rect x="-0.9" y="-9" width="1.8" height="5" />
+              <rect x="-0.9" y="4" width="1.8" height="5" />
+              <rect x="-9" y="-0.9" width="5" height="1.8" />
+              <rect x="4" y="-0.9" width="5" height="1.8" />
+            </g>
           </g>
         </g>
-        <g className="reel" style={style} transform="translate(58 12)">
-          <circle r="8" className="reel-rim" />
-          <circle r="2" className="reel-hub" />
-          <g className="reel-spokes">
-            <rect x="-0.8" y="-7" width="1.6" height="4" />
-            <rect x="-0.8" y="3" width="1.6" height="4" />
-            <rect x="-7" y="-0.8" width="4" height="1.6" />
-            <rect x="3" y="-0.8" width="4" height="1.6" />
+        <g transform="translate(58 12)">
+          <g className="reel" style={style}>
+            <circle r="8" className="reel-rim" />
+            <circle r="2" className="reel-hub" />
+            <g className="reel-spokes">
+              <rect x="-0.8" y="-7" width="1.6" height="4" />
+              <rect x="-0.8" y="3" width="1.6" height="4" />
+              <rect x="-7" y="-0.8" width="4" height="1.6" />
+              <rect x="3" y="-0.8" width="4" height="1.6" />
+            </g>
           </g>
         </g>
         {/* 脚 */}

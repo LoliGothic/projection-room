@@ -207,11 +207,16 @@ body {
 .projector .reel-hub { fill: #4a4136; }
 .projector .reel-spokes { fill: #4a4136; }
 .projector .reel {
-  transform-box: fill-box;
-  transform-origin: center;
+  /* 子の図形は原点を中心に描いてあるので、原点をそのまま回転軸にする。
+     transform-box: fill-box は <g> では効かないブラウザがあり、
+     その場合 viewBox の中心が軸になって 2 つのリールが一緒に公転してしまう */
+  transform-origin: 0 0;
   animation: reel-spin 2.4s linear infinite;
 }
-@keyframes reel-spin { to { rotate: 360deg; } }
+@keyframes reel-spin {
+  from { rotate: 0deg; }
+  to { rotate: 360deg; }
+}
 
 .reel-dots { display: flex; gap: 0.5rem; }
 .reel-dots .dot {
