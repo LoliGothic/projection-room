@@ -353,3 +353,42 @@ body {
   .projector .reel { animation: none; }
   .loopcut .rewind-streaks { animation: none; }
 }
+
+/* ---- 不穏タイマーの演出 ---- */
+.dread-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.82) 100%);
+  transition: opacity 500ms linear;
+}
+
+.silhouette {
+  position: absolute;
+  left: 50%;
+  fill: #000;
+  pointer-events: none;
+  transition: opacity 900ms ease, transform 1400ms ease;
+  filter: blur(1.6px);
+}
+.silhouette.upper { top: 0; }
+.silhouette.lower { bottom: 0; transform-origin: 50% 100%; }
+.silhouette.lower svg { transform: scaleY(-1); }
+
+/* 映写機の光。段階が進むほど強くなる */
+.upper, .lower { position: relative; }
+.lamp {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 70%;
+  height: 100%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(216, 180, 106, 0.22), transparent 70%);
+  transition: opacity 600ms linear;
+}
+
+.gate-wrap { position: relative; width: 100%; }

@@ -1,6 +1,9 @@
 import { useCallback, useEffect } from 'react'
-import type { Verdict } from './core/types'
+import { isCorrect, type Verdict } from './core/types'
+import { currentClip } from './core/session'
+import { audio } from './audio/engine'
 import { useGame } from './state/gameStore'
+import { useSettings } from './state/settingsStore'
 import { GameScreen } from './components/screens/GameScreen'
 import { IntertitleScreen } from './components/screens/IntertitleScreen'
 import { LoopCutScreen } from './components/screens/LoopCutScreen'
@@ -11,13 +14,48 @@ export default function App() {
   const error = useGame((s) => s.error)
   const load = useGame((s) => s.load)
   const send = useGame((s) => s.send)
+  const volume = useSettings((s) => s.volume)
+  const muted = useSettings((s) => s.muted)
 
   useEffect(() => {
     void load()
   }, [load])
 
-  const onAnswer = useCallback((verdict: Verdict) => send({ type: 'answer', verdict }), [send])
+  useEffect(() => {
+    audio.setVolume(volume)
+  }, [volume])
+  useEffect(() => {
+    audio.setMuted(muted)
+  }, [muted])
+
+  const phaseName = session?.phase.name
+
+  // 巻の節目とミス演出のあいだは映写機を止める
+  useEffect(() => {
+    audio.setProjectorRunning(phaseName === 'playing')
+  }, [phaseName])
+
+  const onStart = useCallback(() => {
+    void audio.unlock()
+    send({ type: 'start' })
+  }, [send])
+
+  const onAnswer = useCallback(
+    (verdict: Verdict) => {
+      const clip = session ? currentClip(session) : undefined
+      if (clip) {
+        // 右スワイプ＝映写、左スワイプ＝焼却。音も同じ側に振る
+        const pan = verdict === 'project' ? 0.65 : -0.65
+        if (isCorrect(clip, verdict)) audio.playCorrect(pan)
+        else audio.playMiss(pan)
+      }
+      send({ type: 'answer', verdict })
+    },
+    [session, send],
+  )
+
   const onReplay = useCallback(() => send({ type: 'replay' }), [send])
+  const onDarkness = useCallback(() => send({ type: 'darkness' }), [send])
   const onCutsceneDone = useCallback(() => send({ type: 'cutsceneDone' }), [send])
 
   if (error) {
@@ -48,10 +86,15 @@ export default function App() {
   return (
     <div className="theatre">
       <div className="stage">
-        {phase.name === 'title' && <TitleScreen onStart={() => send({ type: 'start' })} />}
+        {phase.name === 'title' && <TitleScreen onStart={onStart} />}
 
         {phase.name === 'playing' && (
-          <GameScreen session={session} onAnswer={onAnswer} onReplay={onReplay} />
+          <GameScreen
+            session={session}
+            onAnswer={onAnswer}
+            onReplay={onReplay}
+            onDarkness={onDarkness}
+          />
         )}
 
         {phase.name === 'intertitle' && (
@@ -67,7 +110,7 @@ export default function App() {
             段階4で実装します
             <br />
             <br />
-            <button type="button" className="title-start" onClick={() => send({ type: 'start' })}>
+            <button type="button" className="title-start" onClick={onStart}>
               もう一度
             </button>
           </p>

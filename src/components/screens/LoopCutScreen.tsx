@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { audio } from '../../audio/engine'
 import { CUTSCENE } from '../../config/tuning'
 import { useTimeout } from '../../hooks/useTimeout'
 
@@ -17,7 +18,10 @@ export function LoopCutScreen({ onDone }: Props) {
 
   useEffect(() => {
     const a = window.setTimeout(() => setStep('black'), CUTSCENE.burnMs)
-    const b = window.setTimeout(() => setStep('rewind'), CUTSCENE.burnMs + CUTSCENE.blackoutMs)
+    const b = window.setTimeout(() => {
+      setStep('rewind')
+      audio.playRewind()
+    }, CUTSCENE.burnMs + CUTSCENE.blackoutMs)
     return () => {
       window.clearTimeout(a)
       window.clearTimeout(b)
