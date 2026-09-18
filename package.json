@@ -15,7 +15,8 @@
     "gen:dummy:if-missing": "node scripts/gen-dummy.mjs --if-missing",
     "gen:icons": "node scripts/gen-icons.mjs",
     "gen:real": "node scripts/gen-real.mjs",
-    "gen:dummy:ai": "node scripts/gen-dummy.mjs --ai-only"
+    "gen:dummy:ai": "node scripts/gen-dummy.mjs --ai-only",
+    "import:saved": "node scripts/import-saved.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",

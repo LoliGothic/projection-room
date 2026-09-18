@@ -2,16 +2,16 @@
   "version": 1,
   "clips": [
     {
-      "id": "eb8dbb",
-      "src": "clips/eb8dbb.mp4",
+      "id": "9egbmf",
+      "src": "clips/9egbmf.mp4",
       "isAI": false,
-      "work": "nosferatu",
-      "title": "ノスフェラトゥ",
-      "year": 1922,
-      "director": "F・W・ムルナウ",
+      "work": "big-business-1929-16mm-silent-uhd",
+      "title": "ビッグ・ビジネス",
+      "year": 1929,
+      "director": "ジェームズ・W・ホーン",
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "ノスフェラトゥ（1922）より 33分20秒あたり"
+      "note": "ビッグ・ビジネス より 5分30秒あたり"
     },
     {
       "id": "ebpbse",
@@ -25,16 +25,15 @@
       "note": "手の指の本数が途中で変わる。輪郭が溶けるように揺れている。"
     },
     {
-      "id": "dqcdjc",
-      "src": "clips/dqcdjc.mp4",
+      "id": "cbsgym",
+      "src": "clips/cbsgym.mp4",
       "isAI": false,
-      "work": "nosferatu",
-      "title": "ノスフェラトゥ",
-      "year": 1922,
-      "director": "F・W・ムルナウ",
+      "work": "hell-s-hinges-1916",
+      "title": "ヘルズ・ヒンジズ",
+      "year": 1916,
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "ノスフェラトゥ（1922）より 68分20秒あたり"
+      "note": "ヘルズ・ヒンジズ より 32分13秒あたり"
     },
     {
       "id": "hpny4j",
@@ -48,16 +47,15 @@
       "note": "手の指の本数が途中で変わる。輪郭が溶けるように揺れている。"
     },
     {
-      "id": "9eevuc",
-      "src": "clips/9eevuc.mp4",
+      "id": "thpvyu",
+      "src": "clips/thpvyu.mp4",
       "isAI": false,
-      "work": "caligari",
-      "title": "カリガリ博士",
-      "year": 1920,
-      "director": "ロベルト・ヴィーネ",
+      "work": "hell-s-hinges-1916",
+      "title": "ヘルズ・ヒンジズ",
+      "year": 1916,
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "カリガリ博士（1920）より 7分26秒あたり"
+      "note": "ヘルズ・ヒンジズ より 32分23秒あたり"
     },
     {
       "id": "jeekw4",
@@ -71,16 +69,16 @@
       "note": "背景の文字がどのコマでも読めない形に崩れている。"
     },
     {
-      "id": "ut4fzv",
-      "src": "clips/ut4fzv.mp4",
+      "id": "d2smw4",
+      "src": "clips/d2smw4.mp4",
       "isAI": false,
-      "work": "caligari",
-      "title": "カリガリ博士",
-      "year": 1920,
-      "director": "ロベルト・ヴィーネ",
+      "work": "le-voyage-dans-la-lune-black-and-white-1",
+      "title": "月世界旅行",
+      "year": 1902,
+      "director": "ジョルジュ・メリエス",
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "カリガリ博士（1920）より 29分17秒あたり"
+      "note": "月世界旅行 より 1分58秒あたり"
     },
     {
       "id": "mqybnt",
@@ -94,16 +92,16 @@
       "note": "粒子の動きが画面全体で均一すぎる。フィルムの傷が一度も出ない。"
     },
     {
-      "id": "mfedmf",
-      "src": "clips/mfedmf.mp4",
+      "id": "n3z3e5",
+      "src": "clips/n3z3e5.mp4",
       "isAI": false,
-      "work": "phantom",
-      "title": "オペラの怪人",
-      "year": 1925,
-      "director": "ルパート・ジュリアン",
+      "work": "les-vampires-satanas-1916",
+      "title": "レ・ヴァンピール 第5話「サタナス」",
+      "year": 1916,
+      "director": "ルイ・フイヤード",
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "オペラの怪人（1925）より 63分20秒あたり"
+      "note": "レ・ヴァンピール 第5話「サタナス」 より 23分22秒あたり"
     },
     {
       "id": "hqn9k8",
@@ -117,16 +115,16 @@
       "note": "人物の影の向きが光源と合っていない。"
     },
     {
-      "id": "pkpne9",
-      "src": "clips/pkpne9.mp4",
+      "id": "73cqtt",
+      "src": "clips/73cqtt.mp4",
       "isAI": false,
-      "work": "phantom",
-      "title": "オペラの怪人",
-      "year": 1925,
-      "director": "ルパート・ジュリアン",
+      "work": "our-hospitality-1923",
+      "title": "荒武者キートン",
+      "year": 1923,
+      "director": "バスター・キートン／ジョン・G・ブライストン",
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "オペラの怪人（1925）より 88分20秒あたり"
+      "note": "荒武者キートン より 24分45秒あたり"
     },
     {
       "id": "9nxznk",
@@ -140,16 +138,16 @@
       "note": "同じ模様が画面内で繰り返し現れる（生成モデル特有のタイル状の反復）。"
     },
     {
-      "id": "ackin8",
-      "src": "clips/ackin8.mp4",
+      "id": "8n2a68",
+      "src": "clips/8n2a68.mp4",
       "isAI": false,
-      "work": "jekyll",
-      "title": "ジキル博士とハイド氏",
-      "year": 1920,
-      "director": "ジョン・S・ロバートソン",
+      "work": "safety-last-1923",
+      "title": "ロイドの要心無用",
+      "year": 1923,
+      "director": "フレッド・ニューメイヤー／サム・テイラー",
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "ジキル博士とハイド氏（1920）より 51分59秒あたり"
+      "note": "ロイドの要心無用 より 69分47秒あたり"
     },
     {
       "id": "3knhdi",
@@ -163,16 +161,16 @@
       "note": "人物の影の向きが光源と合っていない。"
     },
     {
-      "id": "q9nivr",
-      "src": "clips/q9nivr.mp4",
+      "id": "eq6k4u",
+      "src": "clips/eq6k4u.mp4",
       "isAI": false,
-      "work": "unknown",
-      "title": "ザ・アンノウン",
-      "year": 1927,
-      "director": "トッド・ブラウニング",
+      "work": "the-cheat-1915",
+      "title": "チート",
+      "year": 1915,
+      "director": "セシル・B・デミル",
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "ザ・アンノウン（1927）より 12分30秒あたり"
+      "note": "チート より 35分10秒あたり"
     },
     {
       "id": "sqm37i",
@@ -186,16 +184,16 @@
       "note": "背景の文字がどのコマでも読めない形に崩れている。"
     },
     {
-      "id": "ube5uk",
-      "src": "clips/ube5uk.mp4",
+      "id": "6yydzg",
+      "src": "clips/6yydzg.mp4",
       "isAI": false,
-      "work": "riders",
-      "title": "ライダーズ・オブ・デスティニー",
-      "year": 1933,
-      "director": "ロバート・N・ブラッドベリー",
+      "work": "the-cheat-1915",
+      "title": "チート",
+      "year": 1915,
+      "director": "セシル・B・デミル",
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "ライダーズ・オブ・デスティニー（1933）より 22分13秒あたり"
+      "note": "チート より 38分33秒あたり"
     },
     {
       "id": "w6ggbp",
@@ -209,16 +207,15 @@
       "note": "カメラが物理的に不可能な速度で被写体を回り込む。"
     },
     {
-      "id": "96djdx",
-      "src": "clips/96djdx.mp4",
+      "id": "7cvgij",
+      "src": "clips/7cvgij.mp4",
       "isAI": false,
-      "work": "usher",
-      "title": "アッシャー家の崩壊",
-      "year": 1928,
-      "director": "",
+      "work": "tumbleweeds-1925",
+      "title": "タンブルウィーズ",
+      "year": 1925,
       "sourceUrl": "",
       "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "アッシャー家の崩壊（1928）より 8分30秒あたり"
+      "note": "タンブルウィーズ より 15分25秒あたり"
     },
     {
       "id": "euqbtv",
@@ -232,18 +229,6 @@
       "note": "カメラが物理的に不可能な速度で被写体を回り込む。"
     },
     {
-      "id": "5icbdr",
-      "src": "clips/5icbdr.mp4",
-      "isAI": false,
-      "work": "caoutchouc",
-      "title": "ゴム頭の男",
-      "year": 1901,
-      "director": "ジョルジュ・メリエス",
-      "sourceUrl": "",
-      "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "ゴム頭の男（1901）より 1分38秒あたり"
-    },
-    {
       "id": "7mhhc4",
       "src": "clips/7mhhc4.mp4",
       "isAI": true,
@@ -253,18 +238,6 @@
       "sourceUrl": "",
       "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
       "note": "同じ模様が画面内で繰り返し現れる（生成モデル特有のタイル状の反復）。"
-    },
-    {
-      "id": "es4pta",
-      "src": "clips/es4pta.mp4",
-      "isAI": false,
-      "work": "haunted-castle",
-      "title": "悪魔の館",
-      "year": 1896,
-      "director": "ジョルジュ・メリエス",
-      "sourceUrl": "",
-      "license": "Public Domain（入手元URLを clips.json に追記してください）",
-      "note": "悪魔の館（1896）より 1分52秒あたり"
     },
     {
       "id": "pvp3r2",

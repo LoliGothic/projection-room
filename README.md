@@ -56,7 +56,8 @@ docker compose exec app npm run gen:dummy -- --force   # ダミー動画を作�
 | `gen:dummy` | ダミー動画24本と `public/clips.json` を生成（**本物側も上書きします**） |
 | `gen:dummy:ai` | AI役12本だけ作り直す（本物の実映像は残す） |
 | `gen:dummy:if-missing` | 未生成のときだけ生成（compose の起動時に使用） |
-| `gen:real` | `sources/` の実映画から本物クリップを切り出す |
+| `import:saved` | `clip_picker.py` で切り出した `saved/` の10秒クリップを取り込む |
+| `gen:real` | `sources/` の実映画から自動で切り出す（目視で選ばない場合） |
 | `prep:clip` | 実素材を同じ質感に揃える劣化処理 |
 | `gen:icons` | PWA のアイコンを生成 |
 
@@ -68,7 +69,7 @@ docker compose exec app npm run gen:dummy -- --force   # ダミー動画を作�
 
 | 役 | 中身 |
 | --- | --- |
-| **本物** 12本 | `sources/` の実際のパブリックドメイン映画から切り出したもの |
+| **本物** 10本 | `clip_picker.py` で選んで `saved/` に切り出したパブリックドメイン映画 |
 | **AI役** 12本 | ffmpeg のテストパターン（仮） |
 
 本物は実写、AI役は明らかな図形パターンなので、**正解／不正解がひと目で分かります**。
@@ -76,22 +77,54 @@ docker compose exec app npm run gen:dummy -- --force   # ダミー動画を作�
 
 1周（8巻×1本）に必要なのは8本なので、同じ動画を出さずに何周かできる余裕があります。
 
-### 本物クリップ（sources/ から切り出す）
+### 本物クリップを入れる（ふだんはこちら）
+
+`clip_picker.py` で場面を選んで `saved/` に貯め、それを取り込みます。
+
+```bash
+# 1. 場面を選ぶ（別ツール。pip install flask して http://127.0.0.1:5000）
+python clip_picker.py
+
+# 2. saved/ の中身をゲームに取り込む
+npm run import:saved          # 本物側を saved/ の中身に差し替える
+npm run import:saved -- --add # 今ある本物を残したまま追加する
+```
+
+`saved/clips.csv` から元映画と切り出し位置を読み、劣化処理をかけて
+`public/clips/<ランダムID>.mp4` に出力し、`public/clips.json` の本物側を書き換えます。
+AI役のエントリは触りません。
+
+作品名・公開年・監督は `scripts/import-saved.mjs` の `TITLES` で指定します
+（キーは `saved/clips.csv` の `source_file` から拡張子を除いたもの）。
+ここに無いものはファイル名から機械的に作るので、気になるものだけ足せば済みます。
+**確かな出典を確認できなかった監督名は空にしてあります。**推測では入れていません。
+
+入手元URLとライセンスは `clips.csv` の `source_url` / `license` 列を埋めておくと
+そのまま取り込まれます。空の場合はあとから `public/clips.json` に追記してください。
+
+### sources/ から自動で切り出す（補助）
 
 ```bash
 npm run gen:real
 ```
 
-`scripts/gen-real.mjs` の `CATALOG` に、元映画のファイル名・作品名・公開年・監督と、
-**目で見て確認した切り出し位置（`picks`）** が書いてあります。
+目視で選ばずに `sources/` の映画から機械的に切り出す経路です。
+`scripts/gen-real.mjs` の `CATALOG` に、元映画と**確認済みの切り出し位置（`picks`）**が書いてあります。
 
 `picks` を消すと自動探索に切り替わりますが、素材の粒子が強いため
 **字幕カードや新聞の挿入カットを明るさや動きだけで自動判別することはできませんでした**
 （白抜き文字の字幕は、平均輝度が暗いシーンと区別できない）。
-そのため確認済みの位置を固定しています。映画を足すときは、切り出した結果を一度目で見てください。
+自動探索を使うときは、切り出した結果を必ず一度目で見てください。
 
-切り出しには `normalize`（自動レベル補正）を入れています。転写ごとに露出がばらばらで、
-これが無いと暗い転写（ジキル博士など）が真っ黒になって判断できなくなるためです。
+### 共通の劣化処理
+
+`import:saved` / `gen:real` / `prep:clip` はどれも同じ処理を通します。
+
+18fps / 480x360 / モノクロ / **自動レベル補正（normalize）** / コントラスト /
+フィルムノイズ / 周辺減光 / 無音 / faststart。
+
+`normalize` は転写ごとの露出差を吸収するために入れています。
+これが無いと暗い転写が真っ黒になり、判断できないクリップが出ます。
 
 ### AI役を作り直す
 
