@@ -78,10 +78,11 @@ export function GameScreen({ session, onAnswer, onReplay, onDarkness, interactiv
         <VideoStage
           ref={stage}
           current={clip}
-          turn={stats.presented}
+          turn={session.deck.advances}
           preload={preload}
           onAnswer={onAnswer}
           enabled={interactive}
+          paused={!interactive}
           fx={fx}
           lightFx={settings.lightFx}
         />

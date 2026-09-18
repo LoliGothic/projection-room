@@ -18,6 +18,8 @@ interface Props {
   preload: readonly Clip[]
   onAnswer: (verdict: Verdict) => void
   enabled: boolean
+  /** 映写機が止まっているあいだは映像も止める（ミス演出・巻の節目） */
+  paused?: boolean
   /** 演出の強さ 0..1。0 なら粒子もリーダーも出さない */
   fx: number
   /** 演出を軽くする */
@@ -31,7 +33,17 @@ const SLOT_COUNT = RULES.preloadAhead + 1
  * 4:3 の映像。<video> を固定数のスロットで使い回し、
  * 表示中の1本の裏で次の2本を読み込んでおく。
  */
-export function VideoStage({ current, turn, preload, onAnswer, enabled, fx, lightFx, ref }: Props) {
+export function VideoStage({
+  current,
+  turn,
+  preload,
+  onAnswer,
+  enabled,
+  paused = false,
+  fx,
+  lightFx,
+  ref,
+}: Props) {
   const videos = useRef<(HTMLVideoElement | null)[]>([])
   const { dx, dragging, progress, handlers } = useSwipeInput(onAnswer, enabled)
 
@@ -62,6 +74,14 @@ export function VideoStage({ current, turn, preload, onAnswer, enabled, fx, ligh
       }
     })
   }, [activeSlot, current.id])
+
+  // 映写機が止まったら映像も止める
+  useEffect(() => {
+    const v = videos.current[activeSlot]
+    if (!v) return
+    if (paused) v.pause()
+    else void v.play().catch(() => {})
+  }, [paused, activeSlot])
 
   useImperativeHandle(
     ref,

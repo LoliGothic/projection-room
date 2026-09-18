@@ -97,6 +97,21 @@ describe('session', () => {
     expect(s.progress.reel).toBe(1)
   })
 
+  it('ミスの演出中は次の1本へ進めない（演出の下に次の問題が映らない）', () => {
+    const s = started()
+    const answered = currentClip(s)!
+
+    const cut = answerWrongly(s)
+    expect(cut.phase.name).toBe('loopCut')
+    // まだ進んでいない。焦げるのは、いま間違えたフィルム
+    expect(currentClip(cut)!.id).toBe(answered.id)
+
+    const after = send(cut, { type: 'cutsceneDone' })
+    expect(after.phase).toMatchObject({ name: 'intertitle', reel: 1 })
+    expect(currentClip(after)!.id).not.toBe(answered.id)
+    expect(preloadClips(after)).toHaveLength(RULES.preloadAhead)
+  })
+
   it('ループしても出題済みはリセットされない（同じ動画が続けて出ない）', () => {
     let s = started()
     const seen = new Set<string>()

@@ -27,6 +27,11 @@ export interface Deck {
   queue: QueueState
   /** 先頭が現在の 1 本。以降は先読み用 */
   buffer: readonly Clip[]
+  /**
+   * 先頭を何回進めたか。<video> のスロット割り当てに使う。
+   * 回答した本数とは一致しない（ミス演出のあいだは進めないため）
+   */
+  advances: number
 }
 
 export interface Session {
@@ -52,7 +57,16 @@ const BUFFER_SIZE = RULES.preloadAhead + 1
 
 function refill(pool: readonly Clip[], deck: Deck, rng: Rng): Deck {
   const r = fillBuffer(pool, deck.queue, rng, BUFFER_SIZE, deck.buffer)
-  return { queue: r.state, buffer: r.buffer }
+  return { ...deck, queue: r.state, buffer: r.buffer }
+}
+
+/** 先頭を 1 本進めて、先読みを補充する */
+function advance(pool: readonly Clip[], deck: Deck, rng: Rng): Deck {
+  return refill(
+    pool,
+    { ...deck, buffer: deck.buffer.slice(1), advances: deck.advances + 1 },
+    rng,
+  )
 }
 
 export function createSession(pool: readonly Clip[]): Session {
@@ -60,7 +74,7 @@ export function createSession(pool: readonly Clip[]): Session {
     pool,
     phase: { name: 'title' },
     progress: createProgress(),
-    deck: { queue: createQueue(), buffer: [] },
+    deck: { queue: createQueue(), buffer: [], advances: 0 },
   }
 }
 
@@ -78,7 +92,7 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
   switch (e.type) {
     case 'start': {
       const progress = createProgress()
-      const deck = refill(s.pool, { queue: createQueue(), buffer: [] }, rng)
+      const deck = refill(s.pool, { queue: createQueue(), buffer: [], advances: 0 }, rng)
       return {
         ...s,
         progress,
@@ -90,9 +104,11 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
     case 'cutsceneDone': {
       if (s.phase.name === 'intertitle') return { ...s, phase: { name: 'playing' } }
       if (s.phase.name === 'loopCut') {
-        // 巻き戻しが終わったら第1巻の字幕カードへ。説明文は出さない
+        // ここで初めて次の 1 本へ進める。
+        // 回答した時点で進めてしまうと、焦げの演出の下に次の問題が映ってしまう
         return {
           ...s,
+          deck: advance(s.pool, s.deck, rng),
           phase: { name: 'intertitle', card: intertitleFor(1, s.progress.stats.loops), reel: 1 },
         }
       }
@@ -123,8 +139,15 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
       if (!clip) return s
 
       const { progress, outcome } = applyAnswer(s.progress, clip, e.verdict)
+
+      // ミスのときは進めない。焦げの演出は、いま間違えたフィルムの上で起きる。
+      // ここで進めると演出中に次の問題が見えてしまう
+      if (outcome.kind === 'loop') {
+        return { ...s, progress, phase: { name: 'loopCut' } }
+      }
+
       // 回答したら間を置かず次へ。出題済みはループしてもリセットしない
-      const deck = refill(s.pool, { ...s.deck, buffer: s.deck.buffer.slice(1) }, rng)
+      const deck = advance(s.pool, s.deck, rng)
 
       switch (outcome.kind) {
         case 'next':
@@ -150,8 +173,6 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
               endingId: resolveEnding(progress.stats, 'escape')?.id ?? 'dawn',
             },
           }
-        case 'loop':
-          return { ...s, progress, deck, phase: { name: 'loopCut' } }
       }
       return s
     }

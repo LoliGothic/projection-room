@@ -124,19 +124,34 @@ describe('画面が実際に動く', () => {
     expect(document.querySelector('.hint')?.textContent).toContain('焼き捨てる')
   })
 
-  it('矢印キーで回答すると次の動画に進む', async () => {
+  it('正しく回答して字幕カードを抜けると、次の動画に進む', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     await toPlaying()
-    const srcBefore = document.querySelector('video')?.getAttribute('src')
+    const before = activeClip()!.id
 
-    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    await answer(true)
+    await runCutscenes()
 
-    await waitFor(() => {
-      const shown = [...document.querySelectorAll('video')].find(
-        (v) => (v as HTMLElement).style.opacity === '1',
-      )
-      expect(shown?.getAttribute('src')).not.toBe(srcBefore)
-    })
+    await waitFor(() => expect(activeClip()).toBeTruthy())
+    expect(activeClip()!.id).not.toBe(before)
+  })
+
+  it('ミスの演出中は次の動画が見えない（間違えたフィルムのまま焦げる）', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toPlaying()
+    const wrong = activeClip()!.id
+
+    await answer(false)
+
+    // 焦げの演出中。映っているのは、いま間違えた1本のまま
+    expect(document.querySelector('.loopcut')).toBeTruthy()
+    expect(activeClip()!.id).toBe(wrong)
+
+    // 演出が終わってから次の1本へ進む
+    await runCutscenes()
+    await runCutscenes()
+    await waitFor(() => expect(activeClip()).toBeTruthy())
+    expect(activeClip()!.id).not.toBe(wrong)
   })
 
   it('先読み用の <video> が current + preload ぶん並んでいる', async () => {
