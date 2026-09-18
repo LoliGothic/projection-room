@@ -134,6 +134,7 @@ export default function App() {
             onAnswer={onAnswer}
             onReplay={onReplay}
             onDarkness={onDarkness}
+            onQuit={toTitle}
             interactive={phase.name === 'playing'}
           />
         )}

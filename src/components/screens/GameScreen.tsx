@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Verdict } from '../../core/types'
 import { currentClip, preloadClips, type Session } from '../../core/session'
 import { breathLevel, projectorSpeed, silhouetteCloseness } from '../../core/dread'
@@ -19,11 +19,22 @@ interface Props {
   onAnswer: (verdict: Verdict) => void
   onReplay: () => void
   onDarkness: () => void
+  /** 上映をやめてタイトルに戻る */
+  onQuit: () => void
   /** ミス演出の最中は操作もタイマーも止める */
   interactive: boolean
 }
 
-export function GameScreen({ session, onAnswer, onReplay, onDarkness, interactive }: Props) {
+export function GameScreen({
+  session,
+  onAnswer,
+  onReplay,
+  onDarkness,
+  onQuit,
+  interactive,
+}: Props) {
+  // 誤タップで進行が消えないよう、2回押させる
+  const [quitArmed, setQuitArmed] = useState(false)
   const stage = useRef<VideoStageHandle>(null)
   const gate = useRef<HTMLDivElement>(null)
   const settings = useSettings()
@@ -54,12 +65,29 @@ export function GameScreen({ session, onAnswer, onReplay, onDarkness, interactiv
     onReplay()
   }, [onReplay])
 
+  // 確認の表示は放っておけば引っ込む
+  useEffect(() => {
+    if (!quitArmed) return
+    const id = window.setTimeout(() => setQuitArmed(false), 3500)
+    return () => window.clearTimeout(id)
+  }, [quitArmed])
+
   if (!clip) return <p className="center-message">フィルムを巻いています…</p>
 
   return (
     <>
       <div className="upper">
         <span className="lamp" style={{ opacity: lamp }} aria-hidden="true" />
+
+        {interactive && (
+          <button
+            type="button"
+            className={quitArmed ? 'quit-link armed' : 'quit-link'}
+            onClick={() => (quitArmed ? onQuit() : setQuitArmed(true))}
+          >
+            {quitArmed ? 'もう一度押すと最初に戻る' : '上映をやめる'}
+          </button>
+        )}
         <Silhouette closeness={closeness} place="upper" />
         {!settings.reduceFlashing && <CrossingShadow />}
         <Projector speed={projectorSpeed(dread)} stopped={!interactive} onReplay={replay} />

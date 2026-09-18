@@ -203,6 +203,34 @@ describe('画面が実際に動く', () => {
     }
   })
 
+  it('上映をやめてタイトルに戻れる（2回押すまで戻らない）', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toPlaying()
+
+    const quit = screen.getByRole('button', { name: '上映をやめる' })
+    fireEvent.click(quit)
+
+    // 1回目は確認になるだけ。まだゲーム画面のまま
+    expect(screen.getByRole('button', { name: 'もう一度押すと最初に戻る' })).toBeTruthy()
+    expect(document.querySelector('.card video')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'もう一度押すと最初に戻る' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: '上映を始める' })).toBeTruthy())
+  })
+
+  it('やめる確認は放っておくと引っ込む', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toPlaying()
+
+    fireEvent.click(screen.getByRole('button', { name: '上映をやめる' }))
+    expect(screen.getByRole('button', { name: 'もう一度押すと最初に戻る' })).toBeTruthy()
+
+    await act(async () => {
+      vi.advanceTimersByTime(4000)
+    })
+    expect(screen.getByRole('button', { name: '上映をやめる' })).toBeTruthy()
+  })
+
   it('上映記録・設定・クレジットを開いて戻れる', async () => {
     await toTitle()
     for (const [open, heading] of [

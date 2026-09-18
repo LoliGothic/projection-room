@@ -732,3 +732,23 @@ body {
   }
   .hint { position: relative; }
 }
+
+/* 上映をやめてタイトルへ戻る。誤爆しないよう控えめに置く */
+.quit-link {
+  position: absolute;
+  top: calc(0.6rem + env(safe-area-inset-top));
+  left: 0.7rem;
+  z-index: 5;
+  background: none;
+  border: 0;
+  padding: 0.5rem 0.6rem;
+  color: #4a453d;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+.quit-link:hover { color: #8a8175; }
+.quit-link.armed {
+  color: var(--burn);
+  border: 1px solid rgba(196, 85, 47, 0.5);
+}
