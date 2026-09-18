@@ -57,6 +57,7 @@ docker compose exec app npm run gen:dummy -- --force   # ダミー動画を作�
 | `gen:dummy:ai` | AI役12本だけ作り直す（本物の実映像は残す） |
 | `gen:dummy:if-missing` | 未生成のときだけ生成（compose の起動時に使用） |
 | `import:saved` | `clip_picker.py` で切り出した `saved/` の10秒クリップを取り込む |
+| `import:ai` | `clips/` の AI 生成動画を取り込む |
 | `gen:real` | `sources/` の実映画から自動で切り出す（目視で選ばない場合） |
 | `prep:clip` | 実素材を同じ質感に揃える劣化処理 |
 | `gen:icons` | PWA のアイコンを生成 |
@@ -70,7 +71,7 @@ docker compose exec app npm run gen:dummy -- --force   # ダミー動画を作�
 | 役 | 中身 |
 | --- | --- |
 | **本物** 10本 | `clip_picker.py` で選んで `saved/` に切り出したパブリックドメイン映画 |
-| **AI役** 12本 | ffmpeg のテストパターン（仮） |
+| **AI** 10本 | 生成した1920年代スラップスティック風の動画 |
 
 本物は実写、AI役は明らかな図形パターンなので、**正解／不正解がひと目で分かります**。
 判定ロジックや演出の確認用の構成です。AI生成動画が用意できたら AI 役を差し替えてください。
@@ -101,6 +102,39 @@ AI役のエントリは触りません。
 
 入手元URLとライセンスは `clips.csv` の `source_url` / `license` 列を埋めておくと
 そのまま取り込まれます。空の場合はあとから `public/clips.json` に追記してください。
+
+### AI生成動画を入れる
+
+`clips/` に置いて取り込みます。
+
+```bash
+npm run import:ai            # AI 側を clips/ の中身に差し替える
+npm run import:ai -- --add   # いまの AI を残して追加する
+npm run import:ai -- --in clips/batch2
+```
+
+本物とまったく同じ劣化処理を通すので、解像度・fps・圧縮の癖からは見分けられません。
+
+**生成ツールが焼き込む左上のウォーターマークは、切り落として消しています**
+（`TRIM_LEFT` / `TRIM_TOP`）。`delogo` は画面端すぎて補間元が無く、
+黒い三角形の破綻が出てしまい、それ自体が手がかりになるため使っていません。
+別のツールでウォーターマークの位置や大きさが違う場合は、
+`scripts/import-ai.mjs` の `TRIM_LEFT` / `TRIM_TOP` を変えてください。無い場合は `--no-trim`。
+
+生成ツール名と「AIと見抜ける手がかり」は、`clips/ai-meta.json` を置くと1本ずつ指定できます。
+
+```json
+{
+  "動画7.mp4": {
+    "tool": "生成ツール名",
+    "note": "荷車の車輪が地面と噛み合わずに滑っている。"
+  }
+}
+```
+
+`work` は1本ずつ別の値になります。まとめて同じにすると
+「同じ作品の場面は連続しない」規則により **AI が2本続けて出なくなり**、
+「AIのあとは必ず本物」という手がかりを与えてしまうためです。
 
 ### sources/ から自動で切り出す（補助）
 

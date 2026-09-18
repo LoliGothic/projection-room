@@ -16,7 +16,8 @@
     "gen:icons": "node scripts/gen-icons.mjs",
     "gen:real": "node scripts/gen-real.mjs",
     "gen:dummy:ai": "node scripts/gen-dummy.mjs --ai-only",
-    "import:saved": "node scripts/import-saved.mjs"
+    "import:saved": "node scripts/import-saved.mjs",
+    "import:ai": "node scripts/import-ai.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",

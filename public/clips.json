@@ -14,15 +14,15 @@
       "note": "ビッグ・ビジネス より 5分30秒あたり"
     },
     {
-      "id": "ebpbse",
-      "src": "clips/ebpbse.mp4",
+      "id": "uz8huk",
+      "src": "clips/uz8huk.mp4",
       "isAI": true,
-      "work": "dummy-gen-a",
-      "title": "生成クリップ dummy-gen-a-1",
-      "tool": "仮・生成ツールA",
+      "work": "gen-uz8huk",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "手の指の本数が途中で変わる。輪郭が溶けるように揺れている。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "cbsgym",
@@ -36,15 +36,15 @@
       "note": "ヘルズ・ヒンジズ より 32分13秒あたり"
     },
     {
-      "id": "hpny4j",
-      "src": "clips/hpny4j.mp4",
+      "id": "jezmug",
+      "src": "clips/jezmug.mp4",
       "isAI": true,
-      "work": "dummy-gen-a",
-      "title": "生成クリップ dummy-gen-a-2",
-      "tool": "仮・生成ツールA",
+      "work": "gen-jezmug",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "手の指の本数が途中で変わる。輪郭が溶けるように揺れている。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "thpvyu",
@@ -58,15 +58,15 @@
       "note": "ヘルズ・ヒンジズ より 32分23秒あたり"
     },
     {
-      "id": "jeekw4",
-      "src": "clips/jeekw4.mp4",
+      "id": "9xgeyf",
+      "src": "clips/9xgeyf.mp4",
       "isAI": true,
-      "work": "dummy-gen-b",
-      "title": "生成クリップ dummy-gen-b-1",
-      "tool": "仮・生成ツールB",
+      "work": "gen-9xgeyf",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "背景の文字がどのコマでも読めない形に崩れている。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "d2smw4",
@@ -81,15 +81,15 @@
       "note": "月世界旅行 より 1分58秒あたり"
     },
     {
-      "id": "mqybnt",
-      "src": "clips/mqybnt.mp4",
+      "id": "5r2h6z",
+      "src": "clips/5r2h6z.mp4",
       "isAI": true,
-      "work": "dummy-gen-c",
-      "title": "生成クリップ dummy-gen-c-1",
-      "tool": "仮・生成ツールC",
+      "work": "gen-5r2h6z",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "粒子の動きが画面全体で均一すぎる。フィルムの傷が一度も出ない。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "n3z3e5",
@@ -104,15 +104,15 @@
       "note": "レ・ヴァンピール 第5話「サタナス」 より 23分22秒あたり"
     },
     {
-      "id": "hqn9k8",
-      "src": "clips/hqn9k8.mp4",
+      "id": "ia67gr",
+      "src": "clips/ia67gr.mp4",
       "isAI": true,
-      "work": "dummy-gen-d",
-      "title": "生成クリップ dummy-gen-d-2",
-      "tool": "仮・生成ツールD",
+      "work": "gen-ia67gr",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "人物の影の向きが光源と合っていない。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "73cqtt",
@@ -127,15 +127,15 @@
       "note": "荒武者キートン より 24分45秒あたり"
     },
     {
-      "id": "9nxznk",
-      "src": "clips/9nxznk.mp4",
+      "id": "diyir4",
+      "src": "clips/diyir4.mp4",
       "isAI": true,
-      "work": "dummy-gen-f",
-      "title": "生成クリップ dummy-gen-f-2",
-      "tool": "仮・生成ツールF",
+      "work": "gen-diyir4",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "同じ模様が画面内で繰り返し現れる（生成モデル特有のタイル状の反復）。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "8n2a68",
@@ -150,15 +150,15 @@
       "note": "ロイドの要心無用 より 69分47秒あたり"
     },
     {
-      "id": "3knhdi",
-      "src": "clips/3knhdi.mp4",
+      "id": "crnabp",
+      "src": "clips/crnabp.mp4",
       "isAI": true,
-      "work": "dummy-gen-d",
-      "title": "生成クリップ dummy-gen-d-1",
-      "tool": "仮・生成ツールD",
+      "work": "gen-crnabp",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "人物の影の向きが光源と合っていない。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "eq6k4u",
@@ -173,15 +173,15 @@
       "note": "チート より 35分10秒あたり"
     },
     {
-      "id": "sqm37i",
-      "src": "clips/sqm37i.mp4",
+      "id": "mrd5ww",
+      "src": "clips/mrd5ww.mp4",
       "isAI": true,
-      "work": "dummy-gen-b",
-      "title": "生成クリップ dummy-gen-b-2",
-      "tool": "仮・生成ツールB",
+      "work": "gen-mrd5ww",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "背景の文字がどのコマでも読めない形に崩れている。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "6yydzg",
@@ -196,15 +196,15 @@
       "note": "チート より 38分33秒あたり"
     },
     {
-      "id": "w6ggbp",
-      "src": "clips/w6ggbp.mp4",
+      "id": "mzxquw",
+      "src": "clips/mzxquw.mp4",
       "isAI": true,
-      "work": "dummy-gen-e",
-      "title": "生成クリップ dummy-gen-e-2",
-      "tool": "仮・生成ツールE",
+      "work": "gen-mzxquw",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "カメラが物理的に不可能な速度で被写体を回り込む。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
       "id": "7cvgij",
@@ -218,37 +218,15 @@
       "note": "タンブルウィーズ より 15分25秒あたり"
     },
     {
-      "id": "euqbtv",
-      "src": "clips/euqbtv.mp4",
+      "id": "4pfsi7",
+      "src": "clips/4pfsi7.mp4",
       "isAI": true,
-      "work": "dummy-gen-e",
-      "title": "生成クリップ dummy-gen-e-1",
-      "tool": "仮・生成ツールE",
+      "work": "gen-4pfsi7",
+      "title": "生成クリップ",
+      "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "カメラが物理的に不可能な速度で被写体を回り込む。"
-    },
-    {
-      "id": "7mhhc4",
-      "src": "clips/7mhhc4.mp4",
-      "isAI": true,
-      "work": "dummy-gen-f",
-      "title": "生成クリップ dummy-gen-f-1",
-      "tool": "仮・生成ツールF",
-      "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "同じ模様が画面内で繰り返し現れる（生成モデル特有のタイル状の反復）。"
-    },
-    {
-      "id": "pvp3r2",
-      "src": "clips/pvp3r2.mp4",
-      "isAI": true,
-      "work": "dummy-gen-c",
-      "title": "生成クリップ dummy-gen-c-2",
-      "tool": "仮・生成ツールC",
-      "sourceUrl": "",
-      "license": "ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）",
-      "note": "粒子の動きが画面全体で均一すぎる。フィルムの傷が一度も出ない。"
+      "license": "自作（AI生成）",
+      "note": "（AIと見抜ける手がかりを書いてください）"
     }
   ]
 }
