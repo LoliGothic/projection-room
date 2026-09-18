@@ -19,8 +19,10 @@ const run = promisify(execFile)
 
 export const GEOMETRY = {
   fps: 18,
-  width: 480,
-  height: 360,
+  // スマホでは 4:3 が幅いっぱい（430px 前後、実画素はその 2〜3 倍）に広がる。
+  // 480x360 だと引き伸ばしで眠くなるため、素材が持っている分だけ残す
+  width: 640,
+  height: 480,
 }
 
 /**
@@ -59,7 +61,7 @@ export const TARGET = {
 
 /** 1本ずつ散らす範囲。上限と下限は本物側の実測ばらつきに合わせてある */
 export const SPREAD = {
-  noise: [6, 14],
+  noise: [4, 9],
   contrast: [1.06, 1.34],
   /**
    * 甘さ（ぼかし）。0 で素のまま、大きいほど甘い。
@@ -68,12 +70,12 @@ export const SPREAD = {
    * 滑らかな AI を鮮明にするという逆のことをしていた。
    * 画の鮮明さは素材の性質なので、揃えようとせず、両群に同じ範囲の甘さだけ入れる。
    */
-  softness: [0, 0.5],
+  softness: [0, 0.22],
   /**
    * 周辺減光。PI/x の x なので、大きいほど弱い。
    * 強すぎると、画面の端まで明るい画（AI側に多い）で黒い輪が目立つ。
    */
-  vignette: [3.6, 5.2],
+  vignette: [4.4, 6.2],
   /**
    * 撮影コマ数。無声映画は毎秒16コマ前後で撮られ、上映では
    * コマが重複してカクついて見える。AI動画にはこの癖が無く、動きが滑らかすぎる。
@@ -352,7 +354,7 @@ export async function solveLook(input, seed, trim) {
 
 /** エンコード設定も 1 か所に揃えておく */
 export const ENCODE = [
-  '-c:v', 'libx264', '-preset', 'medium', '-crf', '25',
+  '-c:v', 'libx264', '-preset', 'medium', '-crf', '24',
   '-pix_fmt', 'yuv420p', '-profile:v', 'baseline', '-level', '3.0',
   '-movflags', '+faststart',
 ]

@@ -2,8 +2,8 @@
   "version": 1,
   "clips": [
     {
-      "id": "ydfwp6",
-      "src": "clips/ydfwp6.mp4",
+      "id": "z3fuqv",
+      "src": "clips/z3fuqv.mp4",
       "isAI": false,
       "work": "big-business-1929-16mm-silent-uhd",
       "title": "ビッグ・ビジネス",
@@ -14,17 +14,17 @@
       "note": "ビッグ・ビジネス より 5分30秒あたり"
     },
     {
-      "id": "kkdhpk",
-      "src": "clips/kkdhpk.mp4",
+      "id": "azqew3",
+      "src": "clips/azqew3.mp4",
       "isAI": true,
-      "work": "gen-kkdhpk",
+      "work": "gen-azqew3",
       "title": "生成クリップ",
       "tool": "Seedance 2.0 Mini",
       "license": "自作（AI生成）"
     },
     {
-      "id": "b89idh",
-      "src": "clips/b89idh.mp4",
+      "id": "3q47ws",
+      "src": "clips/3q47ws.mp4",
       "isAI": false,
       "work": "hell-s-hinges-1916",
       "title": "ヘルズ・ヒンジズ",
@@ -34,17 +34,17 @@
       "note": "ヘルズ・ヒンジズ より 32分13秒あたり"
     },
     {
-      "id": "rxnhj4",
-      "src": "clips/rxnhj4.mp4",
+      "id": "6iy8wd",
+      "src": "clips/6iy8wd.mp4",
       "isAI": true,
-      "work": "gen-rxnhj4",
+      "work": "gen-6iy8wd",
       "title": "生成クリップ",
       "tool": "Seedance 2.0 Mini",
       "license": "自作（AI生成）"
     },
     {
-      "id": "vayvf4",
-      "src": "clips/vayvf4.mp4",
+      "id": "vmvuss",
+      "src": "clips/vmvuss.mp4",
       "isAI": false,
       "work": "hell-s-hinges-1916",
       "title": "ヘルズ・ヒンジズ",
@@ -54,17 +54,37 @@
       "note": "ヘルズ・ヒンジズ より 32分23秒あたり"
     },
     {
-      "id": "9ixc2v",
-      "src": "clips/9ixc2v.mp4",
+      "id": "x2cezk",
+      "src": "clips/x2cezk.mp4",
       "isAI": true,
-      "work": "gen-9ixc2v",
+      "work": "gen-x2cezk",
       "title": "生成クリップ",
       "tool": "Seedance 2.0 Mini",
       "license": "自作（AI生成）"
     },
     {
-      "id": "ygdtma",
-      "src": "clips/ygdtma.mp4",
+      "id": "3yqqwb",
+      "src": "clips/3yqqwb.mp4",
+      "isAI": false,
+      "work": "hell-s-hinges-1916",
+      "title": "ヘルズ・ヒンジズ",
+      "year": 1916,
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ヘルズ・ヒンジズ より 59分28秒あたり"
+    },
+    {
+      "id": "cnmgng",
+      "src": "clips/cnmgng.mp4",
+      "isAI": true,
+      "work": "gen-cnmgng",
+      "title": "生成クリップ",
+      "tool": "Seedance 2.0 Mini",
+      "license": "自作（AI生成）"
+    },
+    {
+      "id": "vbampd",
+      "src": "clips/vbampd.mp4",
       "isAI": false,
       "work": "le-voyage-dans-la-lune-black-and-white-1",
       "title": "月世界旅行",
@@ -75,17 +95,101 @@
       "note": "月世界旅行 より 1分58秒あたり"
     },
     {
-      "id": "2xeyks",
-      "src": "clips/2xeyks.mp4",
+      "id": "9ssxci",
+      "src": "clips/9ssxci.mp4",
       "isAI": true,
-      "work": "gen-2xeyks",
+      "work": "gen-9ssxci",
       "title": "生成クリップ",
       "tool": "Seedance 2.0 Mini",
       "license": "自作（AI生成）"
     },
     {
-      "id": "9svjjj",
-      "src": "clips/9svjjj.mp4",
+      "id": "5672tm",
+      "src": "clips/5672tm.mp4",
+      "isAI": false,
+      "work": "le-voyage-dans-la-lune-black-and-white-1",
+      "title": "月世界旅行",
+      "year": 1902,
+      "director": "ジョルジュ・メリエス",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "月世界旅行 より 3分53秒あたり"
+    },
+    {
+      "id": "2t62gx",
+      "src": "clips/2t62gx.mp4",
+      "isAI": true,
+      "work": "gen-2t62gx",
+      "title": "生成クリップ",
+      "tool": "Seedance 2.0 Mini",
+      "license": "自作（AI生成）"
+    },
+    {
+      "id": "p4tzp9",
+      "src": "clips/p4tzp9.mp4",
+      "isAI": false,
+      "work": "le-voyage-dans-la-lune-black-and-white-1",
+      "title": "月世界旅行",
+      "year": 1902,
+      "director": "ジョルジュ・メリエス",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "月世界旅行 より 5分22秒あたり"
+    },
+    {
+      "id": "4msxtz",
+      "src": "clips/4msxtz.mp4",
+      "isAI": true,
+      "work": "gen-4msxtz",
+      "title": "生成クリップ",
+      "tool": "Seedance 2.0 Mini",
+      "license": "自作（AI生成）"
+    },
+    {
+      "id": "zaax4g",
+      "src": "clips/zaax4g.mp4",
+      "isAI": false,
+      "work": "le-voyage-dans-la-lune-black-and-white-1",
+      "title": "月世界旅行",
+      "year": 1902,
+      "director": "ジョルジュ・メリエス",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "月世界旅行 より 7分48秒あたり"
+    },
+    {
+      "id": "i5nfe3",
+      "src": "clips/i5nfe3.mp4",
+      "isAI": true,
+      "work": "gen-i5nfe3",
+      "title": "生成クリップ",
+      "tool": "Seedance 2.0 Mini",
+      "license": "自作（AI生成）"
+    },
+    {
+      "id": "w7ec25",
+      "src": "clips/w7ec25.mp4",
+      "isAI": false,
+      "work": "les-vampires-satanas-1916",
+      "title": "レ・ヴァンピール 第5話「サタナス」",
+      "year": 1916,
+      "director": "ルイ・フイヤード",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "レ・ヴァンピール 第5話「サタナス」 より 2分58秒あたり"
+    },
+    {
+      "id": "b4kjr2",
+      "src": "clips/b4kjr2.mp4",
+      "isAI": true,
+      "work": "gen-b4kjr2",
+      "title": "生成クリップ",
+      "tool": "Seedance 2.0 Mini",
+      "license": "自作（AI生成）"
+    },
+    {
+      "id": "nw4dhs",
+      "src": "clips/nw4dhs.mp4",
       "isAI": false,
       "work": "les-vampires-satanas-1916",
       "title": "レ・ヴァンピール 第5話「サタナス」",
@@ -96,17 +200,113 @@
       "note": "レ・ヴァンピール 第5話「サタナス」 より 23分22秒あたり"
     },
     {
-      "id": "t6j4yx",
-      "src": "clips/t6j4yx.mp4",
+      "id": "snr2bb",
+      "src": "clips/snr2bb.mp4",
       "isAI": true,
-      "work": "gen-t6j4yx",
+      "work": "gen-snr2bb",
       "title": "生成クリップ",
       "tool": "Seedance 2.0 Mini",
       "license": "自作（AI生成）"
     },
     {
-      "id": "zw7a4x",
-      "src": "clips/zw7a4x.mp4",
+      "id": "5cjee9",
+      "src": "clips/5cjee9.mp4",
+      "isAI": false,
+      "work": "nanook-of-the-north",
+      "title": "極北のナヌーク",
+      "year": 1922,
+      "director": "ロバート・フラハティ",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "極北のナヌーク より 35分1秒あたり"
+    },
+    {
+      "id": "c2ahg5",
+      "src": "clips/c2ahg5.mp4",
+      "isAI": false,
+      "work": "nanook-of-the-north",
+      "title": "極北のナヌーク",
+      "year": 1922,
+      "director": "ロバート・フラハティ",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "極北のナヌーク より 52分28秒あたり"
+    },
+    {
+      "id": "j7z8hs",
+      "src": "clips/j7z8hs.mp4",
+      "isAI": false,
+      "work": "nanook-of-the-north",
+      "title": "極北のナヌーク",
+      "year": 1922,
+      "director": "ロバート・フラハティ",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "極北のナヌーク より 62分6秒あたり"
+    },
+    {
+      "id": "v6yn5r",
+      "src": "clips/v6yn5r.mp4",
+      "isAI": false,
+      "work": "one-week-1920",
+      "title": "文化生活一週間",
+      "year": 1920,
+      "director": "バスター・キートン／エドワード・F・クライン",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "文化生活一週間 より 9分51秒あたり"
+    },
+    {
+      "id": "rsm6vd",
+      "src": "clips/rsm6vd.mp4",
+      "isAI": false,
+      "work": "one-week-1920",
+      "title": "文化生活一週間",
+      "year": 1920,
+      "director": "バスター・キートン／エドワード・F・クライン",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "文化生活一週間 より 12分13秒あたり"
+    },
+    {
+      "id": "cf6ie6",
+      "src": "clips/cf6ie6.mp4",
+      "isAI": false,
+      "work": "one-week-1920",
+      "title": "文化生活一週間",
+      "year": 1920,
+      "director": "バスター・キートン／エドワード・F・クライン",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "文化生活一週間 より 14分37秒あたり"
+    },
+    {
+      "id": "77bkjc",
+      "src": "clips/77bkjc.mp4",
+      "isAI": false,
+      "work": "one-week-1920",
+      "title": "文化生活一週間",
+      "year": 1920,
+      "director": "バスター・キートン／エドワード・F・クライン",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "文化生活一週間 より 22分38秒あたり"
+    },
+    {
+      "id": "29mjd2",
+      "src": "clips/29mjd2.mp4",
+      "isAI": false,
+      "work": "our-hospitality-1923",
+      "title": "荒武者キートン",
+      "year": 1923,
+      "director": "バスター・キートン／ジョン・G・ブライストン",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "荒武者キートン より 16分46秒あたり"
+    },
+    {
+      "id": "p4rrr9",
+      "src": "clips/p4rrr9.mp4",
       "isAI": false,
       "work": "our-hospitality-1923",
       "title": "荒武者キートン",
@@ -117,17 +317,115 @@
       "note": "荒武者キートン より 24分45秒あたり"
     },
     {
-      "id": "xsezs2",
-      "src": "clips/xsezs2.mp4",
-      "isAI": true,
-      "work": "gen-xsezs2",
-      "title": "生成クリップ",
-      "tool": "Seedance 2.0 Mini",
-      "license": "自作（AI生成）"
+      "id": "m2c4tx",
+      "src": "clips/m2c4tx.mp4",
+      "isAI": false,
+      "work": "our-hospitality-1923",
+      "title": "荒武者キートン",
+      "year": 1923,
+      "director": "バスター・キートン／ジョン・G・ブライストン",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "荒武者キートン より 47分38秒あたり"
     },
     {
-      "id": "pg93bc",
-      "src": "clips/pg93bc.mp4",
+      "id": "xrnupy",
+      "src": "clips/xrnupy.mp4",
+      "isAI": false,
+      "work": "riders-of-destiny-1933",
+      "title": "ライダーズ・オブ・デスティニー",
+      "year": 1933,
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ライダーズ・オブ・デスティニー より 36分25秒あたり"
+    },
+    {
+      "id": "i2hymg",
+      "src": "clips/i2hymg.mp4",
+      "isAI": false,
+      "work": "safety-last-1923",
+      "title": "ロイドの要心無用",
+      "year": 1923,
+      "director": "フレッド・ニューメイヤー／サム・テイラー",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ロイドの要心無用 より 5分37秒あたり"
+    },
+    {
+      "id": "abrvku",
+      "src": "clips/abrvku.mp4",
+      "isAI": false,
+      "work": "safety-last-1923",
+      "title": "ロイドの要心無用",
+      "year": 1923,
+      "director": "フレッド・ニューメイヤー／サム・テイラー",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ロイドの要心無用 より 19分17秒あたり"
+    },
+    {
+      "id": "9cr49r",
+      "src": "clips/9cr49r.mp4",
+      "isAI": false,
+      "work": "safety-last-1923",
+      "title": "ロイドの要心無用",
+      "year": 1923,
+      "director": "フレッド・ニューメイヤー／サム・テイラー",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ロイドの要心無用 より 34分39秒あたり"
+    },
+    {
+      "id": "2htcsy",
+      "src": "clips/2htcsy.mp4",
+      "isAI": false,
+      "work": "safety-last-1923",
+      "title": "ロイドの要心無用",
+      "year": 1923,
+      "director": "フレッド・ニューメイヤー／サム・テイラー",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ロイドの要心無用 より 41分59秒あたり"
+    },
+    {
+      "id": "xedw2e",
+      "src": "clips/xedw2e.mp4",
+      "isAI": false,
+      "work": "safety-last-1923",
+      "title": "ロイドの要心無用",
+      "year": 1923,
+      "director": "フレッド・ニューメイヤー／サム・テイラー",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ロイドの要心無用 より 42分22秒あたり"
+    },
+    {
+      "id": "t2gi2e",
+      "src": "clips/t2gi2e.mp4",
+      "isAI": false,
+      "work": "safety-last-1923",
+      "title": "ロイドの要心無用",
+      "year": 1923,
+      "director": "フレッド・ニューメイヤー／サム・テイラー",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ロイドの要心無用 より 51分34秒あたり"
+    },
+    {
+      "id": "qpzpcq",
+      "src": "clips/qpzpcq.mp4",
+      "isAI": false,
+      "work": "safety-last-1923",
+      "title": "ロイドの要心無用",
+      "year": 1923,
+      "director": "フレッド・ニューメイヤー／サム・テイラー",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "ロイドの要心無用 より 53分14秒あたり"
+    },
+    {
+      "id": "fx5zvi",
+      "src": "clips/fx5zvi.mp4",
       "isAI": false,
       "work": "safety-last-1923",
       "title": "ロイドの要心無用",
@@ -138,17 +436,8 @@
       "note": "ロイドの要心無用 より 69分47秒あたり"
     },
     {
-      "id": "bjrmqz",
-      "src": "clips/bjrmqz.mp4",
-      "isAI": true,
-      "work": "gen-bjrmqz",
-      "title": "生成クリップ",
-      "tool": "Seedance 2.0 Mini",
-      "license": "自作（AI生成）"
-    },
-    {
-      "id": "j2wf2v",
-      "src": "clips/j2wf2v.mp4",
+      "id": "ktnbm6",
+      "src": "clips/ktnbm6.mp4",
       "isAI": false,
       "work": "the-cheat-1915",
       "title": "チート",
@@ -159,17 +448,8 @@
       "note": "チート より 35分10秒あたり"
     },
     {
-      "id": "n98ffg",
-      "src": "clips/n98ffg.mp4",
-      "isAI": true,
-      "work": "gen-n98ffg",
-      "title": "生成クリップ",
-      "tool": "Seedance 2.0 Mini",
-      "license": "自作（AI生成）"
-    },
-    {
-      "id": "uikxy4",
-      "src": "clips/uikxy4.mp4",
+      "id": "zvxr3h",
+      "src": "clips/zvxr3h.mp4",
       "isAI": false,
       "work": "the-cheat-1915",
       "title": "チート",
@@ -180,17 +460,32 @@
       "note": "チート より 38分33秒あたり"
     },
     {
-      "id": "p8tvse",
-      "src": "clips/p8tvse.mp4",
-      "isAI": true,
-      "work": "gen-p8tvse",
-      "title": "生成クリップ",
-      "tool": "Seedance 2.0 Mini",
-      "license": "自作（AI生成）"
+      "id": "kqc8xe",
+      "src": "clips/kqc8xe.mp4",
+      "isAI": false,
+      "work": "the-great-train-robbery-1903",
+      "title": "大列車強盗",
+      "year": 1903,
+      "director": "エドウィン・S・ポーター",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "大列車強盗 より 9分45秒あたり"
     },
     {
-      "id": "nad8b5",
-      "src": "clips/nad8b5.mp4",
+      "id": "745p4d",
+      "src": "clips/745p4d.mp4",
+      "isAI": false,
+      "work": "the-great-train-robbery-1903",
+      "title": "大列車強盗",
+      "year": 1903,
+      "director": "エドウィン・S・ポーター",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "大列車強盗 より 11分56秒あたり"
+    },
+    {
+      "id": "72jmff",
+      "src": "clips/72jmff.mp4",
       "isAI": false,
       "work": "tumbleweeds-1925",
       "title": "タンブルウィーズ",
@@ -200,13 +495,51 @@
       "note": "タンブルウィーズ より 15分25秒あたり"
     },
     {
-      "id": "atssfa",
-      "src": "clips/atssfa.mp4",
-      "isAI": true,
-      "work": "gen-atssfa",
-      "title": "生成クリップ",
-      "tool": "Seedance 2.0 Mini",
-      "license": "自作（AI生成）"
+      "id": "m2fprw",
+      "src": "clips/m2fprw.mp4",
+      "isAI": false,
+      "work": "tumbleweeds-1925",
+      "title": "タンブルウィーズ",
+      "year": 1925,
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "タンブルウィーズ より 73分36秒あたり"
+    },
+    {
+      "id": "663cf3",
+      "src": "clips/663cf3.mp4",
+      "isAI": false,
+      "work": "way-down-east-film-1920",
+      "title": "東への道",
+      "year": 1920,
+      "director": "D・W・グリフィス",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "東への道 より 41分58秒あたり"
+    },
+    {
+      "id": "qturs5",
+      "src": "clips/qturs5.mp4",
+      "isAI": false,
+      "work": "way-down-east-film-1920",
+      "title": "東への道",
+      "year": 1920,
+      "director": "D・W・グリフィス",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "東への道 より 44分39秒あたり"
+    },
+    {
+      "id": "drk8ye",
+      "src": "clips/drk8ye.mp4",
+      "isAI": false,
+      "work": "way-down-east-film-1920",
+      "title": "東への道",
+      "year": 1920,
+      "director": "D・W・グリフィス",
+      "sourceUrl": "",
+      "license": "Public Domain",
+      "note": "東への道 より 138分50秒あたり"
     }
   ]
 }

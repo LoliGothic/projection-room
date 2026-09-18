@@ -61,6 +61,6 @@ export const FX = {
   leaderMs: 120,
   /** 余白を横切る人影の発生間隔（ms） */
   silhouetteIntervalMs: [90_000, 210_000] as [number, number],
-  /** フィルム粒子の濃さ（0..1） */
-  grain: 0.32,
+  /** フィルム粒子の濃さ（0..1）。動画側にも粒子が乗っているので控えめに */
+  grain: 0.22,
 } as const

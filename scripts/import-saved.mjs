@@ -46,6 +46,11 @@ const TITLES = {
   'Tumbleweeds_(1925)': { title: 'タンブルウィーズ', year: 1925, director: '' },
   'Le_Voyage_dans_la_lune_(black_and_white,_1902)': { title: '月世界旅行', year: 1902, director: 'ジョルジュ・メリエス' },
   'Our_Hospitality_(1923)': { title: '荒武者キートン', year: 1923, director: 'バスター・キートン／ジョン・G・ブライストン' },
+  'Nanook_of_the_North': { title: '極北のナヌーク', year: 1922, director: 'ロバート・フラハティ' },
+  'One_Week_(1920)': { title: '文化生活一週間', year: 1920, director: 'バスター・キートン／エドワード・F・クライン' },
+  'The_Great_Train_Robbery_(1903)': { title: '大列車強盗', year: 1903, director: 'エドウィン・S・ポーター' },
+  'Way_Down_East_(film,_1920)': { title: '東への道', year: 1920, director: 'D・W・グリフィス' },
+  'Riders_of_Destiny_(1933)': { title: 'ライダーズ・オブ・デスティニー', year: 1933, director: '' },
 }
 
 const args = process.argv.slice(2)
