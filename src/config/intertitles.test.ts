@@ -30,7 +30,7 @@ describe('intertitleFor', () => {
     const tiers = LOOP_CARDS.map((t) => t.minLoops)
     const seen = tiers.map((n) => at(n))
     // それぞれの段でその段の文が使われている
-    tiers.forEach((minLoops, i) => {
+    tiers.forEach((_minLoops, i) => {
       expect(LOOP_CARDS[i].lines).toContain(seen[i])
     })
     // 段が違えば文も違う
