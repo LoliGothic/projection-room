@@ -20,5 +20,5 @@ dev-dist
 /_preview/
 /venv/
 
-# 生成物（npm run gen:dummy で決定的に再生成できるため git 管理外）
-/public/clips/*.mp4
+# public/clips/*.mp4 は出題動画そのもの。
+# GitHub Actions でビルドして公開するため、リポジトリに含める（約11MB）。
