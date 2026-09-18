@@ -11,11 +11,12 @@
  * 実行後、public/clips.json に貼り付けるための JSON 断片を表示する（--append で自動追記）。
  */
 import { execFile } from 'node:child_process'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import { randomInt } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ENCODE, lookChain, solveLook } from './lib/film-look.mjs'
 
 const run = promisify(execFile)
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -24,12 +25,7 @@ const jsonPath = path.join(root, 'public', 'clips.json')
 
 /* ---- 調整したくなる数値はここだけ ---- */
 const DURATION = 10
-const FPS = 18
-const WIDTH = 480
-const HEIGHT = 360
-const CONTRAST = 1.18
-const NOISE = 14          // フィルム粒子の強さ
-const VIGNETTE = 'PI/3.4' // 周辺減光の強さ（小さいほど強い）
+/* 質感の処理は scripts/lib/film-look.mjs に集約（import:saved / import:ai と同じ） */
 /* ------------------------------------ */
 
 function arg(name, fallback = undefined) {
@@ -66,37 +62,35 @@ const id = Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)])
 const duration = Number(arg('duration', DURATION))
 const outFile = path.join(outDir, `${id}.mp4`)
 
-const filters = [
-  `fps=${FPS}`,
-  `scale=${WIDTH}:${HEIGHT}:force_original_aspect_ratio=increase`,
-  `crop=${WIDTH}:${HEIGHT}`,
-  'setsar=1',
-  'format=gray',
-  // 転写によって露出がばらばらなので、まず自動で階調を伸ばして揃える
-  'normalize=blackpt=black:whitept=white:smoothing=40',
-  `eq=contrast=${CONTRAST}:brightness=0.02:gamma=1.02`,
-  `noise=alls=${NOISE}:allf=t+u`,
-  `vignette=${VIGNETTE}`,
-].join(',')
 
 await mkdir(outDir, { recursive: true })
 
-// -ss を -i の前に置いてキーフレーム単位で高速シーク、-t で長さを決める
+// 切り出した状態で質感を合わせたいので、いったん素の10秒を取り出す
+const staged = path.join(outDir, `.${id}.stage.mp4`)
 await run('ffmpeg', [
   '-hide_banner', '-loglevel', 'error', '-y',
-  '-ss', start,
-  '-i', input,
-  '-t', String(duration),
-  '-vf', filters,
+  '-ss', start, '-i', input, '-t', String(duration),
+  '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '16',
+  '-pix_fmt', 'yuv420p', staged,
+]).catch((err) => {
+  console.error(err.stderr?.toString?.() ?? err)
+  process.exit(1)
+})
+
+// 本物もAIもまったく同じ処理で質感を揃える
+const { params } = await solveLook(staged, id, null)
+await run('ffmpeg', [
+  '-hide_banner', '-loglevel', 'error', '-y',
+  '-i', staged,
+  '-vf', lookChain(params, id, null),
   '-an',
-  '-c:v', 'libx264', '-preset', 'slow', '-crf', '25',
-  '-pix_fmt', 'yuv420p', '-profile:v', 'baseline', '-level', '3.0',
-  '-movflags', '+faststart',
+  ...ENCODE,
   outFile,
 ]).catch((err) => {
   console.error(err.stderr?.toString?.() ?? err)
   process.exit(1)
 })
+await rm(staged, { force: true })
 
 const isAI = has('ai')
 const entry = {
@@ -112,7 +106,7 @@ const entry = {
   note: String(arg('note', '')),
 }
 
-console.log(`出力: public/clips/${id}.mp4  (${duration}秒 / ${FPS}fps / ${WIDTH}x${HEIGHT} / 無音)`)
+console.log(`出力: public/clips/${id}.mp4  (${duration}秒 / 18fps / 480x360 / 無音)`)
 
 if (has('append')) {
   const db = JSON.parse(await readFile(jsonPath, 'utf8'))

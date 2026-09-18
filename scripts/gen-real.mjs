@@ -15,6 +15,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ENCODE, lookChain, solveLook } from './lib/film-look.mjs'
 
 const run = promisify(execFile)
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -24,24 +25,7 @@ const jsonPath = path.join(root, 'public', 'clips.json')
 
 /* ---- 調整するならここ ---- */
 const DURATION = 10
-const FPS = 18
-const WIDTH = 480
-const HEIGHT = 360
-const NOISE = 14
-const VIGNETTE = 'PI/3.4'
-const FILTERS = [
-  `fps=${FPS}`,
-  `scale=${WIDTH}:${HEIGHT}:force_original_aspect_ratio=increase`,
-  `crop=${WIDTH}:${HEIGHT}`,
-  'setsar=1',
-  'format=gray',
-  // 転写によって露出がばらばらなので、まず自動で階調を伸ばして揃える。
-  // これが無いと暗い転写（ジキル博士など）がほぼ真っ黒になり判断できない
-  'normalize=blackpt=black:whitept=white:smoothing=40',
-  'eq=contrast=1.18:brightness=0.02:gamma=1.02',
-  `noise=alls=${NOISE}:allf=t+u`,
-  `vignette=${VIGNETTE}`,
-].join(',')
+/* 質感の処理は scripts/lib/film-look.mjs に集約（import:saved / import:ai と同じ） */
 /** 候補を探す範囲（前後をこれだけ避ける） */
 const EDGE_MARGIN = 0.08
 /** 1本あたり何回まで位置を変えて試すか */
@@ -181,19 +165,25 @@ async function duration(file) {
   return Number(stdout.trim())
 }
 
-async function cut(input, start, outFile) {
+async function cut(input, start, outFile, seed) {
+  // 質感合わせは切り出したものに対して行うので、いったん素の10秒を取り出す
+  const staged = `${outFile}.stage.mp4`
   await run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
-    '-ss', String(start),
-    '-i', input,
-    '-t', String(DURATION),
-    '-vf', FILTERS,
+    '-ss', String(start), '-i', input, '-t', String(DURATION),
+    '-an', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '16',
+    '-pix_fmt', 'yuv420p', staged,
+  ])
+  const { params } = await solveLook(staged, seed, null)
+  await run('ffmpeg', [
+    '-hide_banner', '-loglevel', 'error', '-y',
+    '-i', staged,
+    '-vf', lookChain(params, seed, null),
     '-an',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '25',
-    '-pix_fmt', 'yuv420p', '-profile:v', 'baseline', '-level', '3.0',
-    '-movflags', '+faststart',
+    ...ENCODE,
     outFile,
   ])
+  await rm(staged, { force: true })
 }
 
 /**
@@ -297,7 +287,7 @@ async function main() {
       // 確認済みの位置があればそれを使う
       if (picks) {
         start = picks[n]
-        await cut(input, start, outFile)
+        await cut(input, start, outFile, id)
         made.push(entryFor(film, id, start))
         console.log(`  ${film.title} @${start}s → ${id}.mp4`)
         continue
@@ -328,7 +318,7 @@ async function main() {
         console.warn(`    条件を満たす位置が見つからず、最良の候補を使います (${film.work} @${start}s)`)
       }
 
-      await cut(input, start, outFile)
+      await cut(input, start, outFile, id)
 
       made.push(entryFor(film, id, start))
       console.log(`  ${film.title} @${start}s → ${id}.mp4`)

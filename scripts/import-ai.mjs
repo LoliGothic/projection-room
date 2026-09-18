@@ -20,6 +20,7 @@ import { promisify } from 'node:util'
 import { randomInt } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ENCODE, lookChain, solveLook } from './lib/film-look.mjs'
 
 const run = promisify(execFile)
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -28,9 +29,6 @@ const jsonPath = path.join(root, 'public', 'clips.json')
 
 /* ---- 調整するならここ ---- */
 const DURATION = 10
-const FPS = 18
-const WIDTH = 480
-const HEIGHT = 360
 /** 左上のウォーターマークを消すために切り落とす幅・高さ（px） */
 const TRIM_LEFT = 56
 const TRIM_TOP = 52
@@ -50,36 +48,21 @@ const ALPHABET = 'abcdefghijkmnpqrstuvwxyz23456789'
 const makeId = () =>
   Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join('')
 
-function filters() {
-  const chain = []
-  // ウォーターマークごと左上を切り落とす。4:3 への整形はこのあと
-  if (!NO_TRIM) chain.push(`crop=iw-${TRIM_LEFT}:ih-${TRIM_TOP}:${TRIM_LEFT}:${TRIM_TOP}`)
-  chain.push(
-    `fps=${FPS}`,
-    `scale=${WIDTH}:${HEIGHT}:force_original_aspect_ratio=increase`,
-    `crop=${WIDTH}:${HEIGHT}`,
-    'setsar=1',
-    'format=gray',
-    'normalize=blackpt=black:whitept=white:smoothing=40',
-    'eq=contrast=1.18:brightness=0.02:gamma=1.02',
-    'noise=alls=14:allf=t+u',
-    'vignette=PI/3.4',
-  )
-  return chain.join(',')
-}
+const trim = NO_TRIM ? null : { left: TRIM_LEFT, top: TRIM_TOP }
 
-async function convert(input, outFile) {
+async function convert(input, outFile, seed) {
+  // 実際に通した結果を測りながら、本物と同じ目標へ寄せる
+  const { params, result } = await solveLook(input, seed, trim)
   await run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-i', input,
     '-t', String(DURATION),
-    '-vf', filters(),
+    '-vf', lookChain(params, seed, trim),
     '-an',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '25',
-    '-pix_fmt', 'yuv420p', '-profile:v', 'baseline', '-level', '3.0',
-    '-movflags', '+faststart',
+    ...ENCODE,
     outFile,
   ])
+  return result
 }
 
 async function main() {
@@ -118,7 +101,7 @@ async function main() {
   for (const file of files) {
     const id = makeId()
     const m = meta[file] ?? {}
-    await convert(path.join(inDir, file), path.join(outDir, `${id}.mp4`))
+    await convert(path.join(inDir, file), path.join(outDir, `${id}.mp4`), id)
 
     made.push({
       id,

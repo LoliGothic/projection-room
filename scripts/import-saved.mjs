@@ -16,6 +16,7 @@ import { promisify } from 'node:util'
 import { randomInt } from 'node:crypto'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { ENCODE, lookChain, solveLook } from './lib/film-look.mjs'
 
 const run = promisify(execFile)
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -25,21 +26,7 @@ const jsonPath = path.join(root, 'public', 'clips.json')
 
 /* ---- 調整するならここ ---- */
 const DURATION = 10
-const FPS = 18
-const WIDTH = 480
-const HEIGHT = 360
-const FILTERS = [
-  `fps=${FPS}`,
-  `scale=${WIDTH}:${HEIGHT}:force_original_aspect_ratio=increase`,
-  `crop=${WIDTH}:${HEIGHT}`,
-  'setsar=1',
-  'format=gray',
-  // 転写ごとに露出がばらばらなので、まず階調を伸ばして揃える
-  'normalize=blackpt=black:whitept=white:smoothing=40',
-  'eq=contrast=1.18:brightness=0.02:gamma=1.02',
-  'noise=alls=14:allf=t+u',
-  'vignette=PI/3.4',
-].join(',')
+/* 質感の処理は scripts/lib/film-look.mjs に集約（AI側とまったく同じものを通す） */
 /* ------------------------- */
 
 /**
@@ -138,18 +125,19 @@ function metaFor(stem) {
   return { title, year, director: '' }
 }
 
-async function convert(input, outFile) {
+async function convert(input, outFile, seed) {
+  // 実際に通した結果を測りながら、AI側と同じ目標へ寄せる
+  const { params, result } = await solveLook(input, seed, null)
   await run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-i', input,
     '-t', String(DURATION),
-    '-vf', FILTERS,
+    '-vf', lookChain(params, seed, null),
     '-an',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '25',
-    '-pix_fmt', 'yuv420p', '-profile:v', 'baseline', '-level', '3.0',
-    '-movflags', '+faststart',
+    ...ENCODE,
     outFile,
   ])
+  return result
 }
 
 async function main() {
@@ -188,7 +176,7 @@ async function main() {
     const meta = metaFor(stem)
     const id = makeId()
 
-    await convert(path.join(savedDir, file), path.join(outDir, `${id}.mp4`))
+    await convert(path.join(savedDir, file), path.join(outDir, `${id}.mp4`), id)
 
     const at = info?.startSec
     made.push({
