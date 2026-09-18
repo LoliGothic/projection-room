@@ -20,7 +20,7 @@ export function Projector({ speed = 1, stopped = false, onReplay }: Props) {
       type="button"
       className="projector"
       onClick={onReplay}
-      aria-label="もう一度映写する"
+      aria-label="映写機（押すともう一度映写する）"
       title="もう一度映写する"
     >
       <svg viewBox="0 0 96 44" width="96" height="44" aria-hidden="true">

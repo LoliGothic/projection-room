@@ -10,7 +10,8 @@ interface Props {
 }
 
 /**
- * ミス時の演出：映写機が止まって焦げ跡が広がる → 暗転 → 巻き戻し。
+ * ミス時の演出：映像の中央から焦げ跡が広がって穴が開く → 暗転 → 高速の巻き戻し。
+ * 焦げのあいだは下のゲーム画面が透けるので、止まったフィルムが焼けて見える。
  * 説明文は一切出さない。
  */
 export function LoopCutScreen({ onDone }: Props) {
@@ -31,7 +32,7 @@ export function LoopCutScreen({ onDone }: Props) {
   useTimeout(onDone, CUTSCENE.burnMs + CUTSCENE.blackoutMs + CUTSCENE.rewindMs)
 
   return (
-    <div className={`cutscene loopcut ${step}`} role="presentation">
+    <div className={`loopcut ${step}`} role="presentation">
       {step === 'burn' && <span className="scorch" aria-hidden="true" />}
       {step === 'rewind' && <span className="rewind-streaks" aria-hidden="true" />}
     </div>

@@ -12,7 +12,10 @@ import { GameScreen } from './components/screens/GameScreen'
 import { IntertitleScreen } from './components/screens/IntertitleScreen'
 import { LoopCutScreen } from './components/screens/LoopCutScreen'
 import { RecapScreen } from './components/screens/RecapScreen'
+import { SettingsScreen } from './components/screens/SettingsScreen'
+import { CreditsScreen } from './components/screens/CreditsScreen'
 import { TitleScreen } from './components/screens/TitleScreen'
+import { WarningScreen } from './components/screens/WarningScreen'
 
 export default function App() {
   const session = useGame((s) => s.session)
@@ -23,6 +26,8 @@ export default function App() {
   const finishRun = useRecords((s) => s.finishRun)
   const volume = useSettings((s) => s.volume)
   const muted = useSettings((s) => s.muted)
+  const warningSeen = useSettings((s) => s.warningSeen)
+  const setSettings = useSettings((s) => s.set)
 
   useEffect(() => {
     void load()
@@ -109,16 +114,27 @@ export default function App() {
   return (
     <div className="theatre">
       <div className="stage">
-        {phase.name === 'title' && (
-          <TitleScreen onStart={onStart} onGallery={() => goto({ name: 'gallery' })} />
+        {phase.name === 'title' && !warningSeen && (
+          <WarningScreen onAccept={() => setSettings({ warningSeen: true })} />
         )}
 
-        {phase.name === 'playing' && (
+        {phase.name === 'title' && warningSeen && (
+          <TitleScreen
+            onStart={onStart}
+            onGallery={() => goto({ name: 'gallery' })}
+            onSettings={() => goto({ name: 'settings' })}
+            onCredits={() => goto({ name: 'credits' })}
+          />
+        )}
+
+        {/* ミス演出のあいだもゲーム画面は残す。止まったフィルムの上で焦げが広がる */}
+        {(phase.name === 'playing' || phase.name === 'loopCut') && (
           <GameScreen
             session={session}
             onAnswer={onAnswer}
             onReplay={onReplay}
             onDarkness={onDarkness}
+            interactive={phase.name === 'playing'}
           />
         )}
 
@@ -151,6 +167,10 @@ export default function App() {
         )}
 
         {phase.name === 'gallery' && <GalleryScreen onBack={toTitle} />}
+
+        {phase.name === 'settings' && <SettingsScreen onBack={toTitle} />}
+
+        {phase.name === 'credits' && <CreditsScreen clips={session.pool} onBack={toTitle} />}
       </div>
     </div>
   )

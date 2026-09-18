@@ -1,8 +1,9 @@
 import { useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import type { Clip, Verdict } from '../../core/types'
 import { buildSlots } from '../../core/videoRing'
-import { SWIPE, RULES } from '../../config/tuning'
+import { FX, SWIPE, RULES } from '../../config/tuning'
 import { useSwipeInput } from '../../hooks/useSwipeInput'
+import { FilmGrain } from './FilmGrain'
 
 export interface VideoStageHandle {
   /** 最初から再生し直す */
@@ -17,6 +18,10 @@ interface Props {
   preload: readonly Clip[]
   onAnswer: (verdict: Verdict) => void
   enabled: boolean
+  /** 演出の強さ 0..1。0 なら粒子もリーダーも出さない */
+  fx: number
+  /** 演出を軽くする */
+  lightFx: boolean
   ref?: React.Ref<VideoStageHandle>
 }
 
@@ -26,7 +31,7 @@ const SLOT_COUNT = RULES.preloadAhead + 1
  * 4:3 の映像。<video> を固定数のスロットで使い回し、
  * 表示中の1本の裏で次の2本を読み込んでおく。
  */
-export function VideoStage({ current, turn, preload, onAnswer, enabled, ref }: Props) {
+export function VideoStage({ current, turn, preload, onAnswer, enabled, fx, lightFx, ref }: Props) {
   const videos = useRef<(HTMLVideoElement | null)[]>([])
   const { dx, dragging, progress, handlers } = useSwipeInput(onAnswer, enabled)
 
@@ -99,6 +104,18 @@ export function VideoStage({ current, turn, preload, onAnswer, enabled, ref }: P
             />
           )
         })}
+        {/* 切り替わる一瞬だけ挟むリーダーフィルム。key で毎回アニメーションを走らせる */}
+        {fx > 0 && (
+          <span
+            key={current.id}
+            className="leader"
+            style={{ ['--leader-ms' as string]: `${FX.leaderMs}ms` }}
+            aria-hidden="true"
+          >
+            {(turn % 3) + 1}
+          </span>
+        )}
+        <FilmGrain intensity={fx * FX.grain} light={lightFx} />
       </div>
       <span className="verdict burn" style={{ opacity: Math.max(0, -progress) * 0.85 }}>
         焼き捨てる
