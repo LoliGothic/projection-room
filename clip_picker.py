@@ -10,7 +10,6 @@
   sources/   ... 元の映画を入れる（mp4 / webm / mkv / mov / ogv）
   _preview/  ... 候補の一時ファイル（再生成のたびに消えます）
   saved/     ... 保存した10秒クリップ（ゲームの本物ストック用）と clips.csv
-  refs/      ... AI生成の参照用に短くしたクリップ（Seedanceなどに渡す用）
 """
 
 import csv
@@ -30,7 +29,6 @@ BASE = Path(__file__).resolve().parent
 SOURCE_DIR = BASE / "sources"
 PREVIEW_DIR = BASE / "_preview"
 SAVED_DIR = BASE / "saved"
-REF_DIR = BASE / "refs"
 EXTS = {".mp4", ".webm", ".mkv", ".mov", ".ogv", ".avi"}
 
 CLIP_SEC = 10          # クリップの長さ
@@ -38,12 +36,9 @@ EDGE_SKIP = 60         # 冒頭・末尾のクレジットを避ける秒数
 MAX_TRIES = 8          # 条件に合う場面を探す試行回数
 WORKERS = 4            # 同時に切り出す本数
 
-REF_SEC = 4.8          # 参照用クリップの長さ（3本で14.4秒。Seedanceの合計15秒制限に収まる）
-REF_OFFSET = 2.5       # 保存クリップの何秒目から参照用を切り出すか（頭と終わりを避ける）
-REF_HEIGHT = 480       # 参照用は軽くするため縦480pxに縮小
 SAVE_FIRST_FRAME = False  # 画像→動画で作る場合だけ True（最初のコマをPNG保存）
 
-for d in (SOURCE_DIR, PREVIEW_DIR, SAVED_DIR, REF_DIR):
+for d in (SOURCE_DIR, PREVIEW_DIR, SAVED_DIR):
     d.mkdir(exist_ok=True)
 
 app = Flask(__name__)
@@ -136,7 +131,6 @@ def save():
     src, start = c["src"], c["start"]
     name = f"{src.stem}_{start:08.2f}".replace(" ", "_")
     mp4 = SAVED_DIR / f"{name}.mp4"
-    ref = REF_DIR / f"{name}_ref.mp4"
     png = SAVED_DIR / f"{name}_first.png"
 
     # 保存は元の解像度・高画質で切り出し直す
@@ -144,26 +138,31 @@ def save():
              "-an", "-c:v", "libx264", "-crf", "18", "-movflags", "+faststart", str(mp4)])
     if r.returncode != 0:
         return jsonify(error="保存に失敗しました: " + r.stderr[-300:]), 500
-    # AI生成の参照用に短く・軽くしたクリップを保存
-    r = run(["ffmpeg", "-y", "-ss", str(start + REF_OFFSET), "-i", str(src), "-t", str(REF_SEC),
-             "-vf", f"scale=-2:'min({REF_HEIGHT},ih)'", "-an", "-c:v", "libx264", "-crf", "20",
-             "-movflags", "+faststart", str(ref)])
-    if r.returncode != 0:
-        return jsonify(error="参照用クリップの作成に失敗しました: " + r.stderr[-300:]), 500
     # 画像→動画で作る場合だけ最初のコマも保存
     if SAVE_FIRST_FRAME:
         run(["ffmpeg", "-y", "-ss", str(start), "-i", str(src), "-frames:v", "1", str(png)])
 
     log = SAVED_DIR / "clips.csv"
     new = not log.exists()
+    # 参照用クリップを作っていた頃の CSV には ref_file 列がある。
+    # そこへ追記するときだけ、列がずれないよう空欄を残す
+    legacy_ref_column = False
+    if not new:
+        with log.open("r", newline="", encoding="utf-8") as f:
+            header = next(csv.reader(f), [])
+        legacy_ref_column = "ref_file" in header
+
     with log.open("a", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         if new:
-            w.writerow(["file", "ref_file", "first_frame", "source_file", "start_sec", "length_sec",
+            w.writerow(["file", "first_frame", "source_file", "start_sec", "length_sec",
                         "saved_at", "source_url", "license", "memo"])
-        w.writerow([mp4.name, ref.name, png.name if SAVE_FIRST_FRAME else "", src.name, start, CLIP_SEC,
-                    datetime.now().isoformat(timespec="seconds"), "", "", ""])
-    return jsonify(saved=mp4.name, ref=ref.name)
+        row = [mp4.name, png.name if SAVE_FIRST_FRAME else "", src.name, start, CLIP_SEC,
+               datetime.now().isoformat(timespec="seconds"), "", "", ""]
+        if legacy_ref_column:
+            row.insert(1, "")
+        w.writerow(row)
+    return jsonify(saved=mp4.name)
 
 
 @app.get("/preview/<path:name>")
