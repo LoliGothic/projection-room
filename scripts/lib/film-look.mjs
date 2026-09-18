@@ -37,6 +37,13 @@ export const TARGET = {
   detail: 5.5,
   /** 目標のコントラスト（輝度の標準偏差）。本物側の中央値あたり */
   contrast: 45,
+  /**
+   * 縦スジ（フィルムの引っかき傷）の強さの範囲。
+   * 傷は数コマおきにしか出ないので測定値が安定せず、閉ループには載せていない。
+   * 代わりに1本ずつ ID から決まる強さで必ず入れる。
+   */
+  scratchMin: 0.3,
+  scratchMax: 1.0,
   gammaMin: 0.35,
   gammaMax: 3.2,
   contrastMin: 0.6,
@@ -62,6 +69,39 @@ export const SPREAD = {
    * ここで1本ずつコマ数を落としてから18fpsに戻し、両群に同じだけカクつきを作る。
    */
   shootRate: [11, 16],
+}
+
+/**
+ * 縦スジ（フィルムの引っかき傷）を描く。
+ * AI動画には経年劣化の痕跡が無く、そこが「綺麗すぎる」という手がかりになる。
+ * 位置と出方は ID から決まるので、同じ動画なら毎回同じ傷が入る。
+ */
+function scratchChain(strength, seed) {
+  if (strength <= 0.02) return []
+  const w = GEOMETRY.width
+  const lines = [
+    { pos: 0.12, period: 41, on: 11, dark: false, width: 1 },
+    { pos: 0.68, period: 67, on: 23, dark: false, width: 1 },
+    { pos: 0.31, period: 29, on: 7, dark: true, width: 1 },
+    { pos: 0.86, period: 53, on: 14, dark: false, width: 2 },
+  ]
+  return lines
+    .map((l, i) => {
+      // 位置と出方を1本ずつずらす
+      const x = Math.round(w * (0.04 + 0.92 * hashUnit(seed, `sx${i}`)))
+      const period = l.period + Math.round(hashUnit(seed, `sp${i}`) * 20)
+      const on = Math.max(3, Math.round(l.on * (0.6 + hashUnit(seed, `so${i}`) * 0.8)))
+      // 0.15〜0.35 くらいが「言われれば気づく」濃さ。これ以上は傷が主役になる
+      const alpha =
+        ((l.dark ? 0.1 : 0.14) + 0.18 * strength) * (0.75 + hashUnit(seed, `sa${i}`) * 0.4)
+      if (alpha < 0.03) return null
+      const color = l.dark ? 'black' : 'white'
+      return (
+        `drawbox=x=${x}:y=0:w=${l.width}:h=ih:color=${color}@${alpha.toFixed(3)}` +
+        `:t=fill:enable='lt(mod(n\\,${period})\\,${on})'`
+      )
+    })
+    .filter(Boolean)
 }
 
 /** ID から決まる 0..1 の値（同じ入力なら毎回同じ） */
@@ -117,6 +157,7 @@ export async function probe(input, chain) {
   let meanSum = 0
   let detailSum = 0
   let sdSum = 0
+  let streakSum = 0
 
   for (let off = 0; off + size <= stdout.length; off += size) {
     const b = stdout.subarray(off, off + size)
@@ -139,13 +180,38 @@ export async function probe(input, chain) {
       }
     }
     detailSum += diff / count
+
+    // 縦スジ（フィルムの引っかき傷）。列の平均が左右の列から突出している本数
+    const col = new Float64Array(PROBE_W)
+    for (let x = 0; x < PROBE_W; x++) {
+      let s2 = 0
+      for (let y = 0; y < PROBE_H; y += 2) s2 += b[y * PROBE_W + x]
+      col[x] = s2 / (PROBE_H / 2)
+    }
+    let streak = 0
+    for (let x = 2; x < PROBE_W - 2; x++) {
+      const around = (col[x - 2] + col[x - 1] + col[x + 1] + col[x + 2]) / 4
+      if (Math.abs(col[x] - around) > 6) streak++
+    }
+    streakSum += streak
+
     frames++
   }
 
   if (frames === 0) {
-    return { mean: TARGET.brightness, detail: TARGET.detail, sd: TARGET.contrast }
+    return {
+      mean: TARGET.brightness,
+      detail: TARGET.detail,
+      sd: TARGET.contrast,
+      streak: 0,
+    }
   }
-  return { mean: meanSum / frames, detail: detailSum / frames, sd: sdSum / frames }
+  return {
+    mean: meanSum / frames,
+    detail: detailSum / frames,
+    sd: sdSum / frames,
+    streak: streakSum / frames,
+  }
 }
 
 /**
@@ -166,7 +232,7 @@ function nextGamma(gamma, mean) {
  * seed には動画の ID を渡す（同じ ID なら毎回同じ見た目になる）。
  * gamma と sharpen は solveLook が決めた値を渡す。
  */
-export function lookChain({ gamma, sharpen, contrast, lift = 0 }, seed, trim) {
+export function lookChain({ gamma, sharpen, contrast, lift = 0, scratch = 0 }, seed, trim) {
   const noise = lerp(SPREAD.noise, hashUnit(seed, 'noise'))
   const vignette = lerp(SPREAD.vignette, hashUnit(seed, 'vig'))
 
@@ -180,6 +246,7 @@ export function lookChain({ gamma, sharpen, contrast, lift = 0 }, seed, trim) {
   else if (sharpen < -0.04) chain.push(`gblur=sigma=${(-sharpen).toFixed(2)}`)
 
   chain.push(`noise=alls=${Math.round(noise)}:allf=t+u`)
+  chain.push(...scratchChain(scratch, seed))
   chain.push(`vignette=PI/${vignette.toFixed(2)}`)
 
   return chain.join(',')
@@ -201,6 +268,8 @@ export async function solveLook(input, seed, trim) {
     sharpen: lerp(SPREAD.softness, hashUnit(seed, 'soft')),
     contrast: lerp(SPREAD.contrast, hashUnit(seed, 'contrast')),
     lift: 0,
+    // AI動画には経年劣化の痕跡が無く「綺麗すぎる」ので、両群に傷を入れる
+    scratch: lerp([TARGET.scratchMin, TARGET.scratchMax], hashUnit(seed, 'scr')),
   }
   let last = null
 
