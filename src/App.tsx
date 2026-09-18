@@ -1,59 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { Clip, Verdict } from './core/types'
-import { isCorrect } from './core/types'
-import { createQueue, fillBuffer, type QueueState } from './core/clipQueue'
-import { defaultRng } from './core/rng'
-import { loadClips } from './data/loadClips'
-import { RULES } from './config/tuning'
-import { ClipCard } from './components/game/ClipCard'
-
-interface Deck {
-  queue: QueueState
-  /** 先頭が現在の 1 本。以降は先読み用 */
-  buffer: Clip[]
-}
-
-const BUFFER_SIZE = RULES.preloadAhead + 1
-
-function refill(pool: readonly Clip[], deck: Deck): Deck {
-  const r = fillBuffer(pool, deck.queue, defaultRng, BUFFER_SIZE, deck.buffer)
-  return { queue: r.state, buffer: r.buffer }
-}
+import { useCallback, useEffect } from 'react'
+import type { Verdict } from './core/types'
+import { useGame } from './state/gameStore'
+import { GameScreen } from './components/screens/GameScreen'
+import { IntertitleScreen } from './components/screens/IntertitleScreen'
+import { LoopCutScreen } from './components/screens/LoopCutScreen'
+import { TitleScreen } from './components/screens/TitleScreen'
 
 export default function App() {
-  const [pool, setPool] = useState<readonly Clip[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [deck, setDeck] = useState<Deck>(() => ({ queue: createQueue(), buffer: [] }))
-  const [answered, setAnswered] = useState(0)
+  const session = useGame((s) => s.session)
+  const error = useGame((s) => s.error)
+  const load = useGame((s) => s.load)
+  const send = useGame((s) => s.send)
 
   useEffect(() => {
-    let alive = true
-    loadClips()
-      .then((clips) => {
-        if (!alive) return
-        setPool(clips)
-        setDeck((d) => refill(clips, d))
-      })
-      .catch((e: Error) => alive && setError(e.message))
-    return () => {
-      alive = false
-    }
-  }, [])
+    void load()
+  }, [load])
 
-  const current = deck.buffer[0]
-
-  const onAnswer = useCallback(
-    (verdict: Verdict) => {
-      if (!pool || !current) return
-      // 段階1では正誤を記録するだけ。巻とループは段階2で入れる
-      console.debug(isCorrect(current, verdict) ? '正解' : '不正解', current.id)
-      setDeck((d) => refill(pool, { ...d, buffer: d.buffer.slice(1) }))
-      setAnswered((n) => n + 1)
-    },
-    [pool, current],
-  )
-
-  const preloading = useMemo(() => deck.buffer.slice(1), [deck.buffer])
+  const onAnswer = useCallback((verdict: Verdict) => send({ type: 'answer', verdict }), [send])
+  const onReplay = useCallback(() => send({ type: 'replay' }), [send])
+  const onCutsceneDone = useCallback(() => send({ type: 'cutsceneDone' }), [send])
 
   if (error) {
     return (
@@ -70,7 +35,7 @@ export default function App() {
     )
   }
 
-  if (!current) {
+  if (!session) {
     return (
       <div className="theatre">
         <p className="center-message">フィルムを巻いています…</p>
@@ -78,28 +43,35 @@ export default function App() {
     )
   }
 
+  const { phase } = session
+
   return (
     <div className="theatre">
       <div className="stage">
-        <div className="upper">
-          <div className="reel-label">第一巻</div>
-        </div>
+        {phase.name === 'title' && <TitleScreen onStart={() => send({ type: 'start' })} />}
 
-        <ClipCard clip={current} onAnswer={onAnswer} enabled />
+        {phase.name === 'playing' && (
+          <GameScreen session={session} onAnswer={onAnswer} onReplay={onReplay} />
+        )}
 
-        <div className="lower">
-          <div className="hint" style={{ opacity: answered >= 6 ? 0.35 : 1 }}>
-            <span>← <b>焼き捨てる</b></span>
-            <span><b>映写する</b> →</span>
-          </div>
-        </div>
-      </div>
+        {phase.name === 'intertitle' && (
+          <IntertitleScreen card={phase.card} reel={phase.reel} onDone={onCutsceneDone} />
+        )}
 
-      {/* 先読み。表示はせず、ブラウザにダウンロードだけさせる */}
-      <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden="true">
-        {preloading.map((c) => (
-          <video key={c.id} src={c.src} muted playsInline preload="auto" />
-        ))}
+        {phase.name === 'loopCut' && <LoopCutScreen onDone={onCutsceneDone} />}
+
+        {phase.name === 'ending' && (
+          <p className="center-message">
+            （エンディング: {phase.endingId}）
+            <br />
+            段階4で実装します
+            <br />
+            <br />
+            <button type="button" className="title-start" onClick={() => send({ type: 'start' })}>
+              もう一度
+            </button>
+          </p>
+        )}
       </div>
     </div>
   )
