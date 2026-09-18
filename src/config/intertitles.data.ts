@@ -35,6 +35,12 @@ export const LOOP_CARDS: readonly { minLoops: number; lines: readonly string[] }
 
 export function intertitleFor(reel: number, loops: number): Intertitle {
   const main = REEL_CARDS[(reel - 1) % REEL_CARDS.length]
+
+  // ループを表す一文は「第一巻に戻された瞬間」にだけ添える。
+  // 2巻目以降にも付けると、その周のあいだ同じ一文を毎回読まされることになる。
+  // ループの積み重ねは、人影の距離と映写機に混ざる異音が続けて受け持つ。
+  if (reel !== 1 || loops <= 0) return { main }
+
   let sub: string | undefined
   for (const tier of LOOP_CARDS) {
     if (loops >= tier.minLoops) sub = tier.lines[loops % tier.lines.length]
