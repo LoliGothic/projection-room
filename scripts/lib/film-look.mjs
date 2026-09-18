@@ -28,8 +28,11 @@ export const GEOMETRY = {
  * 途中の値ではなく「最後まで通した結果」を測って合わせる。
  */
 export const TARGET = {
-  /** 目標の平均輝度（0-255） */
-  brightness: 38,
+  /**
+   * 目標の平均輝度（0-255）。
+   * 低くしすぎると、明るい屋外の画（AI側に多い）が不自然に潰れて見える。
+   */
+  brightness: 47,
   /** 目標の細部の量（隣接画素の差の平均）。本物側の中央値あたり */
   detail: 5.5,
   /** 目標のコントラスト（輝度の標準偏差）。本物側の中央値あたり */
@@ -39,7 +42,7 @@ export const TARGET = {
   contrastMin: 0.6,
   contrastMax: 2.1,
   /** 何回まで測り直して寄せるか */
-  passes: 5,
+  passes: 7,
 }
 
 /** 1本ずつ散らす範囲。上限と下限は本物側の実測ばらつきに合わせてある */
@@ -48,7 +51,17 @@ export const SPREAD = {
   contrast: [1.06, 1.34],
   /** 負ならシャープ、正ならソフト */
   softness: [-0.45, 0.65],
-  vignette: [2.9, 4.2],
+  /**
+   * 周辺減光。PI/x の x なので、大きいほど弱い。
+   * 強すぎると、画面の端まで明るい画（AI側に多い）で黒い輪が目立つ。
+   */
+  vignette: [3.6, 5.2],
+  /**
+   * 撮影コマ数。無声映画は毎秒16コマ前後で撮られ、上映では
+   * コマが重複してカクついて見える。AI動画にはこの癖が無く、動きが滑らかすぎる。
+   * ここで1本ずつコマ数を落としてから18fpsに戻し、両群に同じだけカクつきを作る。
+   */
+  shootRate: [11, 16],
 }
 
 /** ID から決まる 0..1 の値（同じ入力なら毎回同じ） */
@@ -68,9 +81,14 @@ const PROBE_W = 240
 const PROBE_H = 180
 
 /** 幾何だけ整えるフィルタ（明るさを測る前に通す） */
-export function geometryChain(trim) {
+export function geometryChain(trim, seed) {
   const chain = []
   if (trim) chain.push(`crop=iw-${trim.left}:ih-${trim.top}:${trim.left}:${trim.top}`)
+  // 撮影コマ数まで落としてから 18fps に戻す。コマが重複してカクつく
+  if (seed !== undefined) {
+    const shoot = Math.round(lerp(SPREAD.shootRate, hashUnit(seed, 'shoot')))
+    chain.push(`fps=${shoot}`)
+  }
   chain.push(
     `fps=${GEOMETRY.fps}`,
     `scale=${GEOMETRY.width}:${GEOMETRY.height}:force_original_aspect_ratio=increase`,
@@ -138,7 +156,9 @@ export async function probe(input, chain) {
 function nextGamma(gamma, mean) {
   const m = Math.min(250, Math.max(2, mean))
   const k = Math.log(m / 255) / Math.log(TARGET.brightness / 255)
-  return Math.min(TARGET.gammaMax, Math.max(TARGET.gammaMin, gamma * k))
+  // そのまま当てると行き過ぎて振動する（極端に暗い転写で顕著）。半分だけ動かす
+  const damped = 1 + (k - 1) * 0.55
+  return Math.min(TARGET.gammaMax, Math.max(TARGET.gammaMin, gamma * damped))
 }
 
 /**
@@ -146,12 +166,14 @@ function nextGamma(gamma, mean) {
  * seed には動画の ID を渡す（同じ ID なら毎回同じ見た目になる）。
  * gamma と sharpen は solveLook が決めた値を渡す。
  */
-export function lookChain({ gamma, sharpen, contrast }, seed, trim) {
+export function lookChain({ gamma, sharpen, contrast, lift = 0 }, seed, trim) {
   const noise = lerp(SPREAD.noise, hashUnit(seed, 'noise'))
   const vignette = lerp(SPREAD.vignette, hashUnit(seed, 'vig'))
 
-  const chain = [geometryChain(trim), LEVELS]
-  chain.push(`eq=contrast=${contrast.toFixed(3)}:gamma=${gamma.toFixed(3)}`)
+  const chain = [geometryChain(trim, seed), LEVELS]
+  chain.push(
+    `eq=contrast=${contrast.toFixed(3)}:gamma=${gamma.toFixed(3)}:brightness=${lift.toFixed(4)}`,
+  )
 
   // 転写ごとの解像感の差。プラスならシャープ、マイナスなら甘い転写
   if (sharpen > 0.04) chain.push(`unsharp=5:5:${sharpen.toFixed(2)}`)
@@ -178,6 +200,7 @@ export async function solveLook(input, seed, trim) {
     gamma: 1,
     sharpen: lerp(SPREAD.softness, hashUnit(seed, 'soft')),
     contrast: lerp(SPREAD.contrast, hashUnit(seed, 'contrast')),
+    lift: 0,
   }
   let last = null
 
@@ -191,6 +214,7 @@ export async function solveLook(input, seed, trim) {
     if (ok) break
 
     params = {
+      ...params,
       gamma: nextGamma(params.gamma, last.mean),
       // 細部が足りなければシャープを強め、出すぎていれば甘くする
       sharpen: Math.min(
@@ -206,6 +230,19 @@ export async function solveLook(input, seed, trim) {
         ),
       ),
     }
+  }
+
+  // コントラストを下げると明るさが上がる、というように 2 つの調整は互いに効く。
+  // 同時に追うと明るさが行き過ぎるので、最後に明度だけで合わせ直す。
+  // ガンマは効き方が素材によって大きく変わるため、ここでは効果が読める線形の補正を使う
+  for (let pass = 0; pass < 3; pass++) {
+    const gap = TARGET.brightness - last.mean
+    if (Math.abs(gap) < 1.5) break
+    params = {
+      ...params,
+      lift: Math.min(0.18, Math.max(-0.18, params.lift + (gap / 255) * 0.9)),
+    }
+    last = await probe(input, lookChain(params, seed, trim))
   }
 
   return { params, result: last }
