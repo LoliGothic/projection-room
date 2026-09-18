@@ -2,8 +2,8 @@
   "version": 1,
   "clips": [
     {
-      "id": "3w39bx",
-      "src": "clips/3w39bx.mp4",
+      "id": "ydfwp6",
+      "src": "clips/ydfwp6.mp4",
       "isAI": false,
       "work": "big-business-1929-16mm-silent-uhd",
       "title": "ビッグ・ビジネス",
@@ -14,10 +14,10 @@
       "note": "ビッグ・ビジネス より 5分30秒あたり"
     },
     {
-      "id": "97pnji",
-      "src": "clips/97pnji.mp4",
+      "id": "kkdhpk",
+      "src": "clips/kkdhpk.mp4",
       "isAI": true,
-      "work": "gen-97pnji",
+      "work": "gen-kkdhpk",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -25,8 +25,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "ggatpt",
-      "src": "clips/ggatpt.mp4",
+      "id": "b89idh",
+      "src": "clips/b89idh.mp4",
       "isAI": false,
       "work": "hell-s-hinges-1916",
       "title": "ヘルズ・ヒンジズ",
@@ -36,10 +36,10 @@
       "note": "ヘルズ・ヒンジズ より 32分13秒あたり"
     },
     {
-      "id": "b2ed3g",
-      "src": "clips/b2ed3g.mp4",
+      "id": "rxnhj4",
+      "src": "clips/rxnhj4.mp4",
       "isAI": true,
-      "work": "gen-b2ed3g",
+      "work": "gen-rxnhj4",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -47,8 +47,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "khtwxw",
-      "src": "clips/khtwxw.mp4",
+      "id": "vayvf4",
+      "src": "clips/vayvf4.mp4",
       "isAI": false,
       "work": "hell-s-hinges-1916",
       "title": "ヘルズ・ヒンジズ",
@@ -58,10 +58,10 @@
       "note": "ヘルズ・ヒンジズ より 32分23秒あたり"
     },
     {
-      "id": "2uhnvt",
-      "src": "clips/2uhnvt.mp4",
+      "id": "9ixc2v",
+      "src": "clips/9ixc2v.mp4",
       "isAI": true,
-      "work": "gen-2uhnvt",
+      "work": "gen-9ixc2v",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -69,8 +69,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "9iyy36",
-      "src": "clips/9iyy36.mp4",
+      "id": "ygdtma",
+      "src": "clips/ygdtma.mp4",
       "isAI": false,
       "work": "le-voyage-dans-la-lune-black-and-white-1",
       "title": "月世界旅行",
@@ -81,10 +81,10 @@
       "note": "月世界旅行 より 1分58秒あたり"
     },
     {
-      "id": "s533uv",
-      "src": "clips/s533uv.mp4",
+      "id": "2xeyks",
+      "src": "clips/2xeyks.mp4",
       "isAI": true,
-      "work": "gen-s533uv",
+      "work": "gen-2xeyks",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -92,8 +92,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "r5vmc6",
-      "src": "clips/r5vmc6.mp4",
+      "id": "9svjjj",
+      "src": "clips/9svjjj.mp4",
       "isAI": false,
       "work": "les-vampires-satanas-1916",
       "title": "レ・ヴァンピール 第5話「サタナス」",
@@ -104,10 +104,10 @@
       "note": "レ・ヴァンピール 第5話「サタナス」 より 23分22秒あたり"
     },
     {
-      "id": "yxg7ja",
-      "src": "clips/yxg7ja.mp4",
+      "id": "t6j4yx",
+      "src": "clips/t6j4yx.mp4",
       "isAI": true,
-      "work": "gen-yxg7ja",
+      "work": "gen-t6j4yx",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -115,8 +115,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "wt6zmd",
-      "src": "clips/wt6zmd.mp4",
+      "id": "zw7a4x",
+      "src": "clips/zw7a4x.mp4",
       "isAI": false,
       "work": "our-hospitality-1923",
       "title": "荒武者キートン",
@@ -127,10 +127,10 @@
       "note": "荒武者キートン より 24分45秒あたり"
     },
     {
-      "id": "gs23hp",
-      "src": "clips/gs23hp.mp4",
+      "id": "xsezs2",
+      "src": "clips/xsezs2.mp4",
       "isAI": true,
-      "work": "gen-gs23hp",
+      "work": "gen-xsezs2",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -138,8 +138,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "z49pqr",
-      "src": "clips/z49pqr.mp4",
+      "id": "pg93bc",
+      "src": "clips/pg93bc.mp4",
       "isAI": false,
       "work": "safety-last-1923",
       "title": "ロイドの要心無用",
@@ -150,10 +150,10 @@
       "note": "ロイドの要心無用 より 69分47秒あたり"
     },
     {
-      "id": "yvk8iv",
-      "src": "clips/yvk8iv.mp4",
+      "id": "bjrmqz",
+      "src": "clips/bjrmqz.mp4",
       "isAI": true,
-      "work": "gen-yvk8iv",
+      "work": "gen-bjrmqz",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -161,8 +161,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "a6d755",
-      "src": "clips/a6d755.mp4",
+      "id": "j2wf2v",
+      "src": "clips/j2wf2v.mp4",
       "isAI": false,
       "work": "the-cheat-1915",
       "title": "チート",
@@ -173,10 +173,10 @@
       "note": "チート より 35分10秒あたり"
     },
     {
-      "id": "g9wnws",
-      "src": "clips/g9wnws.mp4",
+      "id": "n98ffg",
+      "src": "clips/n98ffg.mp4",
       "isAI": true,
-      "work": "gen-g9wnws",
+      "work": "gen-n98ffg",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -184,8 +184,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "fiksgv",
-      "src": "clips/fiksgv.mp4",
+      "id": "uikxy4",
+      "src": "clips/uikxy4.mp4",
       "isAI": false,
       "work": "the-cheat-1915",
       "title": "チート",
@@ -196,10 +196,10 @@
       "note": "チート より 38分33秒あたり"
     },
     {
-      "id": "h4ye3b",
-      "src": "clips/h4ye3b.mp4",
+      "id": "p8tvse",
+      "src": "clips/p8tvse.mp4",
       "isAI": true,
-      "work": "gen-h4ye3b",
+      "work": "gen-p8tvse",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",
@@ -207,8 +207,8 @@
       "note": "（AIと見抜ける手がかりを書いてください）"
     },
     {
-      "id": "2ufcev",
-      "src": "clips/2ufcev.mp4",
+      "id": "nad8b5",
+      "src": "clips/nad8b5.mp4",
       "isAI": false,
       "work": "tumbleweeds-1925",
       "title": "タンブルウィーズ",
@@ -218,10 +218,10 @@
       "note": "タンブルウィーズ より 15分25秒あたり"
     },
     {
-      "id": "maxs4m",
-      "src": "clips/maxs4m.mp4",
+      "id": "atssfa",
+      "src": "clips/atssfa.mp4",
       "isAI": true,
-      "work": "gen-maxs4m",
+      "work": "gen-atssfa",
       "title": "生成クリップ",
       "tool": "（生成ツール名を入れてください）",
       "sourceUrl": "",

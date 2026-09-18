@@ -33,17 +33,22 @@ export const TARGET = {
    * 低くしすぎると、明るい屋外の画（AI側に多い）が不自然に潰れて見える。
    */
   brightness: 47,
-  /** 目標の細部の量（隣接画素の差の平均）。本物側の中央値あたり */
-  detail: 5.5,
   /** 目標のコントラスト（輝度の標準偏差）。本物側の中央値あたり */
   contrast: 45,
   /**
-   * 縦スジ（フィルムの引っかき傷）の強さの範囲。
-   * 傷は数コマおきにしか出ないので測定値が安定せず、閉ループには載せていない。
-   * 代わりに1本ずつ ID から決まる強さで必ず入れる。
+   * 目標の点キズ・ゴミの量（%）。
+   * 同じ量の粒子を足しても、元が滑らかな素材（AI）ほど孤立した点として目立つ。
+   * 放っておくと AI だけチカチカして手がかりになるので、粒子の量で揃える。
    */
-  scratchMin: 0.3,
-  scratchMax: 1.0,
+  /**
+   * 縦スジ（フィルムの引っかき傷）の強さの範囲。
+   * 素の素材にどれだけ傷があるかは転写によって全く違うので、
+   * 「足りない分だけ足す」形で目標へ寄せる。
+   * 結果として、傷の多い転写には合成せず、AI動画には多めに合成することになる。
+   */
+  /** 目標の縦スジの量。素の状態で足りない分だけ合成して足す */
+  streak: 20,
+  scratchMax: 2.6,
   gammaMin: 0.35,
   gammaMax: 3.2,
   contrastMin: 0.6,
@@ -54,10 +59,16 @@ export const TARGET = {
 
 /** 1本ずつ散らす範囲。上限と下限は本物側の実測ばらつきに合わせてある */
 export const SPREAD = {
-  noise: [9, 20],
+  noise: [6, 14],
   contrast: [1.06, 1.34],
-  /** 負ならシャープ、正ならソフト */
-  softness: [-0.45, 0.65],
+  /**
+   * 甘さ（ぼかし）。0 で素のまま、大きいほど甘い。
+   * かつては「細部の量」を目標に合わせてシャープ処理も行っていたが、
+   * この指標は粒子の量に引きずられるため、粒子の多い本物を甘くし、
+   * 滑らかな AI を鮮明にするという逆のことをしていた。
+   * 画の鮮明さは素材の性質なので、揃えようとせず、両群に同じ範囲の甘さだけ入れる。
+   */
+  softness: [0, 0.5],
   /**
    * 周辺減光。PI/x の x なので、大きいほど弱い。
    * 強すぎると、画面の端まで明るい画（AI側に多い）で黒い輪が目立つ。
@@ -79,29 +90,35 @@ export const SPREAD = {
 function scratchChain(strength, seed) {
   if (strength <= 0.02) return []
   const w = GEOMETRY.width
-  const lines = [
-    { pos: 0.12, period: 41, on: 11, dark: false, width: 1 },
-    { pos: 0.68, period: 67, on: 23, dark: false, width: 1 },
-    { pos: 0.31, period: 29, on: 7, dark: true, width: 1 },
-    { pos: 0.86, period: 53, on: 14, dark: false, width: 2 },
-  ]
-  return lines
-    .map((l, i) => {
-      // 位置と出方を1本ずつずらす
-      const x = Math.round(w * (0.04 + 0.92 * hashUnit(seed, `sx${i}`)))
-      const period = l.period + Math.round(hashUnit(seed, `sp${i}`) * 20)
-      const on = Math.max(3, Math.round(l.on * (0.6 + hashUnit(seed, `so${i}`) * 0.8)))
-      // 0.15〜0.35 くらいが「言われれば気づく」濃さ。これ以上は傷が主役になる
-      const alpha =
-        ((l.dark ? 0.1 : 0.14) + 0.18 * strength) * (0.75 + hashUnit(seed, `sa${i}`) * 0.4)
-      if (alpha < 0.03) return null
-      const color = l.dark ? 'black' : 'white'
-      return (
-        `drawbox=x=${x}:y=0:w=${l.width}:h=ih:color=${color}@${alpha.toFixed(3)}` +
-        `:t=fill:enable='lt(mod(n\\,${period})\\,${on})'`
-      )
-    })
-    .filter(Boolean)
+  // 本数も強さで増やす。4本では足りず、傷の多い転写に追いつかない
+  const count = Math.min(12, Math.round(2 + strength * 5))
+
+  const out = []
+  for (let i = 0; i < count; i++) {
+    const x = Math.round(w * (0.03 + 0.94 * hashUnit(seed, `sx${i}`)))
+    // 出ている時間の割合。長いものと短いものを混ぜる
+    const period = 23 + Math.round(hashUnit(seed, `sp${i}`) * 55)
+    const on = Math.max(4, Math.round(period * (0.25 + hashUnit(seed, `so${i}`) * 0.55)))
+    const dark = hashUnit(seed, `sd${i}`) < 0.3
+    const width = hashUnit(seed, `sw${i}`) < 0.25 ? 2 : 1
+    // 全部が画面を貫くと規則的に見えるので、途中で切れる傷も混ぜる
+    const partial = hashUnit(seed, `sh${i}`)
+    const top = partial < 0.45 ? 0 : Math.round(GEOMETRY.height * (partial - 0.45) * 0.9)
+    const height =
+      partial < 0.45
+        ? GEOMETRY.height
+        : Math.round(GEOMETRY.height * (0.35 + hashUnit(seed, `sl${i}`) * 0.6))
+    // 0.15〜0.35 くらいが「言われれば気づく」濃さ。これ以上は傷が主役になる
+    const alpha =
+      ((dark ? 0.1 : 0.14) + 0.14 * Math.min(1, strength)) *
+      (0.75 + hashUnit(seed, `sa${i}`) * 0.4)
+    out.push(
+      `drawbox=x=${x}:y=${top}:w=${width}:h=${height}:t=fill` +
+        `:color=${dark ? 'black' : 'white'}@${alpha.toFixed(3)}` +
+        `:enable='lt(mod(n\\,${period})\\,${on})'`,
+    )
+  }
+  return out
 }
 
 /** ID から決まる 0..1 の値（同じ入力なら毎回同じ） */
@@ -158,6 +175,7 @@ export async function probe(input, chain) {
   let detailSum = 0
   let sdSum = 0
   let streakSum = 0
+  let spotSum = 0
 
   for (let off = 0; off + size <= stdout.length; off += size) {
     const b = stdout.subarray(off, off + size)
@@ -172,14 +190,22 @@ export async function probe(input, chain) {
 
     let diff = 0
     let count = 0
-    for (let y = 1; y < PROBE_H; y++) {
-      for (let x = 1; x < PROBE_W; x++) {
+    // 孤立した点（ゴミ・点キズ）。周囲4画素から大きく外れた画素の割合
+    let spot = 0
+    let spotCount = 0
+    for (let y = 1; y < PROBE_H - 1; y++) {
+      for (let x = 1; x < PROBE_W - 1; x++) {
         const i = y * PROBE_W + x
         diff += Math.abs(b[i] - b[i - 1]) + Math.abs(b[i] - b[i - PROBE_W])
         count += 2
+        const around =
+          (b[i - 1] + b[i + 1] + b[i - PROBE_W] + b[i + PROBE_W]) / 4
+        if (Math.abs(b[i] - around) > 48) spot++
+        spotCount++
       }
     }
     detailSum += diff / count
+    spotSum += (spot / spotCount) * 100
 
     // 縦スジ（フィルムの引っかき傷）。列の平均が左右の列から突出している本数
     const col = new Float64Array(PROBE_W)
@@ -201,9 +227,10 @@ export async function probe(input, chain) {
   if (frames === 0) {
     return {
       mean: TARGET.brightness,
-      detail: TARGET.detail,
+      detail: 0,
       sd: TARGET.contrast,
       streak: 0,
+      spot: 0,
     }
   }
   return {
@@ -211,6 +238,7 @@ export async function probe(input, chain) {
     detail: detailSum / frames,
     sd: sdSum / frames,
     streak: streakSum / frames,
+    spot: spotSum / frames,
   }
 }
 
@@ -230,10 +258,15 @@ function nextGamma(gamma, mean) {
 /**
  * 仕上げのフィルタ列を作る。
  * seed には動画の ID を渡す（同じ ID なら毎回同じ見た目になる）。
- * gamma と sharpen は solveLook が決めた値を渡す。
+ * gamma と contrast は solveLook が決めた値を渡す。
  */
-export function lookChain({ gamma, sharpen, contrast, lift = 0, scratch = 0 }, seed, trim) {
-  const noise = lerp(SPREAD.noise, hashUnit(seed, 'noise'))
+export function lookChain(
+  { gamma, contrast, lift = 0, scratch = 0, noise, soften },
+  seed,
+  trim,
+) {
+  const blur = soften ?? lerp(SPREAD.softness, hashUnit(seed, 'soft'))
+  const grain = noise ?? lerp(SPREAD.noise, hashUnit(seed, 'noise'))
   const vignette = lerp(SPREAD.vignette, hashUnit(seed, 'vig'))
 
   const chain = [geometryChain(trim, seed), LEVELS]
@@ -241,11 +274,10 @@ export function lookChain({ gamma, sharpen, contrast, lift = 0, scratch = 0 }, s
     `eq=contrast=${contrast.toFixed(3)}:gamma=${gamma.toFixed(3)}:brightness=${lift.toFixed(4)}`,
   )
 
-  // 転写ごとの解像感の差。プラスならシャープ、マイナスなら甘い転写
-  if (sharpen > 0.04) chain.push(`unsharp=5:5:${sharpen.toFixed(2)}`)
-  else if (sharpen < -0.04) chain.push(`gblur=sigma=${(-sharpen).toFixed(2)}`)
+  // 転写ごとの甘さの違い。シャープ処理はしない（AIを鮮明にしてしまうため）
+  if (blur > 0.04) chain.push(`gblur=sigma=${blur.toFixed(2)}`)
 
-  chain.push(`noise=alls=${Math.round(noise)}:allf=t+u`)
+  chain.push(`noise=alls=${Math.max(0, Math.round(grain))}:allf=t+u`)
   chain.push(...scratchChain(scratch, seed))
   chain.push(`vignette=PI/${vignette.toFixed(2)}`)
 
@@ -260,16 +292,17 @@ export function lookChain({ gamma, sharpen, contrast, lift = 0, scratch = 0 }, s
 export async function solveLook(input, seed, trim) {
   // 1本ずつばらつかせた目標。どちらの群にも同じ範囲で効くので、
   // 「AIだけ均質」という手がかりにはならない
-  const targetDetail = TARGET.detail * (0.75 + hashUnit(seed, 'detail') * 0.75)
   const targetContrast = TARGET.contrast * (0.88 + hashUnit(seed, 'sd') * 0.3)
+  const targetStreak = TARGET.streak * (0.85 + hashUnit(seed, 'st') * 0.35)
 
   let params = {
     gamma: 1,
-    sharpen: lerp(SPREAD.softness, hashUnit(seed, 'soft')),
+    soften: lerp(SPREAD.softness, hashUnit(seed, 'soft')),
     contrast: lerp(SPREAD.contrast, hashUnit(seed, 'contrast')),
     lift: 0,
-    // AI動画には経年劣化の痕跡が無く「綺麗すぎる」ので、両群に傷を入れる
-    scratch: lerp([TARGET.scratchMin, TARGET.scratchMax], hashUnit(seed, 'scr')),
+    // AI動画には経年劣化の痕跡が無く「綺麗すぎる」ので、足りない分を合成する
+    scratch: 0.4,
+    noise: lerp(SPREAD.noise, hashUnit(seed, 'noise')),
   }
   let last = null
 
@@ -278,17 +311,17 @@ export async function solveLook(input, seed, trim) {
 
     const ok =
       Math.abs(last.mean - TARGET.brightness) < 1.5 &&
-      Math.abs(last.detail - targetDetail) < 0.4 &&
-      Math.abs(last.sd - targetContrast) < 2
+      Math.abs(last.sd - targetContrast) < 2 &&
+      Math.abs(last.streak - targetStreak) < 2.5
     if (ok) break
 
     params = {
       ...params,
       gamma: nextGamma(params.gamma, last.mean),
-      // 細部が足りなければシャープを強め、出すぎていれば甘くする
-      sharpen: Math.min(
-        1.6,
-        Math.max(-1.2, params.sharpen + (targetDetail - last.detail) * 0.35),
+      // 素の傷が目標に届かない分だけ合成して足す
+      scratch: Math.min(
+        TARGET.scratchMax,
+        Math.max(0, params.scratch + (targetStreak - last.streak) * 0.12),
       ),
       // コントラストは標準偏差の比で寄せる
       contrast: Math.min(
