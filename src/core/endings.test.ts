@@ -33,38 +33,38 @@ describe('matches', () => {
 })
 
 describe('resolveEnding', () => {
-  it('一度もループせずに通過すると真エンド', () => {
+  it('一度もループせずに通過すると撮影者エンド', () => {
     expect(resolveEnding(stats({ loops: 0 }), 'escape')?.id).toBe('true')
   })
 
-  it('ループを重ねて通過すると終わらない上映エンド', () => {
+  it('ループを重ねて通過すると無限スクロールエンド', () => {
     const s = stats({ loops: ENDING_THRESHOLDS.endlessLoops + 1 })
     expect(resolveEnding(s, 'escape')?.id).toBe('endless')
   })
 
-  it('しきい値ちょうどでは終わらない上映にならない', () => {
+  it('しきい値ちょうどでは無限スクロールにならない', () => {
     const s = stats({ loops: ENDING_THRESHOLDS.endlessLoops })
-    expect(resolveEnding(s, 'escape')?.id).toBe('dawn')
+    expect(resolveEnding(s, 'escape')?.id).toBe('closed')
   })
 
-  it('リプレイが多いと擦り切れたフィルムエンド', () => {
+  it('リプレイが多いと見すぎエンド', () => {
     const s = stats({
       loops: 3,
       presented: 10,
-      replays: 10 * ENDING_THRESHOLDS.wornAvgReplays,
+      replays: 10 * ENDING_THRESHOLDS.watchedAvgReplays,
     })
-    expect(resolveEnding(s, 'escape')?.id).toBe('worn')
+    expect(resolveEnding(s, 'escape')?.id).toBe('watched')
   })
 
-  it('どれにも当てはまらなければ夜明けエンド', () => {
-    expect(resolveEnding(stats({ loops: 3 }), 'escape')?.id).toBe('dawn')
+  it('どれにも当てはまらなければ通常エンド', () => {
+    expect(resolveEnding(stats({ loops: 3 }), 'escape')?.id).toBe('closed')
   })
 
-  it('不穏タイマーを使い切ったら暗闇エンド', () => {
-    expect(resolveEnding(stats({ loops: 0, wentDark: true }), 'darkness')?.id).toBe('darkness')
+  it('不穏タイマーを使い切ったら暗転エンド', () => {
+    expect(resolveEnding(stats({ loops: 0, wentDark: true }), 'darkness')?.id).toBe('blackout')
   })
 
-  it('優先度の小さいものが勝つ（真エンドが終わらない上映より先）', () => {
+  it('優先度の小さいものが勝つ（優先度が小さいものが先）', () => {
     // loops 0 は endless の条件を満たさないので、優先度の確認には作った定義を使う
     const defs: EndingDef[] = [
       { ...ENDINGS[0], id: 'later', trigger: 'escape', priority: 50, conditions: [] },
@@ -74,8 +74,8 @@ describe('resolveEnding', () => {
   })
 
   it('きっかけが違うエンディングは選ばれない', () => {
-    expect(resolveEnding(stats(), 'darkness')?.id).toBe('darkness')
-    expect(resolveEnding(stats(), 'escape')?.id).not.toBe('darkness')
+    expect(resolveEnding(stats(), 'darkness')?.id).toBe('blackout')
+    expect(resolveEnding(stats(), 'escape')?.id).not.toBe('blackout')
   })
 })
 

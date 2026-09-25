@@ -6,7 +6,7 @@ import { ENDING_ORDER } from '../config/endings.data'
 
 const filled: Records = {
   version: 1,
-  seenEndings: ['dawn', 'darkness'],
+  seenEndings: ['closed', 'blackout'],
   plays: 41,
   escapes: 3,
   bestLoops: 12,
@@ -56,32 +56,32 @@ describe('セーブコード', () => {
 
 describe('recordEnding', () => {
   it('初めてのエンディングを足し、遊んだ回数を増やす', () => {
-    const r = recordEnding(EMPTY_RECORDS, 'dawn', { ...createStats(), loops: 4 }, true)
-    expect(r.seenEndings).toEqual(['dawn'])
+    const r = recordEnding(EMPTY_RECORDS, 'closed', { ...createStats(), loops: 4 }, true)
+    expect(r.seenEndings).toEqual(['closed'])
     expect(r.plays).toBe(1)
     expect(r.escapes).toBe(1)
     expect(r.bestLoops).toBe(4)
   })
 
   it('同じエンディングを重複して足さない', () => {
-    let r = recordEnding(EMPTY_RECORDS, 'dawn', createStats(), true)
-    r = recordEnding(r, 'dawn', createStats(), true)
-    expect(r.seenEndings).toEqual(['dawn'])
+    let r = recordEnding(EMPTY_RECORDS, 'closed', createStats(), true)
+    r = recordEnding(r, 'closed', createStats(), true)
+    expect(r.seenEndings).toEqual(['closed'])
     expect(r.plays).toBe(2)
   })
 
   it('脱出していなければ脱出回数と最少ループは変わらない', () => {
-    const base = recordEnding(EMPTY_RECORDS, 'dawn', { ...createStats(), loops: 2 }, true)
-    const r = recordEnding(base, 'darkness', { ...createStats(), loops: 0 }, false)
+    const base = recordEnding(EMPTY_RECORDS, 'closed', { ...createStats(), loops: 2 }, true)
+    const r = recordEnding(base, 'blackout', { ...createStats(), loops: 0 }, false)
     expect(r.escapes).toBe(1)
     expect(r.bestLoops).toBe(2)
-    expect(r.seenEndings).toEqual(['dawn', 'darkness'])
+    expect(r.seenEndings).toEqual(['closed', 'blackout'])
   })
 
   it('最少ループは小さいほうを残す', () => {
-    let r = recordEnding(EMPTY_RECORDS, 'dawn', { ...createStats(), loops: 9 }, true)
-    r = recordEnding(r, 'dawn', { ...createStats(), loops: 3 }, true)
-    r = recordEnding(r, 'dawn', { ...createStats(), loops: 7 }, true)
+    let r = recordEnding(EMPTY_RECORDS, 'closed', { ...createStats(), loops: 9 }, true)
+    r = recordEnding(r, 'closed', { ...createStats(), loops: 3 }, true)
+    r = recordEnding(r, 'closed', { ...createStats(), loops: 7 }, true)
     expect(r.bestLoops).toBe(3)
   })
 })

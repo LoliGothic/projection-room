@@ -34,7 +34,10 @@ jobs:
 
       - run: npm run lint
 
-      # 動画は public/clips/ に入っているので、ここでは ffmpeg は要らない
+      # 実素材がリポジトリに入っていなければ、ダミーを生成してから配信する。
+      # ID はシードから決まるので、コミット済みの clips.json と必ず一致する
+      - run: npm run gen:dummy:if-missing
+
       - run: npm run build
 
       - uses: actions/upload-pages-artifact@v3

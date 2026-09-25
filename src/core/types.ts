@@ -2,15 +2,17 @@
 export interface Clip {
   id: string
   src: string
-  /** true = AI生成（焼き捨てるべき） */
+  /** true = AI生成（報告すべき） */
   isAI: boolean
-  /** 元作品グループ。同じ作品の場面が連続しないようにするための識別子 */
-  work: string
-  title?: string
-  year?: number
-  director?: string
+  /** カテゴリ。同じカテゴリが3本以上続かないようにするために使う */
+  category: string
+  /** 何が写っているか（滝・猫など） */
+  scene?: string
+  /** 入手元サービス名（Pexels など） */
+  source?: string
   sourceUrl?: string
-  license?: string
+  /** 投稿者名として表示する。本物は提供者名、AIは架空のアカウント名 */
+  contributor?: string
   /** 生成ツール名（AIの場合） */
   tool?: string
   /** 振り返り画面に出す解説 */
@@ -22,10 +24,10 @@ export interface ClipsFile {
   clips: Clip[]
 }
 
-/** プレイヤーの回答。右スワイプ＝映写する、左スワイプ＝焼き捨てる */
-export type Verdict = 'project' | 'burn'
+/** プレイヤーの回答。右スワイプ＝残す、左スワイプ＝報告する */
+export type Verdict = 'keep' | 'report'
 
 /** その回答が正しかったか */
 export function isCorrect(clip: Clip, verdict: Verdict): boolean {
-  return clip.isAI ? verdict === 'burn' : verdict === 'project'
+  return clip.isAI ? verdict === 'report' : verdict === 'keep'
 }

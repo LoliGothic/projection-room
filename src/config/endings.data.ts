@@ -9,7 +9,7 @@ export type Trigger = 'escape' | 'darkness'
 /** 条件に使えるプレイ中の統計 */
 export type StatKey =
   | 'loops'
-  | 'burnedReal'
+  | 'reportedReal'
   | 'missedAI'
   | 'replays'
   | 'presented'
@@ -34,7 +34,7 @@ export interface EndingDef {
   priority: number
   /** すべて満たしたときに成立（AND）。空なら無条件 */
   conditions: Condition[]
-  /** 字幕カード風に 1 枚ずつ出す文章 */
+  /** 通知やメッセージ風に 1 枚ずつ出す文章 */
   cards: string[]
   /** 演出用動画の clips.json 上の ID（任意） */
   clipId?: string
@@ -47,90 +47,88 @@ export interface EndingDef {
  * 追加するときは必ず末尾に足す。
  */
 export const ENDING_ORDER: readonly string[] = [
-  'dawn',
+  'closed',
   'true',
   'endless',
-  'worn',
-  'darkness',
+  'watched',
+  'blackout',
 ]
 
 /** 調整しやすいようしきい値は名前を付けておく */
 export const ENDING_THRESHOLDS = {
-  /** 「終わらない上映」になる累計ループ回数 */
+  /** 「無限スクロール」になる累計ループ回数 */
   endlessLoops: 20,
-  /** 「擦り切れたフィルム」になる 1本あたりの平均リプレイ回数 */
-  wornAvgReplays: 3,
+  /** 「見すぎ」になる 1本あたりの平均リプレイ回数 */
+  watchedAvgReplays: 3,
 } as const
 
 export const ENDINGS: readonly EndingDef[] = [
   {
-    id: 'darkness',
-    title: '暗闇',
+    id: 'blackout',
+    title: '暗転',
     trigger: 'darkness',
     priority: 0,
     conditions: [],
     cards: [
-      'フィルムを見つめすぎた。',
-      '映写機は、あなたを待つのをやめた。',
-      '暗い客席に、拍手の音だけが残っている。',
+      '画面が暗くなりました。',
+      '映っているのは、あなたの部屋です。',
+      'カメラは、ずっと前から起動していました。',
     ],
-    hint: '一本のフィルムを、長く見つめすぎると。',
+    hint: '一本の動画を、長く見つめすぎると。',
   },
   {
     id: 'true',
-    title: '完全上映',
+    title: '撮影者',
     trigger: 'escape',
     priority: 10,
     conditions: [{ stat: 'loops', op: 'eq', value: 0 }],
     cards: [
-      '八巻。一度も止めずに回しきった。',
-      '扉の向こうは、ただの朝だった。',
-      '映写室の灯りを落として、あなたは外へ出る。',
-      'もう、誰も座っていない。',
+      '八段階。一度も間違えずに通しました。',
+      '報告した動画の投稿者は、すべて同じ端末から上げられていました。',
+      '登録されていた名前は、あなたのものでした。',
+      'アプリを閉じます。',
     ],
-    hint: '一度も第一巻に戻らずに、八巻を通すこと。',
+    hint: '一度もリセットされずに、八段階を通すこと。',
   },
   {
     id: 'endless',
-    title: '終わらない上映',
+    title: '無限スクロール',
     trigger: 'escape',
     priority: 20,
     conditions: [{ stat: 'loops', op: 'gt', value: ENDING_THRESHOLDS.endlessLoops }],
     cards: [
-      '八巻を通した。扉が開く。',
-      '外は暗い廊下で、その先にまた扉があった。',
-      '開けると、映写機が回っている。',
-      '出口を出たはずが、また映写室だった。',
+      '八段階を通しました。アプリを閉じます。',
+      'ホーム画面に戻りました。',
+      '……アプリが開いています。',
+      '最初の動画が、また再生されています。',
     ],
-    hint: '何度も何度も第一巻に戻された末に、それでも通すこと。',
+    hint: '何度もリセットされた末に、それでも通すこと。',
   },
   {
-    id: 'worn',
-    title: '擦り切れたフィルム',
+    id: 'watched',
+    title: '見すぎ',
     trigger: 'escape',
     priority: 30,
-    conditions: [
-      { stat: 'avgReplays', op: 'gte', value: ENDING_THRESHOLDS.wornAvgReplays },
-    ],
+    conditions: [{ stat: 'avgReplays', op: 'gte', value: ENDING_THRESHOLDS.watchedAvgReplays }],
     cards: [
-      '確かめて、確かめて、確かめた。',
-      'あなたが回した分だけ、フィルムは薄くなった。',
-      '八巻を通したとき、手元に残っていたのは擦り切れた帯だけだった。',
+      '確かめて、確かめて、確かめました。',
+      '視聴時間の記録が更新されました。',
+      'あなたが見た回数だけ、向こうもあなたを見ていました。',
     ],
-    hint: '同じ場面を、何度も何度も回し直しながら通すこと。',
+    hint: '同じ動画を何度も見返しながら通すこと。',
   },
   {
-    id: 'dawn',
-    title: '夜明け',
+    id: 'closed',
+    title: 'アプリを閉じる',
     trigger: 'escape',
     priority: 100,
     conditions: [],
     cards: [
-      '最後の一巻が、静かに終わる。',
-      '非常口の灯りが、白く変わっていく。',
-      '夜が明けた。あなたは映画館を出る。',
+      '八段階を通しました。',
+      'おすすめの表示を停止しました。',
+      'アプリを閉じます。おつかれさまでした。',
     ],
-    hint: '八巻すべてを通して、映画館を出ること。',
+    hint: '八段階すべてを通して、アプリを閉じること。',
   },
 ]
 

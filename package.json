@@ -11,13 +11,9 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "gen:dummy": "node scripts/gen-dummy.mjs",
-    "prep:clip": "node scripts/prep-clip.mjs",
-    "gen:dummy:if-missing": "node scripts/gen-dummy.mjs --if-missing",
     "gen:icons": "node scripts/gen-icons.mjs",
-    "gen:real": "node scripts/gen-real.mjs",
-    "gen:dummy:ai": "node scripts/gen-dummy.mjs --ai-only",
-    "import:saved": "node scripts/import-saved.mjs",
-    "import:ai": "node scripts/import-ai.mjs"
+    "gen:dummy:if-missing": "node scripts/gen-dummy.mjs --if-missing",
+    "normalize": "node scripts/normalize.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",

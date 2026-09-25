@@ -4,19 +4,17 @@ import { createQueue, fillBuffer, type QueueState } from './clipQueue'
 import { applyAnswer, applyDarkness, applyReplay, createProgress, type Progress } from './progress'
 import { resolveEnding } from './endings'
 import { RULES } from '../config/tuning'
-import { intertitleFor, type Intertitle } from '../config/intertitles.data'
 
 /**
  * ゲーム全体の流れを持つステートマシン。React には依存しない。
  * 演出の「時間待ち」だけは UI 側がタイマーで面倒を見て、終わったら cutsceneDone を送る。
  */
 export type Phase =
-  | { name: 'title' }
-  /** 巻の節目の暗転＋字幕カード */
-  | { name: 'intertitle'; card: Intertitle; reel: number }
+  /** 起動画面 */
+  | { name: 'launch' }
   | { name: 'playing' }
-  /** ミス：映写機停止 → 暗転 → 巻き戻し */
-  | { name: 'loopCut' }
+  /** ミス：画面が固まる → 読み込み中 → おすすめリセットの通知 */
+  | { name: 'resetting' }
   | { name: 'ending'; endingId: string }
   | { name: 'recap' }
   | { name: 'gallery' }
@@ -42,11 +40,11 @@ export interface Session {
 }
 
 export type SessionEvent =
-  /** タイトルから上映を始める */
+  /** 起動画面からフィードを開く */
   | { type: 'start' }
   | { type: 'answer'; verdict: Verdict }
   | { type: 'replay' }
-  /** 字幕カード / ループ演出の再生が終わった */
+  /** リセット演出の再生が終わった */
   | { type: 'cutsceneDone' }
   /** 不穏タイマーを使い切った */
   | { type: 'darkness' }
@@ -62,17 +60,13 @@ function refill(pool: readonly Clip[], deck: Deck, rng: Rng): Deck {
 
 /** 先頭を 1 本進めて、先読みを補充する */
 function advance(pool: readonly Clip[], deck: Deck, rng: Rng): Deck {
-  return refill(
-    pool,
-    { ...deck, buffer: deck.buffer.slice(1), advances: deck.advances + 1 },
-    rng,
-  )
+  return refill(pool, { ...deck, buffer: deck.buffer.slice(1), advances: deck.advances + 1 }, rng)
 }
 
 export function createSession(pool: readonly Clip[]): Session {
   return {
     pool,
-    phase: { name: 'title' },
+    phase: { name: 'launch' },
     progress: createProgress(),
     deck: { queue: createQueue(), buffer: [], advances: 0 },
   }
@@ -91,26 +85,15 @@ export function preloadClips(s: Session): readonly Clip[] {
 export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
   switch (e.type) {
     case 'start': {
-      const progress = createProgress()
       const deck = refill(s.pool, { queue: createQueue(), buffer: [], advances: 0 }, rng)
-      return {
-        ...s,
-        progress,
-        deck,
-        phase: { name: 'intertitle', card: intertitleFor(1, 0), reel: 1 },
-      }
+      return { ...s, progress: createProgress(), deck, phase: { name: 'playing' } }
     }
 
     case 'cutsceneDone': {
-      if (s.phase.name === 'intertitle') return { ...s, phase: { name: 'playing' } }
-      if (s.phase.name === 'loopCut') {
+      if (s.phase.name === 'resetting') {
         // ここで初めて次の 1 本へ進める。
-        // 回答した時点で進めてしまうと、焦げの演出の下に次の問題が映ってしまう
-        return {
-          ...s,
-          deck: advance(s.pool, s.deck, rng),
-          phase: { name: 'intertitle', card: intertitleFor(1, s.progress.stats.loops), reel: 1 },
-        }
+        // 回答した時点で進めてしまうと、リセット演出の裏で次の問題が見えてしまう
+        return { ...s, deck: advance(s.pool, s.deck, rng), phase: { name: 'playing' } }
       }
       return s
     }
@@ -128,7 +111,7 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
         progress,
         phase: {
           name: 'ending',
-          endingId: resolveEnding(progress.stats, 'darkness')?.id ?? 'darkness',
+          endingId: resolveEnding(progress.stats, 'darkness')?.id ?? 'blackout',
         },
       }
     }
@@ -140,41 +123,26 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
 
       const { progress, outcome } = applyAnswer(s.progress, clip, e.verdict)
 
-      // ミスのときは進めない。焦げの演出は、いま間違えたフィルムの上で起きる。
-      // ここで進めると演出中に次の問題が見えてしまう
+      // ミスのときは進めない。リセット演出は、いま間違えた動画の上で起きる
       if (outcome.kind === 'loop') {
-        return { ...s, progress, phase: { name: 'loopCut' } }
+        return { ...s, progress, phase: { name: 'resetting' } }
       }
 
       // 回答したら間を置かず次へ。出題済みはループしてもリセットしない
       const deck = advance(s.pool, s.deck, rng)
 
-      switch (outcome.kind) {
-        case 'next':
-          return { ...s, progress, deck, phase: { name: 'playing' } }
-        case 'reelCleared':
-          return {
-            ...s,
-            progress,
-            deck,
-            phase: {
-              name: 'intertitle',
-              card: intertitleFor(outcome.reel, progress.stats.loops),
-              reel: outcome.reel,
-            },
-          }
-        case 'escaped':
-          return {
-            ...s,
-            progress,
-            deck,
-            phase: {
-              name: 'ending',
-              endingId: resolveEnding(progress.stats, 'escape')?.id ?? 'dawn',
-            },
-          }
+      if (outcome.kind === 'escaped') {
+        return {
+          ...s,
+          progress,
+          deck,
+          phase: {
+            name: 'ending',
+            endingId: resolveEnding(progress.stats, 'escape')?.id ?? 'closed',
+          },
+        }
       }
-      return s
+      return { ...s, progress, deck, phase: { name: 'playing' } }
     }
 
     case 'goto':

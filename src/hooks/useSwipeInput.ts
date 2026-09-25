@@ -4,7 +4,7 @@ import { SWIPE } from '../config/tuning'
 
 /**
  * 左右スワイプ / マウスドラッグ / 矢印キーを 1 つの入力にまとめる。
- * 右 = 映写する（project）、左 = 焼き捨てる（burn）。
+ * 右 = 残す（keep）、左 = 報告する（report）。
  */
 export function useSwipeInput(onCommit: (v: Verdict) => void, enabled: boolean) {
   const [dx, setDx] = useState(0)
@@ -58,7 +58,7 @@ export function useSwipeInput(onCommit: (v: Verdict) => void, enabled: boolean) 
       start.current = null
       axis.current = 'none'
       if (Math.abs(mx) >= SWIPE.commitDistance || (speed >= SWIPE.commitVelocity && Math.abs(mx) > 24)) {
-        commit(mx > 0 ? 'project' : 'burn')
+        commit(mx > 0 ? 'keep' : 'report')
       } else {
         setDx(0)
         setDragging(false)
@@ -79,8 +79,8 @@ export function useSwipeInput(onCommit: (v: Verdict) => void, enabled: boolean) 
     if (!enabled) return
     const onKey = (e: KeyboardEvent) => {
       if (e.repeat) return
-      if (e.key === 'ArrowRight') { e.preventDefault(); commit('project') }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); commit('burn') }
+      if (e.key === 'ArrowRight') { e.preventDefault(); commit('keep') }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); commit('report') }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)

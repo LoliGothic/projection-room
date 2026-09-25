@@ -9,12 +9,8 @@ import {
 } from '../config/endings.data'
 
 export function statValue(stats: Stats, key: StatKey): number {
-  switch (key) {
-    case 'avgReplays':
-      return averageReplays(stats)
-    default:
-      return stats[key]
-  }
+  if (key === 'avgReplays') return averageReplays(stats)
+  return stats[key]
 }
 
 export function matches(stats: Stats, c: Condition): boolean {

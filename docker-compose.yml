@@ -9,7 +9,7 @@ services:
     volumes:
       - .:/app                 # ソースをバインドマウント
       - node_modules:/app/node_modules  # node_modules は名前付きボリューム
-      - ./clips:/app/clips     # 実素材（加工前）の置き場
+      - ./raw:/app/raw         # 素材の作業フォルダ（正規化前）
     environment:
       # macOS/Windows のバインドマウントは inotify を取りこぼすため polling を使う
       - CHOKIDAR_USEPOLLING=true

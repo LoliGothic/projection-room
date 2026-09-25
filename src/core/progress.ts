@@ -7,8 +7,8 @@ export interface Mistake {
   clipId: string
   /** プレイヤーが出した答え */
   verdict: Verdict
-  /** 何巻目で間違えたか */
-  reel: number
+  /** 何段階目で間違えたか */
+  stage: number
 }
 
 /** エンディング判定に使う統計 */
@@ -17,11 +17,11 @@ export interface Stats {
   presented: number
   /** 正解した本数 */
   correct: number
-  /** 第1巻に戻された回数 */
+  /** 第1段階に戻された回数 */
   loops: number
-  /** 本物を焼き捨てた回数 */
-  burnedReal: number
-  /** AI を映写してしまった回数 */
+  /** 本物を報告してしまった回数 */
+  reportedReal: number
+  /** AI を残してしまった回数 */
   missedAI: number
   /** リプレイの総回数 */
   replays: number
@@ -31,22 +31,22 @@ export interface Stats {
 }
 
 export interface Progress {
-  /** 1..RULES.totalReels */
-  reel: number
-  /** いまの巻で正しくさばいた本数 */
-  clearedInReel: number
+  /** 1..RULES.totalStages */
+  stage: number
+  /** いまの段階で正しくさばいた本数 */
+  clearedInStage: number
   stats: Stats
 }
 
 /** 回答の結果、次に何が起きるか */
 export type Outcome =
-  /** 同じ巻の次の 1 本へ */
+  /** 同じ段階の次の 1 本へ */
   | { kind: 'next' }
-  /** 巻を通過した。字幕カードを挟んで次の巻へ */
-  | { kind: 'reelCleared'; reel: number }
-  /** 第8巻を通過した */
+  /** 段階を通過した */
+  | { kind: 'stageCleared'; stage: number }
+  /** 第8段階を通過した */
   | { kind: 'escaped' }
-  /** ミス。第1巻に戻る */
+  /** ミス。第1段階に戻る */
   | { kind: 'loop' }
 
 export function createStats(): Stats {
@@ -54,7 +54,7 @@ export function createStats(): Stats {
     presented: 0,
     correct: 0,
     loops: 0,
-    burnedReal: 0,
+    reportedReal: 0,
     missedAI: 0,
     replays: 0,
     wentDark: false,
@@ -63,51 +63,54 @@ export function createStats(): Stats {
 }
 
 export function createProgress(): Progress {
-  return { reel: 1, clearedInReel: 0, stats: createStats() }
+  return { stage: 1, clearedInStage: 0, stats: createStats() }
 }
 
-/** 巻の構成。既定は config/tuning.ts の RULES。テストで差し替えられるように受け取る */
-export interface ReelRules {
-  totalReels: number
-  clipsPerReel: number
+/** 段階の構成。既定は config/tuning.ts の RULES。テストで差し替えられるように受け取る */
+export interface StageRules {
+  totalStages: number
+  clipsPerStage: number
 }
 
 export function applyAnswer(
   p: Progress,
   clip: Clip,
   verdict: Verdict,
-  rules: ReelRules = RULES,
+  rules: StageRules = RULES,
 ): { progress: Progress; outcome: Outcome } {
   const stats: Stats = { ...p.stats, presented: p.stats.presented + 1 }
 
   if (!isCorrect(clip, verdict)) {
-    // 本物を焼いた / AI を映写した
+    // 本物を報告した / AI を残した
     if (clip.isAI) stats.missedAI++
-    else stats.burnedReal++
+    else stats.reportedReal++
     stats.loops++
-    stats.mistakes = [...stats.mistakes, { clipId: clip.id, verdict, reel: p.reel }]
+    stats.mistakes = [...stats.mistakes, { clipId: clip.id, verdict, stage: p.stage }]
     return {
-      progress: { reel: 1, clearedInReel: 0, stats },
+      progress: { stage: 1, clearedInStage: 0, stats },
       outcome: { kind: 'loop' },
     }
   }
 
   stats.correct++
-  const cleared = p.clearedInReel + 1
+  const cleared = p.clearedInStage + 1
 
-  if (cleared < rules.clipsPerReel) {
-    return { progress: { ...p, clearedInReel: cleared, stats }, outcome: { kind: 'next' } }
+  if (cleared < rules.clipsPerStage) {
+    return { progress: { ...p, clearedInStage: cleared, stats }, outcome: { kind: 'next' } }
   }
 
-  if (p.reel >= rules.totalReels) {
+  if (p.stage >= rules.totalStages) {
     return {
-      progress: { reel: p.reel, clearedInReel: cleared, stats },
+      progress: { stage: p.stage, clearedInStage: cleared, stats },
       outcome: { kind: 'escaped' },
     }
   }
 
-  const reel = p.reel + 1
-  return { progress: { reel, clearedInReel: 0, stats }, outcome: { kind: 'reelCleared', reel } }
+  const stage = p.stage + 1
+  return {
+    progress: { stage, clearedInStage: 0, stats },
+    outcome: { kind: 'stageCleared', stage },
+  }
 }
 
 /** リプレイは罰なし。回数だけ数える */
@@ -115,7 +118,7 @@ export function applyReplay(p: Progress): Progress {
   return { ...p, stats: { ...p.stats, replays: p.stats.replays + 1 } }
 }
 
-/** 不穏タイマーを使い切った（暗闇エンド） */
+/** 不穏タイマーを使い切った（暗転エンド） */
 export function applyDarkness(p: Progress): Progress {
   return { ...p, stats: { ...p.stats, wentDark: true } }
 }

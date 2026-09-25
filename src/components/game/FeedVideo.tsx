@@ -1,47 +1,40 @@
 import { useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import type { Clip, Verdict } from '../../core/types'
 import { buildSlots } from '../../core/videoRing'
-import { FX, SWIPE, RULES } from '../../config/tuning'
+import { RULES, SWIPE } from '../../config/tuning'
 import { useSwipeInput } from '../../hooks/useSwipeInput'
-import { FilmGrain } from './FilmGrain'
 
-export interface VideoStageHandle {
+export interface FeedVideoHandle {
   /** 最初から再生し直す */
   replay: () => void
 }
 
 interface Props {
   current: Clip
-  /** これまでに回答した本数。スロット割り当てに使う */
+  /** これまでにデッキを進めた回数。スロット割り当てに使う */
   turn: number
   /** 先読みしておく動画 */
   preload: readonly Clip[]
   onAnswer: (verdict: Verdict) => void
   enabled: boolean
-  /** 映写機が止まっているあいだは映像も止める（ミス演出・巻の節目） */
+  /** 演出中は映像も止める */
   paused?: boolean
-  /** 演出の強さ 0..1。0 なら粒子もリーダーも出さない */
-  fx: number
-  /** 演出を軽くする */
-  lightFx: boolean
-  ref?: React.Ref<VideoStageHandle>
+  ref?: React.Ref<FeedVideoHandle>
 }
 
 const SLOT_COUNT = RULES.preloadAhead + 1
 
 /**
- * 4:3 の映像。<video> を固定数のスロットで使い回し、
+ * 9:16 の映像。<video> を固定数のスロットで使い回し、
  * 表示中の1本の裏で次の2本を読み込んでおく。
  */
-export function VideoStage({
+export function FeedVideo({
   current,
   turn,
   preload,
   onAnswer,
   enabled,
   paused = false,
-  fx,
-  lightFx,
   ref,
 }: Props) {
   const videos = useRef<(HTMLVideoElement | null)[]>([])
@@ -75,7 +68,6 @@ export function VideoStage({
     })
   }, [activeSlot, current.id])
 
-  // 映写機が止まったら映像も止める
   useEffect(() => {
     const v = videos.current[activeSlot]
     if (!v) return
@@ -99,11 +91,9 @@ export function VideoStage({
   const tilt = progress * SWIPE.maxTiltDeg
 
   return (
-    <div className="gate">
-      <span className="perf left" aria-hidden="true" />
-      <span className="perf right" aria-hidden="true" />
+    <div className="feed-video">
       <div
-        className={dragging ? 'card' : 'card settling'}
+        className={dragging ? 'swipe-card' : 'swipe-card settling'}
         style={{ transform: `translateX(${dx}px) rotate(${tilt}deg)` }}
         {...handlers}
       >
@@ -120,8 +110,7 @@ export function VideoStage({
               playsInline
               preload="auto"
               disablePictureInPicture
-              // 3枚を必ず重ねる。ここを外すと先読み分が縦に並び、
-              // 枠の下（操作案内のあたり）に映ってしまう
+              // 3枚を必ず重ねる。ここを外すと先読み分が縦に並んではみ出す
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -131,24 +120,13 @@ export function VideoStage({
             />
           )
         })}
-        {/* 切り替わる一瞬だけ挟むリーダーフィルム。key で毎回アニメーションを走らせる */}
-        {fx > 0 && (
-          <span
-            key={current.id}
-            className="leader"
-            style={{ ['--leader-ms' as string]: `${FX.leaderMs}ms` }}
-            aria-hidden="true"
-          >
-            {(turn % 3) + 1}
-          </span>
-        )}
-        <FilmGrain intensity={fx * FX.grain} light={lightFx} />
       </div>
-      <span className="verdict burn" style={{ opacity: Math.max(0, -progress) * 0.85 }}>
-        焼き捨てる
+
+      <span className="verdict report" style={{ opacity: Math.max(0, -progress) * 0.9 }}>
+        報告
       </span>
-      <span className="verdict project" style={{ opacity: Math.max(0, progress) * 0.85 }}>
-        映写する
+      <span className="verdict keep" style={{ opacity: Math.max(0, progress) * 0.9 }}>
+        残す
       </span>
     </div>
   )

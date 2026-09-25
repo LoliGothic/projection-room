@@ -1,19 +1,29 @@
 import { describe, expect, it } from 'vitest'
 import type { Clip } from './types'
-import { createQueue, fillBuffer, pickNext, planCycle, trailingKindRun } from './clipQueue'
+import {
+  createQueue,
+  fillBuffer,
+  pickNext,
+  planCycle,
+  trailingCategoryRun,
+  trailingKindRun,
+} from './clipQueue'
 import { seededRng } from './rng'
 import { RULES } from '../config/tuning'
 
-function makeClip(id: string, isAI: boolean, work: string): Clip {
-  return { id, src: `clips/${id}.mp4`, isAI, work }
+function makeClip(id: string, isAI: boolean, category: string): Clip {
+  return { id, src: `clips/${id}.mp4`, isAI, category }
 }
 
-/** 本物 n 本 / AI n 本。work は 2 本ずつ同じにして「同作品の連続」を起こしやすくする */
+/**
+ * 本物 n 本 / AI n 本。
+ * カテゴリは本物と AI で共通にし、2 本ずつ同じにして連続を起こしやすくする
+ */
 function makePool(perSide: number): Clip[] {
   const out: Clip[] = []
   for (let i = 0; i < perSide; i++) {
-    out.push(makeClip(`r${i}`, false, `work-${Math.floor(i / 2)}`))
-    out.push(makeClip(`a${i}`, true, `gen-${Math.floor(i / 2)}`))
+    out.push(makeClip(`r${i}`, false, `cat-${Math.floor(i / 2)}`))
+    out.push(makeClip(`a${i}`, true, `cat-${Math.floor(i / 2)}`))
   }
   return out
 }
@@ -31,10 +41,21 @@ function draw(pool: Clip[], n: number, seed = 1): Clip[] {
   return out
 }
 
+describe('trailingCategoryRun', () => {
+  it('末尾から数えて同じカテゴリが続いている本数を返す', () => {
+    const x = makeClip('x', false, 'cat-a')
+    const y = makeClip('y', true, 'cat-a')
+    const z = makeClip('z', false, 'cat-b')
+    expect(trailingCategoryRun([])).toBe(0)
+    expect(trailingCategoryRun([z, x, y])).toBe(2)
+    expect(trailingCategoryRun([x, y, z])).toBe(1)
+  })
+})
+
 describe('trailingKindRun', () => {
   it('末尾から数えて同じ種類が続いている本数を返す', () => {
-    const a = makeClip('a', true, 'g')
-    const r = makeClip('r', false, 'w')
+    const a = makeClip('a', true, 'cat-a')
+    const r = makeClip('r', false, 'cat-r')
     expect(trailingKindRun([])).toBe(0)
     expect(trailingKindRun([r])).toBe(1)
     expect(trailingKindRun([r, a, a, a])).toBe(3)
@@ -80,12 +101,14 @@ describe('pickNext', () => {
     }
   })
 
-  it('同じ元作品の場面が連続しない', () => {
+  it('同じカテゴリが3本以上連続しない', () => {
     const pool = makePool(12)
     for (let seed = 1; seed <= 40; seed++) {
       const drawn = draw(pool, 200, seed)
+      let run = 1
       for (let i = 1; i < drawn.length; i++) {
-        expect(drawn[i].work).not.toBe(drawn[i - 1].work)
+        run = drawn[i].category === drawn[i - 1].category ? run + 1 : 1
+        expect(run).toBeLessThanOrEqual(RULES.maxSameCategoryRun)
       }
     }
   })
@@ -97,8 +120,8 @@ describe('pickNext', () => {
   })
 
   it('候補が極端に少なくても詰まらず、制約は緩い順に外れる', () => {
-    // 同じ work の本物 2 本だけ。work 制約は満たせないが出題は続けられる
-    const pool = [makeClip('r0', false, 'w'), makeClip('r1', false, 'w')]
+    // 同じカテゴリの本物 2 本だけ。制約は満たせないが出題は続けられる
+    const pool = [makeClip('r0', false, 'c'), makeClip('r1', false, 'c')]
     const drawn = draw(pool, 10)
     expect(drawn).toHaveLength(10)
     for (let i = 1; i < drawn.length; i++) {
@@ -125,7 +148,13 @@ describe('planCycle', () => {
     const tail = pool.filter((c) => c.isAI).slice(0, RULES.maxSameKindRun)
     const plan = planCycle(pool, seededRng(11), tail)
     expect(plan[0].isAI).toBe(false)
-    expect(plan[0].work).not.toBe(tail[tail.length - 1].work)
+  })
+
+  it('直前のサイクル末尾のカテゴリ連続も引き継ぐ', () => {
+    const pool = makePool(12)
+    const sameCat = pool.filter((c) => c.category === 'cat-0').slice(0, RULES.maxSameCategoryRun)
+    const plan = planCycle(pool, seededRng(23), sameCat)
+    expect(plan[0].category).not.toBe('cat-0')
   })
 })
 

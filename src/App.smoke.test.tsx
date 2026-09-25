@@ -9,24 +9,25 @@ import { useGame } from './state/gameStore'
 import { useRecords } from './state/recordsStore'
 import { DEFAULT_SETTINGS, useSettings } from './state/settingsStore'
 
-/** 本物12本 / AI12本 のダミー clips.json */
+const CATEGORIES = ['自然・風景', '動物', '街', '食べ物', '空']
+
+/** 本物10本 / AI10本。カテゴリは両者で共通にして手がかりにしない */
 const clipsFile: ClipsFile = {
   version: 1,
-  clips: Array.from({ length: 24 }, (_, i) => ({
+  clips: Array.from({ length: 20 }, (_, i) => ({
     id: `c${i}`,
     src: `clips/c${i}.mp4`,
     isAI: i % 2 === 1,
-    work: `w${Math.floor(i / 2)}`,
-    title: `作品 ${i}`,
-    year: 1920 + i,
-    tool: i % 2 === 1 ? '仮ツール' : undefined,
+    category: CATEGORIES[Math.floor(i / 2) % CATEGORIES.length],
+    scene: `場面${i}`,
+    contributor: `user_${i}`,
+    tool: i % 2 === 1 ? '仮・生成ツール' : undefined,
     note: 'メモ',
   })),
 }
 
 beforeEach(() => {
   window.localStorage.clear()
-  // ストアはモジュール単位で生きているのでテストごとに戻す
   useSettings.setState(DEFAULT_SETTINGS)
   useRecords.setState({ records: EMPTY_RECORDS, saveFailed: false })
   useGame.setState({ session: null, error: null })
@@ -44,28 +45,9 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-/** 注意表示を抜けてタイトルまで出す */
-async function toTitle() {
-  render(<App />)
-  await waitFor(() => expect(screen.getByText('はじめに')).toBeTruthy())
-  fireEvent.click(screen.getByRole('button', { name: '了解した' }))
-  await waitFor(() => expect(screen.getByRole('button', { name: '上映を始める' })).toBeTruthy())
-}
-
-/** 上映を始めて、字幕カードを抜けてプレイ中まで進める */
-async function toPlaying() {
-  await toTitle()
-  fireEvent.click(screen.getByRole('button', { name: '上映を始める' }))
-  await waitFor(() => expect(screen.getByText(/^第.巻$/)).toBeTruthy())
-  await act(async () => {
-    vi.advanceTimersByTime(4000)
-  })
-  await waitFor(() => expect(screen.getByRole('button', { name: 'もう一度映写する' })).toBeTruthy())
-}
-
 /** いま映っている動画の clips.json 上の定義 */
 function activeClip() {
-  const shown = [...document.querySelectorAll('.card video')].find(
+  const shown = [...document.querySelectorAll('.swipe-card video')].find(
     (v) => (v as HTMLElement).style.opacity === '1',
   )
   const src = shown?.getAttribute('src') ?? ''
@@ -76,319 +58,100 @@ function activeClip() {
 async function answer(correct: boolean) {
   const clip = activeClip()
   if (!clip) throw new Error('映っている動画が見つかりません')
-  const burn = correct ? clip.isAI : !clip.isAI
+  const report = correct ? clip.isAI : !clip.isAI
   await act(async () => {
-    fireEvent.keyDown(window, { key: burn ? 'ArrowLeft' : 'ArrowRight' })
+    fireEvent.keyDown(window, { key: report ? 'ArrowLeft' : 'ArrowRight' })
   })
 }
 
-/** 字幕カードやループ演出を時間で進める */
-async function runCutscenes() {
-  await act(async () => {
-    vi.advanceTimersByTime(6000)
-  })
+async function toFeed() {
+  render(<App />)
+  await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
+  fireEvent.click(screen.getByRole('button', { name: 'はじめる' }))
+  await waitFor(() => expect(document.querySelector('.swipe-card video')).toBeTruthy())
 }
 
-/** エンディングの字幕カードを最後まで送る */
-async function runEndingCards() {
-  for (let i = 0; i < 8; i++) {
-    await act(async () => {
-      vi.advanceTimersByTime(3500)
-    })
-    if (screen.queryByText('終幕')) return
-  }
-  throw new Error('エンディングの字幕カードが終わりませんでした')
-}
-
-describe('画面が実際に動く', () => {
-  it('初回は注意表示が出て、了解するとタイトルになる', async () => {
-    await toTitle()
-    expect(screen.getByText('映写室')).toBeTruthy()
-  })
-
-  it('注意表示は 2 回目以降に出ない', async () => {
-    await toTitle()
-    cleanup()
-    render(<App />)
-    await waitFor(() => expect(screen.getByRole('button', { name: '上映を始める' })).toBeTruthy())
-    expect(screen.queryByText('はじめに')).toBeNull()
-  })
-
-  it('上映を始めると字幕カードを経てゲーム画面になる', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-    expect(document.querySelector('video')).toBeTruthy()
-    // スワイプ中に出る左右の表示と、下部の操作案内がどちらも出ている
-    expect(document.querySelector('.verdict.burn')?.textContent).toBe('焼き捨てる')
-    expect(document.querySelector('.verdict.project')?.textContent).toBe('映写する')
-    expect(document.querySelector('.hint')?.textContent).toContain('焼き捨てる')
-  })
-
-  it('正しく回答して字幕カードを抜けると、次の動画に進む', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-    const before = activeClip()!.id
-
-    await answer(true)
-    await runCutscenes()
-
-    await waitFor(() => expect(activeClip()).toBeTruthy())
-    expect(activeClip()!.id).not.toBe(before)
-  })
-
-  it('ミスの演出中は次の動画が見えない（間違えたフィルムのまま焦げる）', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-    const wrong = activeClip()!.id
-
-    await answer(false)
-
-    // 焦げの演出中。映っているのは、いま間違えた1本のまま
-    expect(document.querySelector('.loopcut')).toBeTruthy()
-    expect(activeClip()!.id).toBe(wrong)
-
-    // 演出が終わってから次の1本へ進む
-    await runCutscenes()
-    await runCutscenes()
-    await waitFor(() => expect(activeClip()).toBeTruthy())
-    expect(activeClip()!.id).not.toBe(wrong)
+describe('フィードが動く', () => {
+  it('起動画面から「はじめる」でフィードに入る', async () => {
+    await toFeed()
+    expect(activeClip()).toBeDefined()
+    expect(document.querySelector('.verdict.report')?.textContent).toBe('報告')
+    expect(document.querySelector('.verdict.keep')?.textContent).toBe('残す')
   })
 
   it('先読み用の <video> が current + preload ぶん並んでいる', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-    expect(document.querySelectorAll('.card video')).toHaveLength(RULES.preloadAhead + 1)
+    await toFeed()
+    expect(document.querySelectorAll('.swipe-card video')).toHaveLength(RULES.preloadAhead + 1)
   })
 
-  it('先読み用の <video> が枠の外にはみ出さない（重ねて配置されている）', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
-    // 絶対配置でないと 3 枚が縦に並び、枠の下（操作案内のあたり）に映ってしまう
-    for (const v of document.querySelectorAll('.card video')) {
+  it('先読み用の <video> は重ねて配置されている', async () => {
+    await toFeed()
+    for (const v of document.querySelectorAll('.swipe-card video')) {
       const style = (v as HTMLElement).style
       expect(style.position).toBe('absolute')
       expect(style.inset).toBe('0px')
     }
   })
 
-  it('回答するたびにスロットが変わっても、表示中の1枚だけが見えている', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
-    // スロットは 3 つを順に使い回すので、3 回ぶん確かめれば一巡する
-    for (let i = 0; i < 4; i++) {
-      const videos = [...document.querySelectorAll('.card video')] as HTMLElement[]
-      const visible = videos.filter((v) => v.style.opacity === '1')
-      expect(visible).toHaveLength(1)
-      expect(visible[0].getAttribute('src')).toBeTruthy()
-
-      await answer(true)
-      await runCutscenes()
-    }
-  })
-
-  it('映写機のリールが自分の中心で回る構造になっている', async () => {
-    await toTitle()
-
-    const reels = [...document.querySelectorAll('.projector .reel')]
-    expect(reels.length).toBeGreaterThan(0)
-
-    for (const reel of reels) {
-      // 回転するグループに位置指定が混ざると、transform-origin の解決が
-      // viewBox 基準になり 2 つのリールが映写機の中心を軸に公転してしまう。
-      // 位置決めは親、回転は子、と分けておく
-      expect(reel.getAttribute('transform')).toBeNull()
-      expect(reel.parentElement?.getAttribute('transform')).toMatch(/^translate\(/)
-    }
+  it('矢印キーで回答すると次の動画に進む', async () => {
+    await toFeed()
+    const before = activeClip()!.id
+    await answer(true)
+    await waitFor(() => expect(activeClip()!.id).not.toBe(before))
   })
 
   it('指でのドラッグ（ポインタ操作）で回答できる', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
+    await toFeed()
     const clip = activeClip()!
-    const card = document.querySelector('.card') as HTMLElement
-    expect(card).toBeTruthy()
-
-    // 本物なら右へ、AI なら左へ引く
+    const card = document.querySelector('.swipe-card') as HTMLElement
     const dir = clip.isAI ? -1 : 1
     await act(async () => {
-      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 200 })
-      fireEvent.pointerMove(card, { pointerId: 1, clientX: 200 + dir * 40, clientY: 202 })
-      fireEvent.pointerMove(card, { pointerId: 1, clientX: 200 + dir * 140, clientY: 204 })
-      fireEvent.pointerUp(card, { pointerId: 1, clientX: 200 + dir * 140, clientY: 204 })
+      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 300 })
+      fireEvent.pointerMove(card, { pointerId: 1, clientX: 200 + dir * 40, clientY: 302 })
+      fireEvent.pointerMove(card, { pointerId: 1, clientX: 200 + dir * 140, clientY: 304 })
+      fireEvent.pointerUp(card, { pointerId: 1, clientX: 200 + dir * 140, clientY: 304 })
     })
-
-    // 正解なので巻の節目へ進んでいる
-    await runCutscenes()
-    await waitFor(() => expect(activeClip()).toBeTruthy())
-    expect(activeClip()!.id).not.toBe(clip.id)
+    await waitFor(() => expect(activeClip()!.id).not.toBe(clip.id))
   })
 
   it('途中で操作を横取りされたら（pointercancel）回答しない', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
+    await toFeed()
     const before = activeClip()!.id
-    const card = document.querySelector('.card') as HTMLElement
+    const card = document.querySelector('.swipe-card') as HTMLElement
     await act(async () => {
-      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 200 })
-      fireEvent.pointerMove(card, { pointerId: 1, clientX: 340, clientY: 200 })
-      fireEvent.pointerCancel(card, { pointerId: 1, clientX: 340, clientY: 200 })
+      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 300 })
+      fireEvent.pointerMove(card, { pointerId: 1, clientX: 340, clientY: 300 })
+      fireEvent.pointerCancel(card, { pointerId: 1, clientX: 340, clientY: 300 })
     })
-
     expect(activeClip()!.id).toBe(before)
-    expect(document.querySelector('.loopcut')).toBeNull()
+  })
+
+  it('ミスするとリセット演出が出て、その裏に次の動画は見えない', async () => {
+    await toFeed()
+    const wrong = activeClip()!.id
+    await answer(false)
+
+    expect(document.querySelector('.resetting')).toBeTruthy()
+    expect(activeClip()!.id).toBe(wrong)
   })
 
   it('画面を離れると映像が止まる', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
-    const shown = [...document.querySelectorAll('.card video')].find(
+    await toFeed()
+    const shown = [...document.querySelectorAll('.swipe-card video')].find(
       (v) => (v as HTMLElement).style.opacity === '1',
     ) as HTMLVideoElement
-    expect(shown).toBeTruthy()
 
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })
     await act(async () => {
       document.dispatchEvent(new Event('visibilitychange'))
     })
     expect(shown.pause).toHaveBeenCalled()
-
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => false })
-  })
-
-  it('上映をやめてタイトルに戻れる（2回押すまで戻らない）', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
-    const quit = screen.getByRole('button', { name: '上映をやめる' })
-    fireEvent.click(quit)
-
-    // 1回目は確認になるだけ。まだゲーム画面のまま
-    expect(screen.getByRole('button', { name: 'もう一度押すと最初に戻る' })).toBeTruthy()
-    expect(document.querySelector('.card video')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'もう一度押すと最初に戻る' }))
-    await waitFor(() => expect(screen.getByRole('button', { name: '上映を始める' })).toBeTruthy())
-  })
-
-  it('やめる確認は放っておくと引っ込む', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
-    fireEvent.click(screen.getByRole('button', { name: '上映をやめる' }))
-    expect(screen.getByRole('button', { name: 'もう一度押すと最初に戻る' })).toBeTruthy()
-
-    await act(async () => {
-      vi.advanceTimersByTime(4000)
-    })
-    expect(screen.getByRole('button', { name: '上映をやめる' })).toBeTruthy()
-  })
-
-  it('上映記録・設定・クレジットを開いて戻れる', async () => {
-    await toTitle()
-    for (const [open, heading] of [
-      ['上映記録', '上映記録'],
-      ['設定', '設定'],
-      ['クレジット', 'クレジット'],
-    ] as const) {
-      fireEvent.click(screen.getByRole('button', { name: open }))
-      await waitFor(() => expect(screen.getByRole('heading', { name: heading })).toBeTruthy())
-      fireEvent.click(screen.getByRole('button', { name: '戻る' }))
-      await waitFor(() => expect(screen.getByRole('button', { name: '上映を始める' })).toBeTruthy())
-    }
-  })
-
-  it('未達成のエンディングは ？？？ とヒントだけ出す', async () => {
-    await toTitle()
-    fireEvent.click(screen.getByRole('button', { name: '上映記録' }))
-    await waitFor(() => expect(screen.getAllByText('？？？').length).toBeGreaterThan(0))
-  })
-
-  it('設定の変更が保存される', async () => {
-    await toTitle()
-    fireEvent.click(screen.getByRole('button', { name: '設定' }))
-    const reduce = await screen.findByLabelText('点滅を弱める')
-    fireEvent.click(reduce)
-    expect((reduce as HTMLInputElement).checked).toBe(true)
-    expect(window.localStorage.getItem('projection-room:settings')).toContain('"reduceFlashing":true')
-  })
-
-  it('ミスすると焦げの演出が出て第1巻に戻る', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
-    // 第2巻まで進めてからミスする
-    for (let i = 0; i < RULES.clipsPerReel; i++) await answer(true)
-    await runCutscenes()
-    expect(screen.getByText('第二巻')).toBeTruthy()
-
-    await answer(false)
-    expect(document.querySelector('.loopcut')).toBeTruthy()
-    // 焦げのあいだは下の映像が残っている
-    expect(document.querySelector('.card video')).toBeTruthy()
-
-    await runCutscenes()
-    await runCutscenes()
-    expect(screen.getByText('第一巻')).toBeTruthy()
-  })
-
-  it('全8巻を通すと真エンドになり、振り返りへ進める', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
-    for (let i = 0; i < RULES.totalReels * RULES.clipsPerReel; i++) {
-      await answer(true)
-      await runCutscenes()
-    }
-
-    await runEndingCards()
-    expect(screen.getByRole('heading', { name: '完全上映' })).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: '振り返る' }))
-    await waitFor(() => expect(screen.getByRole('heading', { name: '振り返り' })).toBeTruthy())
-    expect(screen.getByText('一本も取り違えなかった。')).toBeTruthy()
-  })
-
-  it('間違えた動画は振り返りで解説つきで見られる', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-
-    await answer(false)
-    await runCutscenes()
-    await runCutscenes()
-
-    // 暗闇エンドまで飛ばして振り返りを開く
-    await act(async () => {
-      vi.advanceTimersByTime(61_000)
-    })
-    await runEndingCards()
-
-    fireEvent.click(screen.getByRole('button', { name: '振り返る' }))
-    await waitFor(() => expect(screen.getByRole('heading', { name: '振り返り' })).toBeTruthy())
-    expect(screen.getByText('1 / 1')).toBeTruthy()
-    expect(document.querySelector('.recap-video')).toBeTruthy()
-  })
-
-  it('エンディングを見ると一覧に残る', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    await toPlaying()
-    await act(async () => {
-      vi.advanceTimersByTime(61_000)
-    })
-    await runEndingCards()
-
-    fireEvent.click(screen.getByRole('button', { name: '映写室を出る' }))
-    fireEvent.click(await screen.findByRole('button', { name: '上映記録' }))
-    await waitFor(() => expect(screen.getByText('暗闇')).toBeTruthy())
   })
 
   it('clips.json が読めないときは案内を出す', async () => {
     vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({ ok: false, status: 404 })))
     render(<App />)
-    await waitFor(() => expect(screen.getByText(/フィルムが見つかりません/)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/動画を読み込めませんでした/)).toBeTruthy())
   })
 })

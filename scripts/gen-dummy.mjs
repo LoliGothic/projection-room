@@ -1,15 +1,21 @@
 #!/usr/bin/env node
 /**
- * ダミー動画（10秒 / 4:3 / 無音 / H.264）と public/clips.json を生成する。
+ * ダミー動画（10秒 / 9:16 / 720x1280 / 24fps / 無音 / H.264）と
+ * public/clips.json を生成する。
  *
- *   npm run gen:dummy            既定（本物役12本・AI役12本）
+ *   npm run gen:dummy                既定（本物役10本・AI役10本）
  *   npm run gen:dummy -- --seed 42
+ *   npm run gen:dummy -- --force     生成済みでも作り直す
+ *   npm run gen:dummy -- --if-missing 未生成のときだけ（compose の起動時に使用）
  *
  * 実素材が用意できるまでの仮データ。ファイル名は答えが分からないランダムID。
  * ID はシードから決定的に作るので、再実行しても同じ結果になる。
+ *
+ * 動作確認しやすいよう、本物役は落ち着いた色、AI役は彩度が高く滑らか、と
+ * 見た目を分けてある。実素材に差し替えれば無くなる差。
  */
 import { execFile } from 'node:child_process'
-import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -20,17 +26,15 @@ const outDir = path.join(root, 'public', 'clips')
 const jsonPath = path.join(root, 'public', 'clips.json')
 
 const DURATION = 10
-const WIDTH = 480
-const HEIGHT = 360
+const WIDTH = 720
+const HEIGHT = 1280
+const FPS = 24
 
 const args = process.argv.slice(2)
 const seedArg = args.indexOf('--seed')
-const SEED = seedArg >= 0 ? Number(args[seedArg + 1]) : 20260918
+const SEED = seedArg >= 0 ? Number(args[seedArg + 1]) : 20260925
 const FORCE = args.includes('--force')
-// 既に生成済みなら何もしない（docker compose 起動時に毎回走らせても無駄にならないように）
 const SKIP_IF_PRESENT = args.includes('--if-missing')
-// 本物側を gen:real で実映像に差し替えたあと、AI役だけ作り直したいとき
-const AI_ONLY = args.includes('--ai-only')
 
 /** 決定的な乱数（xorshift32） */
 function makeRng(seed) {
@@ -52,60 +56,49 @@ function makeId() {
 }
 
 /* ------------------------------------------------------------------ *
- * 本物役：フィルム質感（モノクロ・粒子・周辺減光・18fps）
- * AI役  ：デジタル質感（色あり・なめらか・粒子が少ない）
+ * カテゴリは本物役とAI役で同じものを使う。
+ * カテゴリが答えの手がかりになってしまわないようにするため。
  * ------------------------------------------------------------------ */
 
-const FILM_LOOK =
-  `format=gray,eq=contrast=1.28:brightness=-0.04:gamma=0.95,` +
-  `noise=alls=16:allf=t+u,vignette=PI/4.2,` +
-  `scale=${WIDTH}:${HEIGHT}:flags=bicubic,setsar=1,fps=18`
+const REAL_LOOK =
+  `eq=saturation=0.92:contrast=1.04,noise=alls=6:allf=t,` +
+  `scale=${WIDTH}:${HEIGHT}:flags=bicubic,setsar=1,fps=${FPS}`
 
-const DIGITAL_LOOK =
-  `eq=saturation=1.15:contrast=1.05,gblur=sigma=0.5,` +
-  `scale=${WIDTH}:${HEIGHT}:flags=bicubic,setsar=1,fps=24`
+const AI_LOOK =
+  `eq=saturation=1.35:contrast=1.08:brightness=0.03,gblur=sigma=0.6,` +
+  `scale=${WIDTH}:${HEIGHT}:flags=bicubic,setsar=1,fps=${FPS}`
 
-/** 本物役：6作品 × 2場面 */
-const REAL_WORKS = [
-  { work: 'dummy-work-a', title: 'ダミー作品A（駅）', year: 1921, director: '仮 監督A',
-    scenes: [`testsrc2=size=640x480:rate=25`, `testsrc2=size=640x480:rate=25,hue=s=0`] },
-  { work: 'dummy-work-b', title: 'ダミー作品B（塔）', year: 1922, director: '仮 監督B',
-    scenes: [`mandelbrot=size=640x480:rate=25:maxiter=120`, `mandelbrot=size=640x480:rate=25:maxiter=60:start_scale=2.2`] },
-  { work: 'dummy-work-c', title: 'ダミー作品C（群衆）', year: 1925, director: '仮 監督C',
-    scenes: [`life=size=320x240:rate=12:ratio=0.35:death_color=#101010:life_color=#e8e8e8,scale=640:480:flags=neighbor`,
-             `life=size=160x120:rate=10:ratio=0.5:death_color=#000000:life_color=#cccccc,scale=640:480:flags=neighbor`] },
-  { work: 'dummy-work-d', title: 'ダミー作品D（海）', year: 1928, director: '仮 監督D',
-    scenes: [`cellauto=size=640x480:rate=25:rule=110`, `cellauto=size=640x480:rate=25:rule=30`] },
-  { work: 'dummy-work-e', title: 'ダミー作品E（屋敷）', year: 1919, director: '仮 監督E',
-    scenes: [`smptebars=size=640x480:rate=25`, `pal75bars=size=640x480:rate=25`] },
-  { work: 'dummy-work-f', title: 'ダミー作品F（汽車）', year: 1931, director: '仮 監督F',
-    scenes: [`sierpinski=size=640x480:rate=25:type=carpet`, `sierpinski=size=640x480:rate=25:type=triangle`] },
+/** 本物役：5カテゴリ × 2場面 */
+const REAL_CLIPS = [
+  { category: '自然・風景', scene: '滝', src: 'testsrc2=size=540x960:rate=24' },
+  { category: '自然・風景', scene: '海辺', src: 'gradients=size=540x960:rate=24:n=3:speed=0.02' },
+  { category: '動物', scene: '猫', src: 'life=size=180x320:rate=12:ratio=0.4:life_color=#c8b89a:death_color=#20201c,scale=540:960:flags=neighbor' },
+  { category: '動物', scene: '鳥', src: 'cellauto=size=540x960:rate=24:rule=110' },
+  { category: '街', scene: '交差点', src: 'mandelbrot=size=540x960:rate=24:maxiter=120' },
+  { category: '街', scene: '路地', src: 'sierpinski=size=540x960:rate=24:type=carpet' },
+  { category: '食べ物', scene: 'コーヒー', src: 'smptebars=size=540x960:rate=24' },
+  { category: '食べ物', scene: '麺', src: 'testsrc=size=540x960:rate=24' },
+  { category: '空', scene: '雲', src: 'gradients=size=540x960:rate=24:n=2:speed=0.008' },
+  { category: '空', scene: '夕焼け', src: 'mandelbrot=size=540x960:rate=24:start_scale=2.4' },
 ]
 
-/** AI役：6系統 × 2本 */
-const AI_SETS = [
-  { work: 'dummy-gen-a', tool: '仮・生成ツールA',
-    note: '手の指の本数が途中で変わる。輪郭が溶けるように揺れている。',
-    scenes: [`gradients=size=640x480:rate=25:n=3:speed=0.03`, `gradients=size=640x480:rate=25:n=4:speed=0.08`] },
-  { work: 'dummy-gen-b', tool: '仮・生成ツールB',
-    note: '背景の文字がどのコマでも読めない形に崩れている。',
-    scenes: [`rgbtestsrc=size=640x480:rate=25`, `yuvtestsrc=size=640x480:rate=25`] },
-  { work: 'dummy-gen-c', tool: '仮・生成ツールC',
-    note: '粒子の動きが画面全体で均一すぎる。フィルムの傷が一度も出ない。',
-    scenes: [`testsrc=size=640x480:rate=25`, `testsrc=size=640x480:rate=25,negate`] },
-  { work: 'dummy-gen-d', tool: '仮・生成ツールD',
-    note: '人物の影の向きが光源と合っていない。',
-    scenes: [`mandelbrot=size=640x480:rate=25:inner=period:outer=iteration_count`,
-             `mandelbrot=size=640x480:rate=25:inner=convergence:outer=normalized_iteration_count`] },
-  { work: 'dummy-gen-e', tool: '仮・生成ツールE',
-    note: 'カメラが物理的に不可能な速度で被写体を回り込む。',
-    scenes: [`life=size=200x150:rate=15:ratio=0.4:life_color=#7fd0ff:death_color=#101822,scale=640:480:flags=bicubic`,
-             `life=size=200x150:rate=15:ratio=0.2:life_color=#ffcf7f:death_color=#1a1410,scale=640:480:flags=bicubic`] },
-  { work: 'dummy-gen-f', tool: '仮・生成ツールF',
-    note: '同じ模様が画面内で繰り返し現れる（生成モデル特有のタイル状の反復）。',
-    scenes: [`cellauto=size=640x480:rate=25:rule=90:random_fill_ratio=0.1`,
-             `allrgb=rate=25,scale=640:480:flags=neighbor`] },
+/** AI役：同じ5カテゴリ × 2場面 */
+const AI_CLIPS = [
+  { category: '自然・風景', scene: '渓谷', src: 'gradients=size=540x960:rate=24:n=4:speed=0.05' },
+  { category: '自然・風景', scene: '湖', src: 'testsrc2=size=540x960:rate=24,hue=h=140' },
+  { category: '動物', scene: '犬', src: 'life=size=200x356:rate=15:ratio=0.35:life_color=#7fd0ff:death_color=#101822,scale=540:960:flags=bicubic' },
+  { category: '動物', scene: '魚', src: 'cellauto=size=540x960:rate=24:rule=30' },
+  { category: '街', scene: '歩道', src: 'rgbtestsrc=size=540x960:rate=24' },
+  { category: '街', scene: 'ネオン', src: 'mandelbrot=size=540x960:rate=24:inner=period:outer=iteration_count' },
+  { category: '食べ物', scene: 'ケーキ', src: 'sierpinski=size=540x960:rate=24:type=triangle' },
+  { category: '食べ物', scene: '果物', src: 'yuvtestsrc=size=540x960:rate=24' },
+  { category: '空', scene: '星空', src: 'cellauto=size=540x960:rate=24:rule=90:random_fill_ratio=0.08' },
+  { category: '空', scene: 'オーロラ', src: 'gradients=size=540x960:rate=24:n=5:speed=0.09' },
 ]
+
+/** ダミー用の投稿者名。本物もAIも同じ書式にして手がかりにしない */
+const REAL_NAMES = ['haru_films', 'mist.and.moss', 'kohaku_ch', 'sotogawa', 'yuzu_daily']
+const AI_NAMES = ['nagi_scenes', 'still.water', 'aoi_clip', 'hoshi_room', 'mado_kara']
 
 async function encode(source, look, outFile) {
   await run('ffmpeg', [
@@ -114,8 +107,8 @@ async function encode(source, look, outFile) {
     '-t', String(DURATION),
     '-vf', look,
     '-an',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '26',
-    '-pix_fmt', 'yuv420p', '-profile:v', 'baseline', '-level', '3.0',
+    '-c:v', 'libx264', '-preset', 'medium', '-crf', '25',
+    '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-level', '4.0',
     '-movflags', '+faststart',
     outFile,
   ])
@@ -129,71 +122,48 @@ async function main() {
       return
     }
   }
-  // gen:real で作った実映像を残したまま AI 役だけ作り直す
-  let keep = []
-  if (AI_ONLY) {
-    const db = JSON.parse(await readFile(jsonPath, 'utf8').catch(() => '{"clips":[]}'))
-    keep = db.clips.filter((c) => !c.isAI)
-    for (const c of db.clips.filter((c) => c.isAI)) {
-      await rm(path.join(root, 'public', c.src), { force: true })
-    }
-  } else {
-    await rm(outDir, { recursive: true, force: true })
-  }
+  await rm(outDir, { recursive: true, force: true })
   await mkdir(outDir, { recursive: true })
 
   const jobs = []
-
-  if (!AI_ONLY) for (const w of REAL_WORKS) {
-    w.scenes.forEach((source, i) => {
-      jobs.push({
-        id: makeId(),
-        isAI: false,
-        work: w.work,
-        source,
-        look: FILM_LOOK,
-        meta: {
-          title: `${w.title} 第${i + 1}場面`,
-          year: w.year,
-          director: w.director,
-          sourceUrl: 'https://example.invalid/dummy',
-          license: 'ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）',
-          note: '実素材に差し替えるまでの仮クリップです。',
-        },
-      })
+  REAL_CLIPS.forEach((c, i) => {
+    jobs.push({
+      id: makeId(), isAI: false, look: REAL_LOOK, source: c.src,
+      meta: {
+        category: c.category,
+        scene: c.scene,
+        source: 'ダミー（ffmpeg lavfi 生成）',
+        sourceUrl: '',
+        contributor: REAL_NAMES[i % REAL_NAMES.length],
+        note: '実素材に差し替えるまでの仮クリップです。',
+      },
     })
-  }
-
-  for (const g of AI_SETS) {
-    g.scenes.forEach((source, i) => {
-      jobs.push({
-        id: makeId(),
-        isAI: true,
-        work: g.work,
-        source,
-        look: DIGITAL_LOOK,
-        meta: {
-          title: `生成クリップ ${g.work}-${i + 1}`,
-          tool: g.tool,
-          sourceUrl: '',
-          license: 'ダミー素材（ffmpeg lavfi 生成 / 差し替え前提）',
-          note: g.note,
-        },
-      })
+  })
+  AI_CLIPS.forEach((c, i) => {
+    jobs.push({
+      id: makeId(), isAI: true, look: AI_LOOK, source: c.src,
+      meta: {
+        category: c.category,
+        scene: c.scene,
+        source: 'ダミー（ffmpeg lavfi 生成）',
+        sourceUrl: '',
+        contributor: AI_NAMES[i % AI_NAMES.length],
+        tool: '仮・生成ツール',
+        note: '実素材に差し替えるまでの仮クリップです。',
+      },
     })
-  }
+  })
 
-  // 出題順が読めないよう clips.json 内の並びもシャッフルしておく
+  // clips.json の並びから答えが読めないようにシャッフルしておく
   for (let i = jobs.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1))
     ;[jobs[i], jobs[j]] = [jobs[j], jobs[i]]
   }
 
   let done = 0
-  const CONCURRENCY = 4
   const queue = [...jobs]
   await Promise.all(
-    Array.from({ length: CONCURRENCY }, async () => {
+    Array.from({ length: 4 }, async () => {
       for (let job = queue.shift(); job; job = queue.shift()) {
         await encode(job.source, job.look, path.join(outDir, `${job.id}.mp4`))
         done++
@@ -203,22 +173,13 @@ async function main() {
   )
   process.stdout.write('\n')
 
-  const made = jobs.map((j) => ({
+  const clips = jobs.map((j) => ({
     id: j.id,
     // 配信先が未定のため相対パスで保持し、実行時に BASE_URL と連結する
     src: `clips/${j.id}.mp4`,
     isAI: j.isAI,
-    work: j.work,
     ...j.meta,
   }))
-
-  // --ai-only のときは、残した本物と交互に近い並びにする
-  const clips = []
-  const max = Math.max(keep.length, made.length)
-  for (let i = 0; i < max; i++) {
-    if (keep[i]) clips.push(keep[i])
-    if (made[i]) clips.push(made[i])
-  }
 
   await writeFile(jsonPath, JSON.stringify({ version: 1, clips }, null, 2) + '\n', 'utf8')
 
