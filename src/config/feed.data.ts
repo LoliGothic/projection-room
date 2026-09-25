@@ -87,15 +87,48 @@ export function captionFor(loops: number, index: number): string {
 }
 
 /**
+ * 提供者名が未記入のときに使う、当たり障りのないアカウント名。
+ * 本物と AI のどちらにも同じ形で出すので、見分けの手がかりにならない。
+ */
+const FALLBACK_NAMES: readonly string[] = [
+  'nagi.films',
+  'shizuku_ch',
+  'mist_and_moss',
+  'aoi.walks',
+  'kohaku_daily',
+  'still.water',
+  'hoshi_room',
+  'mado_kara',
+  'yuzu_scenes',
+  'towa.clip',
+]
+
+/** ID から決まる 0..1 の値 */
+function hashUnit(seed: string): number {
+  let h = 2166136261
+  for (const ch of seed) {
+    h ^= ch.charCodeAt(0)
+    h = Math.imul(h, 16777619)
+  }
+  return (h >>> 0) / 4294967296
+}
+
+/**
  * 表示する投稿者名。
  * ループが増えるほど、同じ名前に置き換わる割合が上がる。
+ *
+ * 提供者名が空のときは ID から決まる名前を当てる。
+ * 片方だけ「unknown」になると、そこが手がかりになってしまうため。
  */
 export function accountNameFor(
   contributor: string | undefined,
   loops: number,
   index: number,
+  clipId = '',
 ): string {
-  const base = contributor?.trim() || 'unknown'
+  const base =
+    contributor?.trim() ||
+    FALLBACK_NAMES[Math.floor(hashUnit(clipId) * FALLBACK_NAMES.length) % FALLBACK_NAMES.length]
   if (loops <= 0) return base
   // 20 ループで半分ほどが同じ名前になる
   const ratio = Math.min(0.55, loops / 36)

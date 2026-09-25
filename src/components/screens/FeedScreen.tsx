@@ -120,7 +120,7 @@ export function FeedScreen({ session, onAnswer, onReplay, onDarkness, interactiv
         <SideActions counters={counters} onReplay={replay} onDecorative={onDecorative} />
 
         <div className="feed-bottom">
-          <p className="account">@{accountNameFor(clip.contributor, stats.loops, turn)}</p>
+          <p className="account">@{accountNameFor(clip.contributor, stats.loops, turn, clip.id)}</p>
           <p className="caption">{captionFor(stats.loops, turn)}</p>
           <div className="hint" style={{ opacity: stats.presented >= 6 ? 0.3 : 1 }}>
             <span>← 報告する</span>

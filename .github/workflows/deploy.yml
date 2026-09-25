@@ -34,18 +34,7 @@ jobs:
 
       - run: npm run lint
 
-      # 実素材がリポジトリに入っていなければ、ダミーを生成してから配信する。
-      # ID はシードから決まるので、コミット済みの clips.json と必ず一致する
-      - name: ffmpeg を用意する（ランナーに無いことがある）
-        run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            sudo apt-get update -qq
-            sudo apt-get install -y -qq ffmpeg
-          fi
-          ffmpeg -version | head -1
-
-      - run: npm run gen:dummy:if-missing
-
+      # 動画は public/clips/ に入っているので、ここでは ffmpeg は要らない
       - run: npm run build
 
       - uses: actions/upload-pages-artifact@v3

@@ -32,6 +32,21 @@ const DURATION = 10
 const WIDTH = 720
 const HEIGHT = 1280
 const FPS = 24
+
+/**
+ * 取り込む前に切り落とす端（px）。素材の縦幅に対する割合で指定する。
+ *
+ * 生成ツールが左上に焼き込むウォーターマークを消すために使う。
+ * 本物側には無いので、残っていると一目で分かってしまう。
+ * delogo は画面端すぎて補間元が無く、かえって目立つ跡が残るので使わない。
+ *
+ * ツールを変えて位置や大きさが違うときは、この値を調整すること。
+ * 透かしが無い素材なら 0 にする。
+ */
+const TRIM = {
+  real: { topRatio: 0 },
+  ai: { topRatio: 0.06 },
+}
 /* --------------------------------------------- */
 
 const args = process.argv.slice(2)
@@ -77,21 +92,28 @@ async function collect(kind) {
 /**
  * 中央切り取りで 9:16 にしてから拡大縮小する。
  * 横長の素材は左右を、縦長すぎる素材は上下を落とす。
+ * topRatio が指定されていれば、先に上端を切り落とす（透かし対策）。
  */
-const FILTERS = [
-  `crop='min(iw,ih*${WIDTH}/${HEIGHT})':'min(ih,iw*${HEIGHT}/${WIDTH})'`,
-  `scale=${WIDTH}:${HEIGHT}:flags=bicubic`,
-  'setsar=1',
-  `fps=${FPS}`,
-].join(',')
+function filtersFor(kind) {
+  const trim = TRIM[kind]?.topRatio ?? 0
+  const chain = []
+  if (trim > 0) chain.push(`crop=iw:ih*${(1 - trim).toFixed(4)}:0:ih*${trim.toFixed(4)}`)
+  chain.push(
+    `crop='min(iw,ih*${WIDTH}/${HEIGHT})':'min(ih,iw*${HEIGHT}/${WIDTH})'`,
+    `scale=${WIDTH}:${HEIGHT}:flags=bicubic`,
+    'setsar=1',
+    `fps=${FPS}`,
+  )
+  return chain.join(',')
+}
 
-async function convert(input, outFile) {
+async function convert(input, outFile, kind) {
   await run('ffmpeg', [
     '-hide_banner', '-loglevel', 'error', '-y',
     '-ss', START,
     '-i', input,
     '-t', String(DURATION),
-    '-vf', FILTERS,
+    '-vf', filtersFor(kind),
     '-an',
     '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
     '-pix_fmt', 'yuv420p', '-profile:v', 'high', '-level', '4.0',
@@ -137,7 +159,7 @@ async function main() {
     for (const item of list) {
       const id = makeId()
       const { category, scene } = classify(item.rel)
-      await convert(item.full, path.join(outDir, `${id}.mp4`))
+      await convert(item.full, path.join(outDir, `${id}.mp4`), kind)
 
       made.push({
         id,
