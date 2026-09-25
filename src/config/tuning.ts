@@ -37,6 +37,10 @@ export const SWIPE = {
   commitVelocity: 0.55,
   /** 最大の傾き（度） */
   maxTiltDeg: 10,
+  /** これ未満の移動ならタップとみなす（px） */
+  tapSlopPx: 10,
+  /** これ以内に離せばタップとみなす（ms） */
+  tapMaxMs: 300,
 } as const
 
 export const CUTSCENE = {

@@ -16,6 +16,8 @@ interface Props {
   /** 先読みしておく動画 */
   preload: readonly Clip[]
   onAnswer: (verdict: Verdict) => void
+  /** 映像をタップしたとき（頭出し） */
+  onTap?: () => void
   /** 動画が読み込めなかったとき（配信の取りこぼしに気づけるように） */
   onVideoError?: () => void
   enabled: boolean
@@ -35,13 +37,14 @@ export function FeedVideo({
   turn,
   preload,
   onAnswer,
+  onTap,
   onVideoError,
   enabled,
   paused = false,
   ref,
 }: Props) {
   const videos = useRef<(HTMLVideoElement | null)[]>([])
-  const { dx, dragging, progress, handlers } = useSwipeInput(onAnswer, enabled)
+  const { dx, dragging, progress, handlers } = useSwipeInput(onAnswer, enabled, onTap)
 
   const wanted = useMemo(
     () => [current.id, ...preload.map((c) => c.id)].slice(0, SLOT_COUNT),
@@ -112,6 +115,9 @@ export function FeedVideo({
               muted
               playsInline
               autoPlay
+              // 短尺のフィードなので繰り返し流す。
+              // 止まった最後のフレームを見せ続けるより、見比べやすい
+              loop
               preload="auto"
               disablePictureInPicture
               onError={i === activeSlot ? onVideoError : undefined}

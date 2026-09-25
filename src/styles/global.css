@@ -117,16 +117,55 @@ body {
 }
 .feed-overlay button { pointer-events: auto; }
 
-/* 上部：段階の進捗 */
-.progress-bars { display: flex; gap: 4px; }
-.progress-bars .bar {
-  flex: 1;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.22);
+/*
+  上部：段階の進捗。
+  画面上端いっぱいのセグメントバーにすると実在のアプリのストーリーズに見え、
+  タップで進むと誤解されるので、小さなゲージに留める。
+*/
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+
+.stage-gauge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  pointer-events: none;
 }
-.progress-bars .bar.done { background: rgba(255, 255, 255, 0.85); }
-.progress-bars .bar.now { background: var(--accent); }
+.stage-gauge-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--gauge, 0deg), rgba(255, 255, 255, 0.18) 0);
+  mask: radial-gradient(circle, transparent 58%, #000 60%);
+  -webkit-mask: radial-gradient(circle, transparent 58%, #000 60%);
+  transition: background 400ms ease;
+}
+.stage-gauge-text {
+  font-size: 0.6rem;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+}
+
+/* フィードを閉じてホームに戻る。誤爆しないよう控えめに置く */
+.quit-link {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: rgba(0, 0, 0, 0.32);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.68rem;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+.quit-link:hover { color: #fff; }
+.quit-link.armed {
+  background: rgba(255, 107, 107, 0.18);
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  color: var(--danger);
+}
 
 /* 上部：進捗と通知 */
 .feed-top { display: flex; flex-direction: column; gap: 0.6rem; }

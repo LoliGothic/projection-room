@@ -23,6 +23,8 @@ interface Props {
   onAnswer: (verdict: Verdict) => void
   onReplay: () => void
   onDarkness: () => void
+  /** フィードを閉じて起動画面に戻る */
+  onQuit: () => void
   /** 演出中は操作もタイマーも止める */
   interactive: boolean
 }
@@ -35,7 +37,16 @@ function elapsedSecOf(d: Dread): number {
   return (from + (to - from) * d.progress) / 1000
 }
 
-export function FeedScreen({ session, onAnswer, onReplay, onDarkness, interactive }: Props) {
+export function FeedScreen({
+  session,
+  onAnswer,
+  onReplay,
+  onDarkness,
+  onQuit,
+  interactive,
+}: Props) {
+  // 誤タップで進行が消えないよう、2回押させる
+  const [quitArmed, setQuitArmed] = useState(false)
   const video = useRef<FeedVideoHandle>(null)
   const settings = useSettings()
   const clip = currentClip(session)
@@ -90,6 +101,13 @@ export function FeedScreen({ session, onAnswer, onReplay, onDarkness, interactiv
 
   const onDecorative = useCallback(() => audio.playTap(), [])
 
+  // 確認の表示は放っておけば引っ込む
+  useEffect(() => {
+    if (!quitArmed) return
+    const id = window.setTimeout(() => setQuitArmed(false), 3500)
+    return () => window.clearTimeout(id)
+  }, [quitArmed])
+
   // 動画が取れなかったときに黙って黒くならないようにする
   const [failed, setFailed] = useState<string | null>(null)
   const onVideoError = useCallback(() => setFailed(clip?.src ?? null), [clip?.src])
@@ -106,6 +124,7 @@ export function FeedScreen({ session, onAnswer, onReplay, onDarkness, interactiv
         onAnswer={onAnswer}
         enabled={interactive}
         paused={!interactive}
+        onTap={replay}
         onVideoError={onVideoError}
       />
 
@@ -119,13 +138,28 @@ export function FeedScreen({ session, onAnswer, onReplay, onDarkness, interactiv
 
       <div className="feed-overlay">
         <div className="feed-top">
-          <div className="progress-bars" aria-label={`段階 ${stageLabel(stage)}`}>
-            {Array.from({ length: RULES.totalStages }, (_, i) => (
-              <span
-                key={i}
-                className={i < stage - 1 ? 'bar done' : i === stage - 1 ? 'bar now' : 'bar'}
-              />
-            ))}
+          <div className="top-row">
+            {/*
+              画面上端いっぱいのセグメントバーにすると、実在のアプリの
+              ストーリーズに見えてしまい、タップで進むと誤解される。
+              小さなゲージとテキストに留める。
+            */}
+            <div
+              className="stage-gauge"
+              style={{ ['--gauge' as string]: `${(stage / RULES.totalStages) * 360}deg` }}
+              aria-label={`${stageLabel(stage)} 段階目`}
+            >
+              <span className="stage-gauge-ring" aria-hidden="true" />
+              <span className="stage-gauge-text">{stageLabel(stage)}</span>
+            </div>
+
+            <button
+              type="button"
+              className={quitArmed ? 'quit-link armed' : 'quit-link'}
+              onClick={() => (quitArmed ? onQuit() : setQuitArmed(true))}
+            >
+              {quitArmed ? 'もう一度押すとやめる' : 'やめる'}
+            </button>
           </div>
           <Notifications notices={notices} />
         </div>

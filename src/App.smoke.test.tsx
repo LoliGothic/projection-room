@@ -181,9 +181,9 @@ describe('フィードが動く', () => {
   it('右側のアイコンに数字が出て、動画ごとに変わる', async () => {
     await toFeed()
     const labels = [...document.querySelectorAll('.side-label')].map((e) => e.textContent)
-    // 再生 / いいね / コメント / 共有
+    // 最初から / いいね / コメント / 共有
     expect(labels).toHaveLength(4)
-    expect(labels[0]).toBe('再生')
+    expect(labels[0]).toBe('最初から')
     expect(labels.slice(1).every((t) => (t ?? '').length > 0)).toBe(true)
 
     const before = labels.join()
@@ -200,21 +200,60 @@ describe('フィードが動く', () => {
     expect((document.querySelector('.caption')?.textContent ?? '').length).toBeGreaterThan(0)
   })
 
-  it('段階の進捗バーが8本出る', async () => {
+  it('段階の進捗が小さなゲージで出る（ストーリーズ風のバーは使わない）', async () => {
     await toFeed()
-    expect(document.querySelectorAll('.progress-bars .bar')).toHaveLength(RULES.totalStages)
-    expect(document.querySelectorAll('.progress-bars .bar.now')).toHaveLength(1)
+    expect(document.querySelector('.stage-gauge-text')?.textContent).toBe(`1 / ${RULES.totalStages}`)
+    // 画面上端いっぱいのセグメントバーは、実在のアプリに見えるので使わない
+    expect(document.querySelector('.progress-bars')).toBeNull()
   })
 
-  it('正解すると進捗バーが進む', async () => {
+  it('正解すると進捗が進む', async () => {
     await toFeed()
-    const nowIndex = () =>
-      [...document.querySelectorAll('.progress-bars .bar')].findIndex((b) =>
-        b.classList.contains('now'),
-      )
-    expect(nowIndex()).toBe(0)
+    const shown = () => document.querySelector('.stage-gauge-text')?.textContent
+    expect(shown()).toBe(`1 / ${RULES.totalStages}`)
     await answer(true)
-    await waitFor(() => expect(nowIndex()).toBe(1))
+    await waitFor(() => expect(shown()).toBe(`2 / ${RULES.totalStages}`))
+  })
+
+  it('動画は繰り返し再生される', async () => {
+    await toFeed()
+    for (const v of document.querySelectorAll('.swipe-card video')) {
+      expect((v as HTMLVideoElement).loop).toBe(true)
+    }
+  })
+
+  it('映像をタップすると頭出しになる（スワイプにはならない）', async () => {
+    await toFeed()
+    const before = activeClip()!.id
+    const card = document.querySelector('.swipe-card') as HTMLElement
+    await act(async () => {
+      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 300 })
+      fireEvent.pointerUp(card, { pointerId: 1, clientX: 203, clientY: 301 })
+    })
+    // 回答にはならない
+    expect(activeClip()!.id).toBe(before)
+  })
+
+  it('やめるボタンでホームに戻れる（2回押すまで戻らない）', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toFeed()
+
+    fireEvent.click(screen.getByRole('button', { name: 'やめる' }))
+    expect(screen.getByRole('button', { name: 'もう一度押すとやめる' })).toBeTruthy()
+    expect(document.querySelector('.swipe-card video')).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'もう一度押すとやめる' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
+  })
+
+  it('やめる確認は放っておくと引っ込む', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toFeed()
+    fireEvent.click(screen.getByRole('button', { name: 'やめる' }))
+    await act(async () => {
+      vi.advanceTimersByTime(4000)
+    })
+    expect(screen.getByRole('button', { name: 'やめる' })).toBeTruthy()
   })
 
   it('画面を離れると映像が止まる', async () => {

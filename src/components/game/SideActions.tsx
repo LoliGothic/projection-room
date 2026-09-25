@@ -15,11 +15,11 @@ interface Props {
 export function SideActions({ counters, onReplay, onDecorative }: Props) {
   return (
     <div className="side-actions">
-      <button type="button" className="side-item" onClick={onReplay} aria-label="もう一度再生">
+      <button type="button" className="side-item" onClick={onReplay} aria-label="最初から再生">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M3 12a9 9 0 1 0 2.6-6.4M3 4v5h5" />
         </svg>
-        <span className="side-label">再生</span>
+        <span className="side-label">最初から</span>
       </button>
 
       <button

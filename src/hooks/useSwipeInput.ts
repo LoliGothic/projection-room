@@ -6,7 +6,11 @@ import { SWIPE } from '../config/tuning'
  * 左右スワイプ / マウスドラッグ / 矢印キーを 1 つの入力にまとめる。
  * 右 = 残す（keep）、左 = 報告する（report）。
  */
-export function useSwipeInput(onCommit: (v: Verdict) => void, enabled: boolean) {
+export function useSwipeInput(
+  onCommit: (v: Verdict) => void,
+  enabled: boolean,
+  onTap?: () => void,
+) {
   const [dx, setDx] = useState(0)
   const [dragging, setDragging] = useState(false)
   const start = useRef<{ x: number; y: number; t: number; id: number } | null>(null)
@@ -53,6 +57,7 @@ export function useSwipeInput(onCommit: (v: Verdict) => void, enabled: boolean) 
       const s = start.current
       if (!s || s.id !== e.pointerId) return
       const mx = e.clientX - s.x
+      const my = e.clientY - s.y
       const dt = Math.max(1, e.timeStamp - s.t)
       const speed = Math.abs(mx) / dt
       start.current = null
@@ -60,11 +65,15 @@ export function useSwipeInput(onCommit: (v: Verdict) => void, enabled: boolean) 
       if (Math.abs(mx) >= SWIPE.commitDistance || (speed >= SWIPE.commitVelocity && Math.abs(mx) > 24)) {
         commit(mx > 0 ? 'keep' : 'report')
       } else {
+        // ほとんど動いていなければタップとして扱う（映像をタップで頭出し）
+        if (Math.abs(mx) < SWIPE.tapSlopPx && Math.abs(my) < SWIPE.tapSlopPx && dt < SWIPE.tapMaxMs) {
+          onTap?.()
+        }
         setDx(0)
         setDragging(false)
       }
     },
-    [commit],
+    [commit, onTap],
   )
 
   /** 途中でブラウザに操作を横取りされたときは、確定させずに戻す */

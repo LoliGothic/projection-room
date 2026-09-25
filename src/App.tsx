@@ -172,6 +172,7 @@ export default function App() {
             onAnswer={onAnswer}
             onReplay={onReplay}
             onDarkness={onDarkness}
+            onQuit={toHome}
             interactive={phase.name === 'playing'}
           />
         )}
