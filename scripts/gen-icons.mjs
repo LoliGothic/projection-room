@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 /**
- * PWA 用のアイコンを ffmpeg で生成する（映写機のリール）。
+ * PWA 用のアイコンを ffmpeg で生成する。
  *   npm run gen:icons
+ *
+ * 再生ボタンの三角と、少しずれて重なるもう一つの三角。
+ * 実在のアプリのロゴには似せない。
  */
 import { execFile } from 'node:child_process'
 import { mkdir } from 'node:fs/promises'
@@ -16,46 +19,47 @@ const outDir = path.join(root, 'public', 'icons')
 const SIZES = [
   { size: 192, name: 'icon-192.png' },
   { size: 512, name: 'icon-512.png' },
-  { size: 512, name: 'icon-maskable-512.png', padding: 0.78 },
+  { size: 512, name: 'icon-maskable-512.png', padding: 0.7 },
   { size: 180, name: 'apple-touch-icon.png' },
 ]
 
-/** リールの形を作る式（1 = 線の色、0 = 背景） */
-function reelExpr(size, padding) {
+/** 三角形（右向き）の内側かどうかを表す式 */
+function triangle(size, padding, dx, dy) {
   const c = size / 2
-  const R = (size / 2) * padding
-  const ring = R * 0.92
-  const ringW = R * 0.12
-  const hub = R * 0.2
-  const spokeW = R * 0.09
-  const spokeIn = R * 0.3
-  const spokeOut = R * 0.78
-  const d = `hypot(X-${c},Y-${c})`
-
-  const onRing = `lt(abs(${d}-${ring}),${ringW})`
-  const onHub = `lt(${d},${hub})`
-  const inBand = `between(${d},${spokeIn},${spokeOut})`
-  const spokeV = `lt(abs(X-${c}),${spokeW})`
-  const spokeH = `lt(abs(Y-${c}),${spokeW})`
-  const spokeD1 = `lt(abs((X-${c})-(Y-${c})),${spokeW * 1.4})`
-  const spokeD2 = `lt(abs((X-${c})+(Y-${c})),${spokeW * 1.4})`
-  const spokes = `(${inBand})*((${spokeV})+(${spokeH})+(${spokeD1})+(${spokeD2}))`
-
-  return `clip((${onRing})+(${onHub})+(${spokes}),0,1)`
+  const r = (size / 2) * padding
+  const left = c - r * 0.55 + dx
+  const right = c + r * 0.75 + dx
+  const top = c - r * 0.8 + dy
+  const bottom = c + r * 0.8 + dy
+  // 左辺より右、かつ上下の斜辺の内側
+  const inX = `gte(X,${left})*lte(X,${right})`
+  const t = `((X-${left})/(${right - left}))`
+  const halfH = `((1-${t})*${(bottom - top) / 2})`
+  const inY = `lte(abs(Y-${(top + bottom) / 2}),${halfH})`
+  return `(${inX})*(${inY})`
 }
 
 async function main() {
   await mkdir(outDir, { recursive: true })
 
-  for (const { size, name, padding = 0.9 } of SIZES) {
-    const v = reelExpr(size, padding)
+  for (const { size, name, padding = 0.86 } of SIZES) {
+    const main = triangle(size, padding, 0, 0)
+    const ghost = triangle(size, padding, size * 0.09, -size * 0.06)
+
+    // 本体は明るい色、ずれた影は暗く。重なった部分は本体を優先する
+    const v = `clip(${main},0,1)`
+    const g = `clip((${ghost})*(1-${main}),0,1)`
+
     await run('ffmpeg', [
       '-hide_banner', '-loglevel', 'error', '-y',
       '-f', 'lavfi',
-      '-i', `color=c=#0A0908:s=${size}x${size}`,
+      '-i', `color=c=#0A0A0E:s=${size}x${size}`,
       '-vf', [
         'format=rgb24',
-        `geq=r='10+206*(${v})':g='9+171*(${v})':b='8+98*(${v})'`,
+        `geq=` +
+          `r='10+99*(${v})+40*(${g})':` +
+          `g='10+214*(${v})+60*(${g})':` +
+          `b='14+190*(${v})+70*(${g})'`,
       ].join(','),
       '-frames:v', '1',
       path.join(outDir, name),

@@ -12,6 +12,9 @@ import { ResetScreen } from './components/screens/ResetScreen'
 import { EndingScreen } from './components/screens/EndingScreen'
 import { RecapScreen } from './components/screens/RecapScreen'
 import { GalleryScreen } from './components/screens/GalleryScreen'
+import { SettingsScreen } from './components/screens/SettingsScreen'
+import { CreditsScreen } from './components/screens/CreditsScreen'
+import { WarningScreen } from './components/screens/WarningScreen'
 
 export default function App() {
   const session = useGame((s) => s.session)
@@ -22,6 +25,8 @@ export default function App() {
   const finishRun = useRecords((s) => s.finishRun)
   const volume = useSettings((s) => s.volume)
   const muted = useSettings((s) => s.muted)
+  const warningSeen = useSettings((s) => s.warningSeen)
+  const setSettings = useSettings((s) => s.set)
 
   useEffect(() => {
     void load()
@@ -124,7 +129,11 @@ export default function App() {
   return (
     <div className="app">
       <div className="phone">
-        {phase.name === 'launch' && (
+        {phase.name === 'launch' && !warningSeen && (
+          <WarningScreen onAccept={() => setSettings({ warningSeen: true })} />
+        )}
+
+        {phase.name === 'launch' && warningSeen && (
           <div className="launch">
             <h1 className="launch-name">{APP.name}</h1>
             <p className="launch-tagline">{APP.tagline}</p>
@@ -138,6 +147,20 @@ export default function App() {
                 onClick={() => goto({ name: 'gallery' })}
               >
                 記録
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => goto({ name: 'settings' })}
+              >
+                設定
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => goto({ name: 'credits' })}
+              >
+                クレジット
               </button>
             </nav>
           </div>
@@ -178,6 +201,10 @@ export default function App() {
         )}
 
         {phase.name === 'gallery' && <GalleryScreen onBack={toHome} />}
+
+        {phase.name === 'settings' && <SettingsScreen onBack={toHome} />}
+
+        {phase.name === 'credits' && <CreditsScreen clips={session.pool} onBack={toHome} />}
       </div>
     </div>
   )

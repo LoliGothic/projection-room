@@ -7,10 +7,8 @@ export interface Settings {
   muted: boolean
   /** 演出の強さ 0..1 */
   fxIntensity: number
-  /** 点滅を弱める：揺れ・明滅・切替の一瞬・人影をまとめて無効化 */
+  /** 演出を弱める：揺れ・明滅・通知の連続表示をまとめて弱める */
   reduceFlashing: boolean
-  /** 演出を軽くする：Canvas の重い演出を簡易版に */
-  lightFx: boolean
   /** 初回の注意表示を読んだか */
   warningSeen: boolean
 }
@@ -20,7 +18,6 @@ export const DEFAULT_SETTINGS: Settings = {
   muted: false,
   fxIntensity: 1,
   reduceFlashing: false,
-  lightFx: false,
   warningSeen: false,
 }
 
@@ -43,12 +40,14 @@ function pickSettings(s: Settings): Settings {
     muted: s.muted,
     fxIntensity: s.fxIntensity,
     reduceFlashing: s.reduceFlashing,
-    lightFx: s.lightFx,
     warningSeen: s.warningSeen,
   }
 }
 
-/** 「点滅を弱める」を踏まえた実効の演出強度 */
+/**
+ * 「演出を弱める」を踏まえた実効の演出強度。
+ * 0 にはしない。不穏タイマーは遊びの根幹なので、弱めても残す。
+ */
 export function effectiveFx(s: Settings): number {
-  return s.reduceFlashing ? 0 : s.fxIntensity
+  return s.reduceFlashing ? s.fxIntensity * 0.4 : s.fxIntensity
 }

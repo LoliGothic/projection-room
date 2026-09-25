@@ -64,9 +64,16 @@ async function answer(correct: boolean) {
   })
 }
 
-async function toFeed() {
+/** 初回の注意表示を抜けて起動画面まで出す */
+async function toLaunch() {
   render(<App />)
+  await waitFor(() => expect(screen.getByText('はじめに')).toBeTruthy())
+  fireEvent.click(screen.getByRole('button', { name: '了解した' }))
   await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
+}
+
+async function toFeed() {
+  await toLaunch()
   fireEvent.click(screen.getByRole('button', { name: 'はじめる' }))
   await waitFor(() => expect(document.querySelector('.swipe-card video')).toBeTruthy())
 }
@@ -275,15 +282,14 @@ describe('フィードが動く', () => {
   })
 
   it('未達成のエンディングは ？？？ とヒントだけ出す', async () => {
-    render(<App />)
-    await waitFor(() => expect(screen.getByRole('button', { name: '記録' })).toBeTruthy())
+    await toLaunch()
     fireEvent.click(screen.getByRole('button', { name: '記録' }))
     await waitFor(() => expect(screen.getAllByText('？？？').length).toBeGreaterThan(0))
   })
 
   it('セーブコードを書き出して読み込める', async () => {
-    render(<App />)
-    fireEvent.click(await screen.findByRole('button', { name: '記録' }))
+    await toLaunch()
+    fireEvent.click(screen.getByRole('button', { name: '記録' }))
     const code = (await screen.findByText(/^PR1-/)).textContent!
 
     fireEvent.change(screen.getByPlaceholderText('コードを貼り付け'), {
@@ -291,6 +297,46 @@ describe('フィードが動く', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: '読み込む' }))
     await waitFor(() => expect(screen.getByText('記録を読み込みました。')).toBeTruthy())
+  })
+
+  it('初回は注意表示が出て、了解すると起動画面になる', async () => {
+    render(<App />)
+    await waitFor(() => expect(screen.getByText('はじめに')).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: '了解した' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
+  })
+
+  it('注意表示は2回目以降に出ない', async () => {
+    await toLaunch()
+    cleanup()
+    render(<App />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
+    expect(screen.queryByText('はじめに')).toBeNull()
+  })
+
+  it('記録・設定・クレジットを開いて戻れる', async () => {
+    await toLaunch()
+    for (const [open, heading] of [
+      ['記録', '記録'],
+      ['設定', '設定'],
+      ['クレジット', 'クレジット'],
+    ] as const) {
+      fireEvent.click(screen.getByRole('button', { name: open }))
+      await waitFor(() => expect(screen.getByRole('heading', { name: heading })).toBeTruthy())
+      fireEvent.click(screen.getByRole('button', { name: '戻る' }))
+      await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
+    }
+  })
+
+  it('設定の変更が保存される', async () => {
+    await toLaunch()
+    fireEvent.click(screen.getByRole('button', { name: '設定' }))
+    const reduce = await screen.findByLabelText('演出を弱める')
+    fireEvent.click(reduce)
+    expect((reduce as HTMLInputElement).checked).toBe(true)
+    expect(window.localStorage.getItem('projection-room:settings')).toContain(
+      '"reduceFlashing":true',
+    )
   })
 
   it('clips.json が読めないときは案内を出す', async () => {
