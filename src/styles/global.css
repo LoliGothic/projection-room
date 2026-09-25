@@ -259,18 +259,16 @@ body {
 }
 /* 固まっているあいだは下の映像が透ける */
 .resetting.freeze { background: rgba(0, 0, 0, 0.12); }
-.resetting.loading { background: rgba(0, 0, 0, 0.86); }
+.resetting.glitch { background: #000; }
 .resetting.notice { background: rgba(0, 0, 0, 0.94); }
 
-.spinner {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  border-top-color: rgba(255, 255, 255, 0.85);
-  animation: spin 760ms linear infinite;
+.glitch-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
-@keyframes spin { to { rotate: 360deg; } }
 
 .reset-notice {
   margin: 0;
@@ -285,9 +283,7 @@ body {
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2s; }
-}
+
 
 /* ---- 起動画面 ---- */
 .launch {

@@ -288,9 +288,28 @@ class AudioEngine {
     }
   }
 
-  /** おすすめのリセット中に流れる、読み込み音 */
-  playLoading() {
-    this.play(this.rewind, 0.45)
+  /**
+   * 画面が壊れるときの音。
+   * 読み込み音だと通信待ちに聞こえるので、割れたノイズと低い唸りを重ねる。
+   */
+  playGlitch() {
+    this.play(this.rewind, 0.5, 0, 1.6)
+    if (!this.ctx || !this.master) return
+    const t = this.ctx.currentTime
+    const osc = this.ctx.createOscillator()
+    osc.type = 'square'
+    osc.frequency.setValueAtTime(92, t)
+    osc.frequency.exponentialRampToValueAtTime(38, t + 1.1)
+    const gain = this.ctx.createGain()
+    gain.gain.setValueAtTime(0.0001, t)
+    gain.gain.exponentialRampToValueAtTime(0.07, t + 0.05)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.2)
+    const lp = this.ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.value = 700
+    osc.connect(gain).connect(lp).connect(this.master)
+    osc.start(t)
+    osc.stop(t + 1.25)
   }
 
   /**

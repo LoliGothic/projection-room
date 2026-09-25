@@ -153,7 +153,7 @@ describe('フィードが動く', () => {
     expect(activeClip()!.id).toBe(wrong)
   })
 
-  it('リセット演出は 固まる → 読み込み中 → 通知 の順に進む', async () => {
+  it('リセット演出は 固まる → 画面が壊れる → 通知 の順に進む', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     await toFeed()
     await answer(false)
@@ -163,8 +163,10 @@ describe('フィードが動く', () => {
     await act(async () => {
       vi.advanceTimersByTime(800)
     })
-    expect(document.querySelector('.resetting.loading')).toBeTruthy()
-    expect(document.querySelector('.spinner')).toBeTruthy()
+    // 読み込み中のぐるぐるは出さない（通信が遅いだけに見えるため）
+    expect(document.querySelector('.resetting.glitch')).toBeTruthy()
+    expect(document.querySelector('.glitch-overlay')).toBeTruthy()
+    expect(document.querySelector('.spinner')).toBeNull()
 
     await act(async () => {
       vi.advanceTimersByTime(1500)

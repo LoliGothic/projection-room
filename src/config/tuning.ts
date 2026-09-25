@@ -46,8 +46,8 @@ export const SWIPE = {
 export const CUTSCENE = {
   /** ミス時：画面が一瞬固まる（ms） */
   freezeMs: 700,
-  /** ミス時：読み込み中の表示（ms） */
-  loadingMs: 1400,
+  /** ミス時：画面が壊れる（ms） */
+  glitchMs: 1300,
   /** ミス時：「おすすめがリセットされました」の通知（ms） */
   resetNoticeMs: 1800,
   /** 段階が上がったときの間（ms）。0 にすると完全にノンストップ */
