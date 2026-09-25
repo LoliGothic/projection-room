@@ -4,9 +4,9 @@
  */
 export const APP = {
   /** 架空のショート動画アプリ名 */
-  name: '（仮）Uncanny Feed',
+  name: '撮影者不明',
   /** 短い表記（タブや狭い場所で使う） */
-  shortName: 'Uncanny Feed',
+  shortName: '撮影者不明',
   /** 起動画面に出す一言 */
   tagline: 'あなたへのおすすめ',
 } as const

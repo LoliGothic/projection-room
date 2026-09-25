@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
-        name: '（仮）Uncanny Feed',
-        short_name: 'Uncanny Feed',
+        name: '撮影者不明',
+        short_name: '撮影者不明',
         description: '流れてくる動画の中から、AIが生成した偽物を見分けるゲーム',
         lang: 'ja',
         start_url: '.',
