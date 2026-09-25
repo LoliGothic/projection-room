@@ -71,6 +71,17 @@ async function toFeed() {
   await waitFor(() => expect(document.querySelector('.swipe-card video')).toBeTruthy())
 }
 
+/** エンディングのテキストを最後まで送る */
+async function runEndingCards() {
+  for (let i = 0; i < 10; i++) {
+    await act(async () => {
+      vi.advanceTimersByTime(3300)
+    })
+    if (screen.queryByText('エンディング')) return
+  }
+  throw new Error('エンディングのテキストが終わりませんでした')
+}
+
 describe('フィードが動く', () => {
   it('起動画面から「はじめる」でフィードに入る', async () => {
     await toFeed()
@@ -211,6 +222,75 @@ describe('フィードが動く', () => {
     })
     expect(shown.pause).toHaveBeenCalled()
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => false })
+  })
+
+  it('8段階を通すとエンディングになり、振り返りへ進める', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toFeed()
+
+    for (let i = 0; i < RULES.totalStages * RULES.clipsPerStage; i++) {
+      await answer(true)
+    }
+
+    await runEndingCards()
+    expect(screen.getByRole('heading', { name: '撮影者' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: '振り返る' }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: '振り返り' })).toBeTruthy())
+    expect(screen.getByText('一本も取り違えませんでした。')).toBeTruthy()
+  })
+
+  it('間違えた動画は振り返りで見られる', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toFeed()
+
+    await answer(false)
+    await act(async () => {
+      vi.advanceTimersByTime(4500)
+    })
+
+    // 暗転エンドまで飛ばして振り返りを開く
+    await act(async () => {
+      vi.advanceTimersByTime(61_000)
+    })
+    await runEndingCards()
+
+    fireEvent.click(screen.getByRole('button', { name: '振り返る' }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: '振り返り' })).toBeTruthy())
+    expect(screen.getByText('1 / 1')).toBeTruthy()
+    expect(document.querySelector('.recap-video')).toBeTruthy()
+  })
+
+  it('エンディングを見ると記録に残る', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toFeed()
+    await act(async () => {
+      vi.advanceTimersByTime(61_000)
+    })
+    await runEndingCards()
+
+    fireEvent.click(screen.getByRole('button', { name: 'ホームに戻る' }))
+    fireEvent.click(await screen.findByRole('button', { name: '記録' }))
+    await waitFor(() => expect(screen.getByText('暗転')).toBeTruthy())
+  })
+
+  it('未達成のエンディングは ？？？ とヒントだけ出す', async () => {
+    render(<App />)
+    await waitFor(() => expect(screen.getByRole('button', { name: '記録' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: '記録' }))
+    await waitFor(() => expect(screen.getAllByText('？？？').length).toBeGreaterThan(0))
+  })
+
+  it('セーブコードを書き出して読み込める', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: '記録' }))
+    const code = (await screen.findByText(/^PR1-/)).textContent!
+
+    fireEvent.change(screen.getByPlaceholderText('コードを貼り付け'), {
+      target: { value: code },
+    })
+    fireEvent.click(screen.getByRole('button', { name: '読み込む' }))
+    await waitFor(() => expect(screen.getByText('記録を読み込みました。')).toBeTruthy())
   })
 
   it('clips.json が読めないときは案内を出す', async () => {
