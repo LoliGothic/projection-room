@@ -167,7 +167,8 @@ async function main() {
         isAI: kind === 'ai',
         category,
         scene,
-        // 以下は取り込んだあと clips.json に手で書き足す
+        // source は取り込んだあと clips.json に書き足す。
+        // contributor は任意（未記入ならフィードには ID から決まる名前が出る）
         source: '',
         sourceUrl: '',
         contributor: '',
@@ -194,11 +195,13 @@ async function main() {
 
   console.log(`\n完了: 本物 ${r.length}本 / AI ${a.length}本`)
   console.log('  対応表: raw/id-map.json（git 管理外。公開しないこと）')
-  const blank = clips.filter((c) => !c.contributor).length
+  const blank = clips.filter((c) => !c.isAI && !c.source).length
   if (blank > 0) {
     console.warn(
-      `\n注意: ${blank}本 の提供者・出典が空です。` +
-        '\n  クレジット画面と振り返り画面に出るので、public/clips.json を埋めてください。',
+      `\n注意: 本物 ${blank}本 の出典（source）が空です。` +
+        '\n  クレジット画面に出るので、public/clips.json を埋めてください。' +
+        '\n  提供者名（contributor）は任意です。未記入なら、フィードには' +
+        '\n  ID から決まる当たり障りのない名前が出ます。',
     )
   }
 }

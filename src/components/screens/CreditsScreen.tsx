@@ -11,13 +11,18 @@ export function CreditsScreen({ clips, onBack }: Props) {
   const real = clips.filter((c) => !c.isAI)
   const ai = clips.filter((c) => c.isAI)
 
-  // 同じ提供元をまとめる
-  const providers = new Map<string, { source?: string; sourceUrl?: string; count: number }>()
+  /**
+   * 出典ごとにまとめる。
+   * Pexels は表示義務が無いが、感謝の意として出典だけ載せている。
+   * 提供者名は clips.json に入っていれば添える（未記入でも問題ない）。
+   */
+  const sources = new Map<string, { url?: string; count: number; contributors: Set<string> }>()
   for (const c of real) {
-    const key = c.contributor || '提供者不明'
-    const entry = providers.get(key) ?? { source: c.source, sourceUrl: c.sourceUrl, count: 0 }
+    const key = c.source || '出典未記入'
+    const entry = sources.get(key) ?? { url: c.sourceUrl, count: 0, contributors: new Set<string>() }
     entry.count++
-    providers.set(key, entry)
+    if (c.contributor) entry.contributors.add(c.contributor)
+    sources.set(key, entry)
   }
 
   const tools = new Map<string, number>()
@@ -35,19 +40,19 @@ export function CreditsScreen({ clips, onBack }: Props) {
 
       <section>
         <h3 className="panel-subtitle">映像（本物）</h3>
-        {providers.size === 0 && <p className="panel-note">登録がありません。</p>}
+        {sources.size === 0 && <p className="panel-note">登録がありません。</p>}
         <ul className="credit-list">
-          {[...providers.entries()].map(([name, info]) => (
+          {[...sources.entries()].map(([name, info]) => (
             <li key={name}>
               <p className="credit-title">{name}</p>
-              <p className="credit-sub">
-                {info.source ? `${info.source} / ` : ''}
-                {info.count} 本
-              </p>
-              {info.sourceUrl && (
+              <p className="credit-sub">{info.count} 本</p>
+              {info.contributors.size > 0 && (
+                <p className="credit-sub">{[...info.contributors].join(' / ')}</p>
+              )}
+              {info.url && (
                 <p className="credit-sub">
-                  <a href={info.sourceUrl} target="_blank" rel="noreferrer">
-                    {info.sourceUrl}
+                  <a href={info.url} target="_blank" rel="noreferrer">
+                    {info.url}
                   </a>
                 </p>
               )}
