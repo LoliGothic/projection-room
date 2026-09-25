@@ -1,12 +1,12 @@
 import { creakBuffer, noiseBuffer, projectorBuffer, rewindBuffer } from './synth'
 
 /**
- * 映写室の音。
- * - 映写機の回転音と低いドローンを常時鳴らす
- * - 不穏タイマーの段階で速さ・重さ・息づかいが変わる
- * - ループ回数に応じて映写機に異音が混ざる
+ * ゲームの音。動画は常に無音で、音はすべてここで鳴らす。
+ * - 低い環境音を常時鳴らし、不穏タイマーの段階で大きく・重くする
+ * - 通知音、スワイプ音、ミス時の違和感のある音、リセット時の読み込み音
+ * - ループ回数に応じて環境音に軋みが混ざる
  *
- * スマホの制限があるので、タイトルの「上映を始める」で unlock() を呼ぶまで音は出ない。
+ * スマホの制限があるので、起動画面の「はじめる」で unlock() を呼ぶまで音は出ない。
  * 音声ファイルを用意したら synth.ts の生成関数を差し替えるだけでよい。
  */
 class AudioEngine {
@@ -153,17 +153,17 @@ class AudioEngine {
   }
 
   /** 不穏タイマーの段階を反映する */
-  setDread(intensity: number, breath: number) {
+  setDread(intensity: number, ambience: number) {
     if (!this.ctx) return
     const t = this.ctx.currentTime
     if (this.projectorSrc) {
-      // 速く、そして重く
-      this.projectorSrc.playbackRate.setTargetAtTime(1 + intensity * 0.5, t, 0.3)
+      // だんだん重く、うねるように
+      this.projectorSrc.playbackRate.setTargetAtTime(1 - intensity * 0.35, t, 0.4)
     }
     this.projectorFilter?.frequency.setTargetAtTime(900 - intensity * 420, t, 0.4)
     this.projectorGain?.gain.setTargetAtTime(0.22 + intensity * 0.1, t, 0.3)
     this.droneGain?.gain.setTargetAtTime(0.08 + intensity * 0.16, t, 0.5)
-    this.breathGain?.gain.setTargetAtTime(breath * 0.16, t, 0.5)
+    this.breathGain?.gain.setTargetAtTime(ambience * 0.2, t, 0.5)
   }
 
   /** ループ回数。増えるほど映写機の異音が増える */
@@ -171,8 +171,8 @@ class AudioEngine {
     this.loops = loops
   }
 
-  /** 巻の節目やミスで映写機を一瞬止める */
-  setProjectorRunning(running: boolean) {
+  /** ミスの演出などで、環境音を一瞬止める */
+  setAmbienceRunning(running: boolean) {
     if (!this.ctx || !this.projectorGain) return
     const t = this.ctx.currentTime
     this.projectorGain.gain.setTargetAtTime(running ? 0.22 : 0, t, running ? 0.12 : 0.04)
@@ -204,7 +204,43 @@ class AudioEngine {
     src.start()
   }
 
-  /** 正解：小さな確かな音。pan は回答方向（右＝映写、左＝焼却） */
+  /** 通知音。短い二音 */
+  playNotify() {
+    if (!this.ctx || !this.master) return
+    const t = this.ctx.currentTime
+    for (const [i, freq] of [1046, 1568].entries()) {
+      const osc = this.ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      const gain = this.ctx.createGain()
+      const at = t + i * 0.09
+      gain.gain.setValueAtTime(0.0001, at)
+      gain.gain.exponentialRampToValueAtTime(0.05, at + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.16)
+      osc.connect(gain).connect(this.master)
+      osc.start(at)
+      osc.stop(at + 0.2)
+    }
+  }
+
+  /** 飾りのボタンを押したときの、軽いタップ音 */
+  playTap() {
+    if (!this.ctx || !this.master) return
+    const t = this.ctx.currentTime
+    const osc = this.ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(660, t)
+    osc.frequency.exponentialRampToValueAtTime(420, t + 0.06)
+    const gain = this.ctx.createGain()
+    gain.gain.setValueAtTime(0.0001, t)
+    gain.gain.exponentialRampToValueAtTime(0.035, t + 0.006)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1)
+    osc.connect(gain).connect(this.master)
+    osc.start(t)
+    osc.stop(t + 0.12)
+  }
+
+  /** 正解：小さな確かな音。pan は回答方向（右＝残す、左＝報告） */
   playCorrect(pan = 0) {
     if (!this.ctx || !this.master) return
     const t = this.ctx.currentTime
@@ -252,8 +288,9 @@ class AudioEngine {
     }
   }
 
-  playRewind() {
-    this.play(this.rewind, 0.5)
+  /** おすすめのリセット中に流れる、読み込み音 */
+  playLoading() {
+    this.play(this.rewind, 0.45)
   }
 
   /**

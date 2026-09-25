@@ -1,9 +1,22 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import type { Verdict } from '../../core/types'
 import { currentClip, preloadClips, type Session } from '../../core/session'
-import { RULES } from '../../config/tuning'
-import { stageLabel } from '../../config/feed.data'
+import {
+  ambienceLevel,
+  counterDrift,
+  screenBrightness,
+  type Dread,
+} from '../../core/dread'
+import { baseCounters, driftedCounters } from '../../core/counters'
+import { accountNameFor, captionFor, stageLabel } from '../../config/feed.data'
+import { DREAD, FX, RULES } from '../../config/tuning'
+import { audio } from '../../audio/engine'
+import { useDreadTimer } from '../../hooks/useDreadTimer'
+import { useDreadNotices } from '../../hooks/useDreadEffects'
+import { effectiveFx, useSettings } from '../../state/settingsStore'
 import { FeedVideo, type FeedVideoHandle } from '../game/FeedVideo'
+import { SideActions } from '../game/SideActions'
+import { Notifications } from '../game/Notifications'
 
 interface Props {
   session: Session
@@ -14,16 +27,68 @@ interface Props {
   interactive: boolean
 }
 
-export function FeedScreen({ session, onAnswer, onReplay, interactive }: Props) {
+/** 経過秒。数字は出さないが、飾りの数字を動かすのに使う */
+function elapsedSecOf(d: Dread): number {
+  const thresholds = DREAD.stagesMs
+  const from = d.stage === 0 ? 0 : thresholds[d.stage - 1]
+  const to = thresholds[Math.min(d.stage, thresholds.length - 1)]
+  return (from + (to - from) * d.progress) / 1000
+}
+
+export function FeedScreen({ session, onAnswer, onReplay, onDarkness, interactive }: Props) {
   const video = useRef<FeedVideoHandle>(null)
+  const settings = useSettings()
   const clip = currentClip(session)
   const preload = preloadClips(session)
   const { stage, stats } = session.progress
+  const turn = session.deck.advances
+
+  // 経過時間は「デッキを進めた回数」が変わったときだけリセットする＝リプレイでは戻らない
+  const dread = useDreadTimer(interactive, turn, onDarkness)
+  const fx = effectiveFx(settings)
+  const softened = settings.reduceFlashing
+
+  const notices = useDreadNotices(dread, interactive, softened, turn)
+
+  // 音は外部システムなので効果として同期する
+  useEffect(() => {
+    audio.setDread(dread.intensity * fx, ambienceLevel(dread) * fx)
+  }, [dread, fx])
+  useEffect(() => {
+    audio.setLoops(stats.loops)
+  }, [stats.loops])
+
+  // 通知が増えたら鳴らす
+  const noticeCount = notices.length
+  useEffect(() => {
+    if (noticeCount > 0) audio.playNotify()
+  }, [noticeCount])
+
+  // 画面がゆっくり暗くなる
+  useEffect(() => {
+    const el = document.querySelector('.phone') as HTMLElement | null
+    if (!el) return
+    const floor = 1 - (1 - FX.minBrightness) * fx
+    el.style.setProperty('--screen-brightness', screenBrightness(dread, floor).toFixed(3))
+    return () => el.style.setProperty('--screen-brightness', '1')
+  }, [dread, fx])
+
+  const counters = useMemo(() => {
+    if (!clip) return { likes: 0, comments: 0, shares: 0 }
+    return driftedCounters(
+      baseCounters(clip.id),
+      elapsedSecOf(dread),
+      counterDrift(dread) * fx,
+      FX.counterDriftPerSec,
+    )
+  }, [clip, dread, fx])
 
   const replay = useCallback(() => {
     video.current?.replay()
     onReplay()
   }, [onReplay])
+
+  const onDecorative = useCallback(() => audio.playTap(), [])
 
   if (!clip) return <p className="center-message">読み込み中…</p>
 
@@ -32,7 +97,7 @@ export function FeedScreen({ session, onAnswer, onReplay, interactive }: Props) 
       <FeedVideo
         ref={video}
         current={clip}
-        turn={session.deck.advances}
+        turn={turn}
         preload={preload}
         onAnswer={onAnswer}
         enabled={interactive}
@@ -40,21 +105,23 @@ export function FeedScreen({ session, onAnswer, onReplay, interactive }: Props) 
       />
 
       <div className="feed-overlay">
-        <div className="progress-bars" aria-label={`段階 ${stageLabel(stage)}`}>
-          {Array.from({ length: RULES.totalStages }, (_, i) => (
-            <span key={i} className={i < stage - 1 ? 'bar done' : i === stage - 1 ? 'bar now' : 'bar'} />
-          ))}
+        <div className="feed-top">
+          <div className="progress-bars" aria-label={`段階 ${stageLabel(stage)}`}>
+            {Array.from({ length: RULES.totalStages }, (_, i) => (
+              <span
+                key={i}
+                className={i < stage - 1 ? 'bar done' : i === stage - 1 ? 'bar now' : 'bar'}
+              />
+            ))}
+          </div>
+          <Notifications notices={notices} />
         </div>
 
-        <div className="side-actions">
-          <button type="button" className="side-button" onClick={replay} aria-label="もう一度再生">
-            ↻
-          </button>
-        </div>
+        <SideActions counters={counters} onReplay={replay} onDecorative={onDecorative} />
 
         <div className="feed-bottom">
-          <p className="account">@{clip.contributor ?? 'unknown'}</p>
-          <p className="caption">{clip.scene ?? ''}</p>
+          <p className="account">@{accountNameFor(clip.contributor, stats.loops, turn)}</p>
+          <p className="caption">{captionFor(stats.loops, turn)}</p>
           <div className="hint" style={{ opacity: stats.presented >= 6 ? 0.3 : 1 }}>
             <span>← 報告する</span>
             <span>残す →</span>

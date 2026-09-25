@@ -135,6 +135,70 @@ describe('フィードが動く', () => {
     expect(activeClip()!.id).toBe(wrong)
   })
 
+  it('リセット演出は 固まる → 読み込み中 → 通知 の順に進む', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toFeed()
+    await answer(false)
+
+    expect(document.querySelector('.resetting.freeze')).toBeTruthy()
+
+    await act(async () => {
+      vi.advanceTimersByTime(800)
+    })
+    expect(document.querySelector('.resetting.loading')).toBeTruthy()
+    expect(document.querySelector('.spinner')).toBeTruthy()
+
+    await act(async () => {
+      vi.advanceTimersByTime(1500)
+    })
+    expect(screen.getByText('おすすめをリセットしました')).toBeTruthy()
+
+    // 演出が終わると次の1本へ進む
+    await act(async () => {
+      vi.advanceTimersByTime(2000)
+    })
+    await waitFor(() => expect(document.querySelector('.resetting')).toBeNull())
+  })
+
+  it('右側のアイコンに数字が出て、動画ごとに変わる', async () => {
+    await toFeed()
+    const labels = [...document.querySelectorAll('.side-label')].map((e) => e.textContent)
+    // 再生 / いいね / コメント / 共有
+    expect(labels).toHaveLength(4)
+    expect(labels[0]).toBe('再生')
+    expect(labels.slice(1).every((t) => (t ?? '').length > 0)).toBe(true)
+
+    const before = labels.join()
+    await answer(true)
+    await waitFor(() => {
+      const now = [...document.querySelectorAll('.side-label')].map((e) => e.textContent).join()
+      expect(now).not.toBe(before)
+    })
+  })
+
+  it('投稿者名とキャプションが出る', async () => {
+    await toFeed()
+    expect(document.querySelector('.account')?.textContent).toMatch(/^@/)
+    expect((document.querySelector('.caption')?.textContent ?? '').length).toBeGreaterThan(0)
+  })
+
+  it('段階の進捗バーが8本出る', async () => {
+    await toFeed()
+    expect(document.querySelectorAll('.progress-bars .bar')).toHaveLength(RULES.totalStages)
+    expect(document.querySelectorAll('.progress-bars .bar.now')).toHaveLength(1)
+  })
+
+  it('正解すると進捗バーが進む', async () => {
+    await toFeed()
+    const nowIndex = () =>
+      [...document.querySelectorAll('.progress-bars .bar')].findIndex((b) =>
+        b.classList.contains('now'),
+      )
+    expect(nowIndex()).toBe(0)
+    await answer(true)
+    await waitFor(() => expect(nowIndex()).toBe(1))
+  })
+
   it('画面を離れると映像が止まる', async () => {
     await toFeed()
     const shown = [...document.querySelectorAll('.swipe-card video')].find(

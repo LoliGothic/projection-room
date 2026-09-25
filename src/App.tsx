@@ -6,6 +6,7 @@ import { APP } from './config/app'
 import { useGame } from './state/gameStore'
 import { useSettings } from './state/settingsStore'
 import { FeedScreen } from './components/screens/FeedScreen'
+import { ResetScreen } from './components/screens/ResetScreen'
 
 export default function App() {
   const session = useGame((s) => s.session)
@@ -64,6 +65,12 @@ export default function App() {
   const onDarkness = useCallback(() => send({ type: 'darkness' }), [send])
   const onCutsceneDone = useCallback(() => send({ type: 'cutsceneDone' }), [send])
 
+  // リセット演出のあいだは環境音を止める
+  const phaseName = session?.phase.name
+  useEffect(() => {
+    audio.setAmbienceRunning(phaseName === 'playing')
+  }, [phaseName])
+
   if (error) {
     return (
       <div className="app">
@@ -112,11 +119,7 @@ export default function App() {
           />
         )}
 
-        {phase.name === 'resetting' && (
-          <div className="resetting" role="presentation" onPointerDown={onCutsceneDone}>
-            <p className="reset-notice">おすすめをリセットしました</p>
-          </div>
-        )}
+        {phase.name === 'resetting' && <ResetScreen onDone={onCutsceneDone} />}
 
         {phase.name === 'ending' && (
           <p className="center-message">

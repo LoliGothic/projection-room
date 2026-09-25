@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { breathLevel, dreadAt, dreadStage, projectorSpeed, silhouetteCloseness } from './dread'
+import {
+  ambienceLevel,
+  counterDrift,
+  dreadAt,
+  dreadStage,
+  noticeIntervalMs,
+  screenBrightness,
+} from './dread'
 import { DREAD } from '../config/tuning'
 
 const T = DREAD.stagesMs
@@ -55,22 +62,38 @@ describe('dreadAt', () => {
 })
 
 describe('段階から決まる演出値', () => {
-  it('映写機は段階が進むほど速くなる', () => {
-    expect(projectorSpeed(dreadAt(0))).toBe(1)
-    expect(projectorSpeed(dreadAt(T[3]))).toBeGreaterThan(projectorSpeed(dreadAt(T[0])))
-  })
-
-  it('人影はループ回数でも近づく', () => {
-    expect(silhouetteCloseness(dreadAt(0), 0)).toBe(0)
-    expect(silhouetteCloseness(dreadAt(0), 20)).toBeGreaterThan(0)
-    expect(silhouetteCloseness(dreadAt(T[2]), 20)).toBeGreaterThan(
-      silhouetteCloseness(dreadAt(T[0]), 0),
+  it('画面は段階が進むほど暗くなる', () => {
+    expect(screenBrightness(dreadAt(0), 0.62)).toBe(1)
+    expect(screenBrightness(dreadAt(T[3]), 0.62)).toBeCloseTo(0.62, 5)
+    expect(screenBrightness(dreadAt(T[1]), 0.62)).toBeLessThan(
+      screenBrightness(dreadAt(T[0]), 0.62),
     )
-    expect(silhouetteCloseness(dreadAt(T[3]), 99)).toBeLessThanOrEqual(1)
   })
 
-  it('息づかいは最初の段階に入るまで鳴らない', () => {
-    expect(breathLevel(dreadAt(0))).toBe(0)
-    expect(breathLevel(dreadAt(T[0]))).toBeGreaterThan(0)
+  it('数字が増える速さは強さに比例する', () => {
+    expect(counterDrift(dreadAt(0))).toBe(0)
+    expect(counterDrift(dreadAt(T[3]))).toBe(1)
+  })
+
+  it('環境音は最初の段階に入るまで鳴らない', () => {
+    expect(ambienceLevel(dreadAt(0))).toBe(0)
+    expect(ambienceLevel(dreadAt(T[0]))).toBeGreaterThan(0)
+    expect(ambienceLevel(dreadAt(T[3]))).toBeLessThanOrEqual(1)
+  })
+
+  it('通知の間隔は強さが上がるほど短くなる', () => {
+    const range = [9000, 2600] as const
+    expect(noticeIntervalMs(dreadAt(0), range)).toBe(9000)
+    expect(noticeIntervalMs(dreadAt(T[3]), range)).toBe(2600)
+    expect(noticeIntervalMs(dreadAt(T[1]), range)).toBeLessThan(
+      noticeIntervalMs(dreadAt(T[0]), range),
+    )
+  })
+})
+
+describe('暗転の判定', () => {
+  it('最後の段階に達したときだけ dark になる', () => {
+    expect(dreadAt(T[2]).dark).toBe(false)
+    expect(dreadAt(T[3]).dark).toBe(true)
   })
 })

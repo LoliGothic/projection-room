@@ -6,7 +6,7 @@ import { DREAD } from '../config/tuning'
  *
  * stage 0        しきい値に達していない
  * stage 1..n-1   段階演出
- * stage n        最後まで達した = 暗闇エンド
+ * stage n        最後まで達した = 暗転エンド
  */
 export interface Dread {
   /** 0..stagesMs.length */
@@ -46,18 +46,22 @@ export function dreadAt(elapsedMs: number, thresholds: readonly number[] = DREAD
   return { stage, progress, intensity, dark }
 }
 
-/** 映写機の回転音・リールの速さ。段階が進むほど速く、重くなる */
-export function projectorSpeed(d: Dread): number {
-  return 1 + d.intensity * 0.55
+/** 画面の明るさ。段階が進むほど落ちる */
+export function screenBrightness(d: Dread, floor: number): number {
+  return 1 - (1 - floor) * d.intensity
 }
 
-/** 上部余白の人影の「近さ」0..1。ループ回数でも近づく */
-export function silhouetteCloseness(d: Dread, loops: number): number {
-  const byLoops = Math.min(1, loops / 20)
-  return Math.min(1, d.intensity * 0.75 + byLoops * 0.45)
+/** ハートやコメント数が勝手に増える速さの倍率 */
+export function counterDrift(d: Dread): number {
+  return d.intensity
 }
 
-/** 下部余白の息づかいの音量 0..1。最初の段階までは鳴らさない */
-export function breathLevel(d: Dread): number {
+/** 低い環境音の大きさ 0..1。最初の段階に入るまでは鳴らさない */
+export function ambienceLevel(d: Dread): number {
   return d.stage === 0 ? 0 : Math.min(1, (d.intensity - 0.15) / 0.85)
+}
+
+/** 通知が届く間隔（ms）。強さが上がるほど短くなる */
+export function noticeIntervalMs(d: Dread, range: readonly [number, number]): number {
+  return range[0] + (range[1] - range[0]) * d.intensity
 }

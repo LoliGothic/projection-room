@@ -44,6 +44,7 @@ body {
 /* ---- 端末の画面に見立てた 9:16 の領域 ---- */
 .phone {
   position: relative;
+  transition: filter 600ms linear;
   width: 100%;
   max-width: min(100vw, calc(100dvh * 9 / 16));
   height: 100%;
@@ -127,29 +128,66 @@ body {
 .progress-bars .bar.done { background: rgba(255, 255, 255, 0.85); }
 .progress-bars .bar.now { background: var(--accent); }
 
+/* 上部：進捗と通知 */
+.feed-top { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.notifications {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: flex-start;
+}
+.notification {
+  margin: 0;
+  max-width: 82%;
+  padding: 0.55rem 0.8rem;
+  border-radius: 10px;
+  background: rgba(18, 18, 24, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--text);
+  animation: notice-in 260ms ease-out;
+  backdrop-filter: blur(4px);
+}
+@keyframes notice-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
 /* 右側の縦並びアイコン */
 .side-actions {
   align-self: end;
   justify-self: end;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  padding-bottom: 1.5rem;
+  gap: 1.05rem;
+  padding-bottom: 1.2rem;
 }
-.side-button {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+.side-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  width: 52px;
   border: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: none;
   color: #fff;
-  font-size: 1.25rem;
   cursor: pointer;
-  display: grid;
-  place-items: center;
-  backdrop-filter: blur(2px);
+  padding: 0;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.7));
 }
-.side-button:hover { background: rgba(0, 0, 0, 0.5); }
+.side-item svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.side-label { font-size: 0.68rem; font-variant-numeric: tabular-nums; }
+.side-item:hover { color: var(--accent); }
 
 /* 下部：投稿者名・キャプション・操作案内 */
 .feed-bottom {
@@ -178,18 +216,39 @@ body {
   z-index: 10;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.82);
-  animation: fade-in 200ms ease-out;
+  transition: background 220ms linear;
 }
+/* 固まっているあいだは下の映像が透ける */
+.resetting.freeze { background: rgba(0, 0, 0, 0.12); }
+.resetting.loading { background: rgba(0, 0, 0, 0.86); }
+.resetting.notice { background: rgba(0, 0, 0, 0.94); }
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  animation: spin 760ms linear infinite;
+}
+@keyframes spin { to { rotate: 360deg; } }
+
 .reset-notice {
   margin: 0;
-  padding: 0.9rem 1.2rem;
-  border-radius: 10px;
+  padding: 0.9rem 1.3rem;
+  border-radius: 12px;
   background: var(--surface);
-  font-size: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.88rem;
   color: var(--text);
+  animation: notice-in 260ms ease-out;
 }
+
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}
 
 /* ---- 起動画面 ---- */
 .launch {
