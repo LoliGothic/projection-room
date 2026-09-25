@@ -30,13 +30,9 @@ export const DREAD = {
   notifyIntervalMs: [9_000, 2_600] as [number, number],
 } as const
 
-export const SWIPE = {
-  /** 確定に必要な横移動量（px） */
-  commitDistance: 90,
-  /** 距離が足りなくても確定させる速度（px/ms） */
-  commitVelocity: 0.55,
-  /** 最大の傾き（度） */
-  maxTiltDeg: 10,
+export const FEED = {
+  /** 次の動画が下から上がってくる時間（ms） */
+  scrollMs: 420,
   /** これ未満の移動ならタップとみなす（px） */
   tapSlopPx: 10,
   /** これ以内に離せばタップとみなす（ms） */

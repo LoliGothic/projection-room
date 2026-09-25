@@ -58,48 +58,33 @@ body {
 .feed-video {
   position: absolute;
   inset: 0;
-}
-
-.swipe-card {
-  position: absolute;
-  inset: 0;
-  transform-origin: 50% 120%;
-  will-change: transform;
-  /*
-    指での横スワイプを自分で処理する。
-    これが無いとブラウザがスクロールとして拾い、pointercancel が飛んで成立しない。
-  */
+  overflow: hidden;
+  /* 指でのスクロールをブラウザに取られないようにする */
   touch-action: none;
 }
-.swipe-card.settling { transition: transform 160ms ease-out; }
 
-.swipe-card video {
+/* 1本ぶんの枠。縦に並べて、まとめて上へ送る */
+.feed-slot {
+  position: absolute;
+  inset: 0;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.22, 0.9, 0.24, 1);
+  will-change: transform;
+}
+
+.feed-slot video {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   background: #000;
-  /* iOS では <video> 自身が指の操作を吸ってしまうので、カードに通す */
+  /* iOS では <video> 自身が指の操作を吸ってしまうので、枠に通す */
   pointer-events: none;
 }
 
-/* ---- スワイプ中の表示 ---- */
-.verdict {
-  position: absolute;
-  top: 38%;
-  z-index: 3;
-  padding: 0.5rem 1rem;
-  border: 2px solid currentColor;
-  border-radius: 6px;
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 90ms linear;
+@media (prefers-reduced-motion: reduce) {
+  .feed-slot { transition-duration: 1ms !important; }
 }
-.verdict.report { left: 7%; color: var(--danger); transform: rotate(-12deg); }
-.verdict.keep { right: 7%; color: var(--accent); transform: rotate(12deg); }
 
 /* ---- 映像に重ねる UI ---- */
 .feed-overlay {
@@ -226,7 +211,37 @@ body {
   stroke-linejoin: round;
 }
 .side-label { font-size: 0.68rem; font-variant-numeric: tabular-nums; }
-.side-item:hover { color: var(--accent); }
+.side-item:hover:not(:disabled) { color: var(--accent); }
+.side-item:disabled { opacity: 0.45; cursor: default; }
+.side-item.like:hover:not(:disabled) { color: var(--danger); }
+
+.side-menu-wrap { position: relative; }
+.side-menu {
+  position: absolute;
+  right: 56px;
+  bottom: 0;
+  min-width: 132px;
+  padding: 0.3rem;
+  border-radius: 12px;
+  background: rgba(18, 18, 24, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(6px);
+  animation: notice-in 160ms ease-out;
+}
+.side-menu button {
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: 0.8rem;
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.side-menu button:hover { background: rgba(255, 255, 255, 0.08); }
+.side-menu button.danger { color: var(--danger); }
 
 /* 下部：投稿者名・キャプション・操作案内 */
 .feed-bottom {
@@ -241,12 +256,12 @@ body {
 .caption { margin: 0; font-size: 0.84rem; line-height: 1.6; color: #e4e4ea; }
 .hint {
   margin-top: 0.7rem;
-  display: flex;
-  justify-content: space-between;
   font-size: 0.72rem;
+  line-height: 1.7;
   color: var(--muted);
   transition: opacity 600ms ease;
 }
+.hint b { color: var(--text); font-weight: 600; }
 
 /* ---- ミス時のリセット演出 ---- */
 .resetting {

@@ -14,16 +14,18 @@ export function slotFor(turn: number, offset: number, slotCount: number): number
 }
 
 /**
- * ids[0] が表示中の 1 本、以降が先読み。
+ * ids は「上へ抜けた1本 → 表示中の1本 → 先読み」の順に並べる。
+ * まだ前の1本が無いときは undefined を入れておけば、その枠を空けたまま割り当てる。
  * 戻り値は「スロット番号 → 動画ID」の配列。
  */
 export function buildSlots(
   turn: number,
-  ids: readonly string[],
+  ids: readonly (string | null | undefined)[],
   slotCount: number,
 ): (string | null)[] {
   const slots: (string | null)[] = new Array(slotCount).fill(null)
   ids.slice(0, slotCount).forEach((id, offset) => {
+    if (!id) return
     slots[slotFor(turn, offset, slotCount)] = id
   })
   return slots

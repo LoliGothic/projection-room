@@ -26,6 +26,11 @@ export interface Deck {
   /** 先頭が現在の 1 本。以降は先読み用 */
   buffer: readonly Clip[]
   /**
+   * ひとつ前に出ていた 1 本。
+   * 下から次が上がってくる動きを見せるあいだ、上へ抜けていく側として残す。
+   */
+  previous?: Clip
+  /**
    * 先頭を何回進めたか。<video> のスロット割り当てに使う。
    * 回答した本数とは一致しない（ミス演出のあいだは進めないため）
    */
@@ -60,7 +65,16 @@ function refill(pool: readonly Clip[], deck: Deck, rng: Rng): Deck {
 
 /** 先頭を 1 本進めて、先読みを補充する */
 function advance(pool: readonly Clip[], deck: Deck, rng: Rng): Deck {
-  return refill(pool, { ...deck, buffer: deck.buffer.slice(1), advances: deck.advances + 1 }, rng)
+  return refill(
+    pool,
+    {
+      ...deck,
+      previous: deck.buffer[0],
+      buffer: deck.buffer.slice(1),
+      advances: deck.advances + 1,
+    },
+    rng,
+  )
 }
 
 export function createSession(pool: readonly Clip[]): Session {
@@ -80,6 +94,11 @@ export function currentClip(s: Session): Clip | undefined {
 /** 先読み中の動画（表示はしない） */
 export function preloadClips(s: Session): readonly Clip[] {
   return s.deck.buffer.slice(1)
+}
+
+/** 上へ抜けていく 1 本。最初の 1 本のときは無い */
+export function previousClip(s: Session): Clip | undefined {
+  return s.deck.previous
 }
 
 export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {

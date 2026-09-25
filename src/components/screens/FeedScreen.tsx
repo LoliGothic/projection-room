@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Verdict } from '../../core/types'
-import { currentClip, preloadClips, type Session } from '../../core/session'
+import { currentClip, preloadClips, previousClip, type Session } from '../../core/session'
 import {
   ambienceLevel,
   counterDrift,
@@ -51,6 +51,7 @@ export function FeedScreen({
   const settings = useSettings()
   const clip = currentClip(session)
   const preload = preloadClips(session)
+  const previous = previousClip(session)
   const { stage, stats } = session.progress
   const turn = session.deck.advances
 
@@ -119,9 +120,9 @@ export function FeedScreen({
       <FeedVideo
         ref={video}
         current={clip}
+        previous={previous}
         turn={turn}
         preload={preload}
-        onAnswer={onAnswer}
         enabled={interactive}
         paused={!interactive}
         onTap={replay}
@@ -164,14 +165,20 @@ export function FeedScreen({
           <Notifications notices={notices} />
         </div>
 
-        <SideActions counters={counters} onReplay={replay} onDecorative={onDecorative} />
+        <SideActions
+          counters={counters}
+          onLike={() => onAnswer('keep')}
+          onReport={() => onAnswer('report')}
+          onReplay={replay}
+          onDecorative={onDecorative}
+          enabled={interactive}
+        />
 
         <div className="feed-bottom">
           <p className="account">@{accountNameFor(clip.contributor, stats.loops, turn, clip.id)}</p>
           <p className="caption">{captionFor(stats.loops, turn)}</p>
-          <div className="hint" style={{ opacity: stats.presented >= 6 ? 0.3 : 1 }}>
-            <span>← 報告する</span>
-            <span>残す →</span>
+          <div className="hint" style={{ opacity: stats.presented >= 6 ? 0.35 : 1 }}>
+            本物なら<b>♥</b>、AIが作ったものなら<b>⋯</b>から<b>報告</b>
           </div>
         </div>
       </div>

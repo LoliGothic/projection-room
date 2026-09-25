@@ -45,13 +45,39 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-/** いま映っている動画の clips.json 上の定義 */
+/** いま映っている動画の clips.json 上の定義（画面の中央にある枠が表示中） */
 function activeClip() {
-  const shown = [...document.querySelectorAll('.swipe-card video')].find(
-    (v) => (v as HTMLElement).style.opacity === '1',
+  const shown = [...document.querySelectorAll('.feed-slot')].find(
+    (el) => (el as HTMLElement).style.transform === 'translateY(0%)',
   )
-  const src = shown?.getAttribute('src') ?? ''
+  const src = shown?.querySelector('video')?.getAttribute('src') ?? ''
   return clipsFile.clips.find((c) => src.endsWith(`${c.id}.mp4`))
+}
+
+/** ハートを押す＝本物だと答える */
+async function tapLike() {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: /^いいね/ }))
+  })
+}
+
+/** 「…」から報告する＝AIだと答える */
+async function tapReport() {
+  await act(async () => {
+    fireEvent.click(screen.getByRole('button', { name: 'その他' }))
+  })
+  await act(async () => {
+    fireEvent.click(screen.getByRole('menuitem', { name: '報告する' }))
+  })
+}
+
+/** いま映っているのが目的の種類になるまで、正解しながら送る */
+async function advanceUntil(isAI: boolean) {
+  for (let i = 0; i < 12; i++) {
+    if (activeClip()!.isAI === isAI) return
+    await answer(true)
+  }
+  throw new Error('目的の種類の動画にたどり着けませんでした')
 }
 
 /** 正しく / わざと間違えて回答する */
@@ -59,9 +85,8 @@ async function answer(correct: boolean) {
   const clip = activeClip()
   if (!clip) throw new Error('映っている動画が見つかりません')
   const report = correct ? clip.isAI : !clip.isAI
-  await act(async () => {
-    fireEvent.keyDown(window, { key: report ? 'ArrowLeft' : 'ArrowRight' })
-  })
+  if (report) await tapReport()
+  else await tapLike()
 }
 
 /** 初回の注意表示を抜けて起動画面まで出す */
@@ -75,7 +100,7 @@ async function toLaunch() {
 async function toFeed() {
   await toLaunch()
   fireEvent.click(screen.getByRole('button', { name: 'はじめる' }))
-  await waitFor(() => expect(document.querySelector('.swipe-card video')).toBeTruthy())
+  await waitFor(() => expect(document.querySelector('.feed-slot video')).toBeTruthy())
 }
 
 /** エンディングのテキストを最後まで送る */
@@ -93,53 +118,75 @@ describe('フィードが動く', () => {
   it('起動画面から「はじめる」でフィードに入る', async () => {
     await toFeed()
     expect(activeClip()).toBeDefined()
-    expect(document.querySelector('.verdict.report')?.textContent).toBe('報告')
-    expect(document.querySelector('.verdict.keep')?.textContent).toBe('残す')
+    expect(screen.getByRole('button', { name: /^いいね/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'その他' })).toBeTruthy()
   })
 
-  it('先読み用の <video> が current + preload ぶん並んでいる', async () => {
+  it('先読みぶんを含めて枠が縦に並んでいる', async () => {
     await toFeed()
-    expect(document.querySelectorAll('.swipe-card video')).toHaveLength(RULES.preloadAhead + 1)
+    // 上へ抜けた1本 + 表示中 + 先読み2本
+    expect(document.querySelectorAll('.feed-slot')).toHaveLength(RULES.preloadAhead + 2)
+    // 次の1本は画面の下に控えている
+    const below = [...document.querySelectorAll('.feed-slot')].filter(
+      (el) => (el as HTMLElement).style.transform === 'translateY(100%)',
+    )
+    expect(below.length).toBeGreaterThan(0)
   })
 
-  it('先読み用の <video> は重ねて配置されている', async () => {
+  it('本物にハートを押すと正解になり、次の動画が上がってくる', async () => {
     await toFeed()
-    for (const v of document.querySelectorAll('.swipe-card video')) {
-      const style = (v as HTMLElement).style
-      expect(style.position).toBe('absolute')
-      expect(style.inset).toBe('0px')
-    }
-  })
-
-  it('矢印キーで回答すると次の動画に進む', async () => {
-    await toFeed()
+    await advanceUntil(false)
     const before = activeClip()!.id
-    await answer(true)
+
+    await tapLike()
+
+    expect(document.querySelector('.resetting')).toBeNull()
     await waitFor(() => expect(activeClip()!.id).not.toBe(before))
   })
 
-  it('指でのドラッグ（ポインタ操作）で回答できる', async () => {
+  it('AIに「…」から報告すると正解になり、次の動画が上がってくる', async () => {
     await toFeed()
-    const clip = activeClip()!
-    const card = document.querySelector('.swipe-card') as HTMLElement
-    const dir = clip.isAI ? -1 : 1
-    await act(async () => {
-      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 300 })
-      fireEvent.pointerMove(card, { pointerId: 1, clientX: 200 + dir * 40, clientY: 302 })
-      fireEvent.pointerMove(card, { pointerId: 1, clientX: 200 + dir * 140, clientY: 304 })
-      fireEvent.pointerUp(card, { pointerId: 1, clientX: 200 + dir * 140, clientY: 304 })
-    })
-    await waitFor(() => expect(activeClip()!.id).not.toBe(clip.id))
+    await advanceUntil(true)
+    const before = activeClip()!.id
+
+    await tapReport()
+
+    expect(document.querySelector('.resetting')).toBeNull()
+    await waitFor(() => expect(activeClip()!.id).not.toBe(before))
   })
 
-  it('途中で操作を横取りされたら（pointercancel）回答しない', async () => {
+  it('AIにハートを押すとミスになる', async () => {
+    await toFeed()
+    await advanceUntil(true)
+    await tapLike()
+    expect(document.querySelector('.resetting')).toBeTruthy()
+  })
+
+  it('本物を報告するとミスになる', async () => {
+    await toFeed()
+    await advanceUntil(false)
+    await tapReport()
+    expect(document.querySelector('.resetting')).toBeTruthy()
+  })
+
+  it('メニューを開いただけでは回答にならない', async () => {
     await toFeed()
     const before = activeClip()!.id
-    const card = document.querySelector('.swipe-card') as HTMLElement
     await act(async () => {
-      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 300 })
-      fireEvent.pointerMove(card, { pointerId: 1, clientX: 340, clientY: 300 })
-      fireEvent.pointerCancel(card, { pointerId: 1, clientX: 340, clientY: 300 })
+      fireEvent.click(screen.getByRole('button', { name: 'その他' }))
+    })
+    expect(screen.getByRole('menuitem', { name: '報告する' })).toBeTruthy()
+    expect(activeClip()!.id).toBe(before)
+  })
+
+  it('メニューの飾りの項目を押しても回答にならない', async () => {
+    await toFeed()
+    const before = activeClip()!.id
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'その他' }))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('menuitem', { name: '興味がない' }))
     })
     expect(activeClip()!.id).toBe(before)
   })
@@ -183,15 +230,21 @@ describe('フィードが動く', () => {
   it('右側のアイコンに数字が出て、動画ごとに変わる', async () => {
     await toFeed()
     const labels = [...document.querySelectorAll('.side-label')].map((e) => e.textContent)
-    // 最初から / いいね / コメント / 共有
+    // いいね / コメント / 最初から / その他
     expect(labels).toHaveLength(4)
-    expect(labels[0]).toBe('最初から')
-    expect(labels.slice(1).every((t) => (t ?? '').length > 0)).toBe(true)
+    expect(labels[2]).toBe('最初から')
+    expect(labels[3]).toBe('その他')
+    // いいねとコメントには数字が出ている
+    expect(labels[0]).toMatch(/[\d,万億]/)
+    expect(labels[1]).toMatch(/[\d,万億]/)
 
-    const before = labels.join()
+    const before = labels.slice(0, 2).join()
     await answer(true)
     await waitFor(() => {
-      const now = [...document.querySelectorAll('.side-label')].map((e) => e.textContent).join()
+      const now = [...document.querySelectorAll('.side-label')]
+        .slice(0, 2)
+        .map((e) => e.textContent)
+        .join()
       expect(now).not.toBe(before)
     })
   })
@@ -219,20 +272,19 @@ describe('フィードが動く', () => {
 
   it('動画は繰り返し再生される', async () => {
     await toFeed()
-    for (const v of document.querySelectorAll('.swipe-card video')) {
+    for (const v of document.querySelectorAll('.feed-slot video')) {
       expect((v as HTMLVideoElement).loop).toBe(true)
     }
   })
 
-  it('映像をタップすると頭出しになる（スワイプにはならない）', async () => {
+  it('映像をタップしても回答にはならない（頭出しだけ）', async () => {
     await toFeed()
     const before = activeClip()!.id
-    const card = document.querySelector('.swipe-card') as HTMLElement
+    const area = document.querySelector('.feed-video') as HTMLElement
     await act(async () => {
-      fireEvent.pointerDown(card, { pointerId: 1, clientX: 200, clientY: 300 })
-      fireEvent.pointerUp(card, { pointerId: 1, clientX: 203, clientY: 301 })
+      fireEvent.pointerDown(area, { pointerId: 1, clientX: 200, clientY: 300 })
+      fireEvent.pointerUp(area, { pointerId: 1, clientX: 203, clientY: 301 })
     })
-    // 回答にはならない
     expect(activeClip()!.id).toBe(before)
   })
 
@@ -242,7 +294,7 @@ describe('フィードが動く', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'やめる' }))
     expect(screen.getByRole('button', { name: 'もう一度押すとやめる' })).toBeTruthy()
-    expect(document.querySelector('.swipe-card video')).toBeTruthy()
+    expect(document.querySelector('.feed-slot video')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'もう一度押すとやめる' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
@@ -260,9 +312,9 @@ describe('フィードが動く', () => {
 
   it('画面を離れると映像が止まる', async () => {
     await toFeed()
-    const shown = [...document.querySelectorAll('.swipe-card video')].find(
-      (v) => (v as HTMLElement).style.opacity === '1',
-    ) as HTMLVideoElement
+    const shown = [...document.querySelectorAll('.feed-slot')]
+      .find((el) => (el as HTMLElement).style.transform === 'translateY(0%)')!
+      .querySelector('video') as HTMLVideoElement
 
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })
     await act(async () => {
