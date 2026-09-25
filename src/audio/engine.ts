@@ -1,4 +1,6 @@
 import { creakBuffer, noiseBuffer, projectorBuffer, rewindBuffer } from './synth'
+import { startMusic, type Music } from './music'
+import { BGM, hasBgmFile } from '../config/audio'
 
 /**
  * ゲームの音。動画は常に無音で、音はすべてここで鳴らす。
@@ -22,6 +24,10 @@ class AudioEngine {
 
   private breathSrc: AudioBufferSourceNode | null = null
   private breathGain: GainNode | null = null
+
+  private music: Music | null = null
+  private musicGain: GainNode | null = null
+  private bgmSrc: AudioBufferSourceNode | null = null
 
   private creak: AudioBuffer | null = null
   private rewind: AudioBuffer | null = null
@@ -59,6 +65,7 @@ class AudioEngine {
     this.startDrone(ctx, master)
     this.startBreath(ctx, master)
     this.scheduleCreak()
+    await this.startBgm(ctx, master)
   }
 
   private startProjector(ctx: AudioContext, master: GainNode) {
@@ -134,6 +141,37 @@ class AudioEngine {
     this.breathGain = gain
   }
 
+  /**
+   * BGM を始める。
+   * config/audio.ts に音源が指定されていればそれを流し、
+   * 無ければ合成した仮のBGMを鳴らす。
+   */
+  private async startBgm(ctx: AudioContext, master: GainNode) {
+    const gain = ctx.createGain()
+    gain.gain.value = BGM.gain
+    gain.connect(master)
+    this.musicGain = gain
+
+    if (hasBgmFile()) {
+      try {
+        const url = import.meta.env.BASE_URL + BGM.file.replace(/^\.?\//, '')
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(String(res.status))
+        const buffer = await ctx.decodeAudioData(await res.arrayBuffer())
+        const src = ctx.createBufferSource()
+        src.buffer = buffer
+        src.loop = true
+        src.connect(gain)
+        src.start()
+        this.bgmSrc = src
+        return
+      } catch {
+        // 読めなければ合成のほうへ落とす。音が無いより鳴っていたほうがよい
+      }
+    }
+    this.music = startMusic(ctx, gain)
+  }
+
   /* ---- 状態の反映 ---- */
 
   setVolume(volume: number) {
@@ -164,6 +202,12 @@ class AudioEngine {
     this.projectorGain?.gain.setTargetAtTime(0.22 + intensity * 0.1, t, 0.3)
     this.droneGain?.gain.setTargetAtTime(0.08 + intensity * 0.16, t, 0.5)
     this.breathGain?.gain.setTargetAtTime(ambience * 0.2, t, 0.5)
+
+    // BGM も一緒に歪ませる。音源ファイルのときは再生速度を落とす
+    this.music?.setDread(intensity)
+    if (this.bgmSrc) this.bgmSrc.playbackRate.setTargetAtTime(1 - intensity * 0.12, t, 0.8)
+    // 不穏になるほど BGM は引っ込み、環境音が前に出る
+    this.musicGain?.gain.setTargetAtTime(BGM.gain * (1 - intensity * 0.45), t, 0.8)
   }
 
   /** ループ回数。増えるほど映写機の異音が増える */
@@ -333,6 +377,10 @@ class AudioEngine {
 
   /** 画面を離れるときなど */
   dispose() {
+    this.music?.stop()
+    this.music = null
+    this.bgmSrc?.stop()
+    this.bgmSrc = null
     if (this.creakTimer !== null) window.clearTimeout(this.creakTimer)
     this.creakTimer = null
     this.projectorSrc?.stop()
