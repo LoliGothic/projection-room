@@ -16,6 +16,8 @@ interface Props {
   /** 先読みしておく動画 */
   preload: readonly Clip[]
   onAnswer: (verdict: Verdict) => void
+  /** 動画が読み込めなかったとき（配信の取りこぼしに気づけるように） */
+  onVideoError?: () => void
   enabled: boolean
   /** 演出中は映像も止める */
   paused?: boolean
@@ -33,6 +35,7 @@ export function FeedVideo({
   turn,
   preload,
   onAnswer,
+  onVideoError,
   enabled,
   paused = false,
   ref,
@@ -108,8 +111,10 @@ export function FeedVideo({
               src={clip?.src}
               muted
               playsInline
+              autoPlay
               preload="auto"
               disablePictureInPicture
+              onError={i === activeSlot ? onVideoError : undefined}
               // 3枚を必ず重ねる。ここを外すと先読み分が縦に並んではみ出す
               style={{
                 position: 'absolute',

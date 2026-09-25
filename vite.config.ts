@@ -34,9 +34,29 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // アプリ本体だけ事前キャッシュする。動画は実行時に少しずつ貯める
-        globPatterns: ['**/*.{js,css,html,woff2}', 'icons/*.png', 'clips.json'],
+        /*
+          アプリ本体だけ事前キャッシュする。動画は実行時に少しずつ貯める。
+
+          clips.json は事前キャッシュしない。ここに入れると、素材を差し替えたときに
+          古い一覧を持った端末が「もう存在しないID」を要求し続けて、
+          映像だけ出ない状態になる。
+        */
+        globPatterns: ['**/*.{js,css,html,woff2}', 'icons/*.png'],
+        // 古い世代のキャッシュを残さない
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
+          {
+            // 一覧は必ず新しいものを見に行く。取れなければ前回のものを使う
+            urlPattern: /clips\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'projection-room-manifest',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 2 },
+            },
+          },
           {
             urlPattern: /\/clips\/.*\.mp4$/,
             handler: 'CacheFirst',

@@ -492,3 +492,22 @@ body {
   color: #cfcfd8;
   margin: 0;
 }
+
+/* 動画が取れなかったときの表示。黙って黒くならないようにする */
+.video-error {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  border-radius: 10px;
+  background: rgba(18, 18, 24, 0.92);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: var(--text);
+  text-align: center;
+}
+.video-error code { font-size: 0.72rem; color: var(--muted); word-break: break-all; }

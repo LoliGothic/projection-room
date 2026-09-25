@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Verdict } from '../../core/types'
 import { currentClip, preloadClips, type Session } from '../../core/session'
 import {
@@ -90,6 +90,10 @@ export function FeedScreen({ session, onAnswer, onReplay, onDarkness, interactiv
 
   const onDecorative = useCallback(() => audio.playTap(), [])
 
+  // 動画が取れなかったときに黙って黒くならないようにする
+  const [failed, setFailed] = useState<string | null>(null)
+  const onVideoError = useCallback(() => setFailed(clip?.src ?? null), [clip?.src])
+
   if (!clip) return <p className="center-message">読み込み中…</p>
 
   return (
@@ -102,7 +106,16 @@ export function FeedScreen({ session, onAnswer, onReplay, onDarkness, interactiv
         onAnswer={onAnswer}
         enabled={interactive}
         paused={!interactive}
+        onVideoError={onVideoError}
       />
+
+      {failed && (
+        <p className="video-error">
+          動画を読み込めませんでした。
+          <br />
+          <code>{failed}</code>
+        </p>
+      )}
 
       <div className="feed-overlay">
         <div className="feed-top">
