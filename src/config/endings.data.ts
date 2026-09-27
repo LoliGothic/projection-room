@@ -133,7 +133,7 @@ export const ENDINGS: readonly EndingDef[] = [
     cards: [
       n('一定時間、操作がありませんでした', 4500),
     ],
-    hint: '一本の動画を、長く見つめすぎると。',
+    hint: '1本の動画を、長く見つめすぎると。',
   },
   {
     id: 'true',
@@ -159,7 +159,7 @@ export const ENDINGS: readonly EndingDef[] = [
     priority: 20,
     conditions: [{ stat: 'loops', op: 'gt', value: ENDING_THRESHOLDS.endlessLoops }],
     cards: [
-      n('八段階を完了しました', 2600),
+      n('8段階を完了しました', 2600),
       n('このアプリを {loops} 回開き直しました', 3000),
       // 通したのに、やめる資格がないと言われる
       n('利用を終了する条件を確認しています', 2800),
