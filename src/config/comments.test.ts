@@ -30,4 +30,29 @@ describe('commentsFor', () => {
     expect(commentsFor('abc123', 0, 5)).toHaveLength(5)
     expect(commentsFor('abc123', 40, 8)).toHaveLength(8)
   })
+
+  it('1つの動画の中で、同じ文言・同じ名前が並ばない', () => {
+    for (const loops of [0, 3, 12, 30]) {
+      const list = commentsFor('abc123', loops)
+      expect(new Set(list.map((c) => c.text)).size).toBe(list.length)
+      expect(new Set(list.map((c) => c.name)).size).toBe(list.length)
+    }
+  })
+
+  it('動画をまたいでも、同じ文言ばかりにならない', () => {
+    // 候補が少ないと、どの動画でも同じ顔ぶれになってしまう
+    const texts = new Set<string>()
+    for (let i = 0; i < 30; i++) {
+      for (const c of commentsFor(`clip${i}`, 0)) texts.add(c.text)
+    }
+    expect(texts.size).toBeGreaterThan(80)
+  })
+
+  it('名前も動画をまたいで散らばる', () => {
+    const names = new Set<string>()
+    for (let i = 0; i < 30; i++) {
+      for (const c of commentsFor(`clip${i}`, 0)) names.add(c.name)
+    }
+    expect(names.size).toBeGreaterThan(150)
+  })
 })

@@ -89,23 +89,6 @@ export function captionFor(loops: number, index: number): string {
 }
 
 /**
- * 提供者名が未記入のときに使う、当たり障りのないアカウント名。
- * 本物と AI のどちらにも同じ形で出すので、見分けの手がかりにならない。
- */
-const FALLBACK_NAMES: readonly string[] = [
-  'nagi.films',
-  'shizuku_ch',
-  'mist_and_moss',
-  'aoi.walks',
-  'kohaku_daily',
-  'still.water',
-  'hoshi_room',
-  'mado_kara',
-  'yuzu_scenes',
-  'towa.clip',
-]
-
-/**
  * 表示する投稿者名。
  * ループが増えるほど、同じ名前に置き換わる割合が上がる。
  *
@@ -118,7 +101,9 @@ export function accountNameFor(
   index: number,
   clipId = '',
 ): string {
-  const base = contributor?.trim() || pickBy(FALLBACK_NAMES, clipId)
+  // 提供者名が未記入でも「unknown」とは出さない。
+  // 片方だけそうなると、そこが手がかりになってしまう
+  const base = contributor?.trim() || accountHandle(clipId)
   if (loops <= 0) return base
   // 20 ループで半分ほどが同じ名前になる
   const ratio = Math.min(0.55, loops / 36)
@@ -136,18 +121,164 @@ export const COMMENTS: readonly { minLoops: number; lines: readonly string[] }[]
   {
     minLoops: 0,
     lines: [
-      'きれい',
-      'どこですか？',
-      '保存しました',
-      '癒される〜',
-      'music名前わかる人いますか',
-      '毎日見てる',
-      'ここ行きたい',
-      '画質すご',
-      '朝から見れてよかった',
-      '何回も見ちゃう',
-      'おすすめに出てきた',
-      '好き',
+    'きれい',
+    'きれいすぎる',
+    'うつくしい',
+    'すご',
+    'すごい…',
+    'やば',
+    'えぐい',
+    '神',
+    '最高',
+    '好き',
+    'すき',
+    'めっちゃいい',
+    'ずっと見てられる',
+    '何回も見ちゃう',
+    '無限に見れる',
+    'ため息出た',
+    '鳥肌',
+    '言葉が出ない',
+    '心が洗われる',
+    '癒される〜',
+    '癒し',
+    '落ち着く',
+    'ほっとする',
+    '泣いた',
+    '涙出てきた',
+    'なんか泣ける',
+    '元気もらえた',
+    '救われた',
+    '朝から見れてよかった',
+    '寝る前に見るやつ',
+    '寝れない夜に見てる',
+    '通勤中に見てる',
+    '休憩中に見てる',
+    '仕事行きたくなくなった',
+    '仕事の手が止まった',
+    '明日もがんばれる',
+    '現実に戻りたくない',
+    'ここで暮らしたい',
+    '行ってみたい',
+    'いつか行きます',
+    'next trip ここにします',
+    'どこですか？',
+    'ここどこですか',
+    '場所知りたいです',
+    '場所教えてください🙏',
+    '何県ですか？',
+    '日本ですか？',
+    '海外っぽい',
+    'season いつ頃ですか',
+    '時期はいつがいいですか',
+    '朝ですか夕方ですか',
+    '保存しました',
+    '保存した',
+    'ブクマ',
+    'メモメモ',
+    '待ち受けにした',
+    '壁紙にしたい',
+    'スクショした',
+    'シェアさせてください',
+    '友達に送った',
+    '家族に見せた',
+    'music名前わかる人いますか',
+    'BGM教えてください',
+    '曲名なんですか？',
+    '音源知りたい',
+    'この音好き',
+    '音もいい',
+    'カメラ何使ってますか',
+    '機材気になる',
+    '撮影上手すぎ',
+    '構図が good',
+    '色味が好み',
+    '編集うま',
+    '画質すご',
+    '4K で見たい',
+    '本物？加工？',
+    'これ加工なしですか',
+    '生で見たらもっとすごいんだろうな',
+    'おすすめに出てきた',
+    'なんで今これが流れてきたんだろ',
+    'アルゴリズムありがとう',
+    'おすすめ有能',
+    'たまたま見つけた',
+    '初めて見た',
+    'フォローしました',
+    'フォローさせてもらいます',
+    '毎日見てる',
+    '毎回楽しみ',
+    '新作待ってます',
+    '続き見たい',
+    'もっと長いバージョンないですか',
+    '通知オンにしました',
+    '1番好きかも',
+    'これは伸びる',
+    'バズれ',
+    'もっと評価されてほしい',
+    'なんでこれ伸びてないの',
+    'みんな見て',
+    'friends にも教えた',
+    '同じ場所に行ったことある',
+    '去年行きました',
+    '懐かしい',
+    '子供の頃に見た景色',
+    'おばあちゃんちの近く',
+    '地元です',
+    '近所でびっくりした',
+    '知ってる場所だ',
+    'わかる',
+    'ほんとそれ',
+    'それな',
+    '同じこと思った',
+    '共感しかない',
+    'ありがとう',
+    'ありがとうございます',
+    '感謝',
+    'おつかれさまです',
+    'いい一日になりそう',
+    'おやすみなさい',
+    'おはようございます',
+    'こんばんは',
+    '深夜に見るやつ',
+    '午前3時',
+    'また来ました',
+    'また見に来た',
+    '何回目だろう',
+    '2回目です',
+    '3回目',
+    'リピートしてる',
+    '音量上げて見てほしい',
+    'イヤホン推奨',
+    'フルスクリーンで見た',
+    '大画面で見たい',
+    '呼吸忘れてた',
+    '時間溶けた',
+    '5分見てた',
+    '気づいたら終わってた',
+    'もう一回',
+    'loop してる',
+    '止まらない',
+    '落ち着いて見れる',
+    'ゆっくりできた',
+    '静かでいい',
+    '音がないのもいい',
+    'すーっとした',
+    '深呼吸した',
+    'なんかいいね',
+    'いいね押した',
+    '❤️',
+    '😭',
+    '🥹',
+    '✨',
+    '🌊',
+    '🍃',
+    'great',
+    'beautiful',
+    'wow',
+    'love this',
+    'amazing',
     ],
   },
   {
@@ -156,18 +287,38 @@ export const COMMENTS: readonly { minLoops: number; lines: readonly string[] }[]
       'これ前も流れてきた',
       'さっき見たばかりなんだけど',
       'また出てきた',
+      '今日3回目',
       'アルゴリズム壊れてる？',
       'なんか見覚えある',
+      'デジャヴ',
+      '同じの何回も出てくる',
+      'さっきと同じですよね',
+      'リロードしても同じ',
+      'おすすめ、これしか出てこない',
+      '他の動画が出てこないんだけど',
+      'なんで繰り返すの',
+      '履歴に残ってないのに見覚えある',
+      'これ見た記憶がある',
     ],
   },
   {
     minLoops: 5,
     lines: [
       'ここ、地図に載ってないですよね',
+      '調べたけど出てこなかった',
+      '検索しても一件もヒットしない',
       '撮影者のアカウントが見つからない',
+      'プロフィール消えてます',
+      '投稿者って実在します？',
       'この場所いつのですか',
       '誰が撮ったんですか？',
-      '調べたけど出てこなかった',
+      '撮影日が未来になってる',
+      '同じ場所の動画が何百件もある',
+      '全部同じ人が上げてる',
+      '通報しても消えない',
+      'ブロックしても出てくる',
+      '誰も答えてくれない',
+      'コメントが増えていってる',
     ],
   },
   {
@@ -178,6 +329,16 @@ export const COMMENTS: readonly { minLoops: number; lines: readonly string[] }[]
       '何回目ですか',
       'ずっと同じところにいますね',
       '私も抜けられませんでした',
+      '寝てないでしょ',
+      '画面から離れて',
+      '後ろ、見ないほうがいいですよ',
+      '部屋の明かりつけて',
+      '今何時か分かりますか',
+      'あなたの番です',
+      '返事しないでください',
+      '見てるのは動画だけじゃない',
+      'このコメント、あなたにしか見えていません',
+      '既読がつきました',
     ],
   },
   {
@@ -187,25 +348,46 @@ export const COMMENTS: readonly { minLoops: number; lines: readonly string[] }[]
       'ここから出た人を見たことがない',
       'もう数えていません',
       '次もまた会いましょう',
+      'ずっとここにいましたよ',
+      'はじめましてじゃないですね',
+      '何度目かは聞きません',
+      'わたしも最初はそう思っていました',
+      '出口はありません',
+      'おすすめは終わりません',
+      'あなたの分も見ておきます',
+      'また明日',
     ],
   },
 ]
 
-/** コメントに添える名前 */
-const COMMENT_NAMES: readonly string[] = [
-  'mori_no_oto',
-  'tsuki3',
-  'kaze.to.hikari',
-  'yoru_ni',
-  'asagiri',
-  'shiro_neko',
-  'umi_bi',
-  'kumo_no_ue',
-  'hazama',
-  'towa.',
-  'nemuri_ya',
-  'kagerou',
+/**
+ * アカウント名は部品の組み合わせで作る。
+ * 一覧を直接持つと数十件で頭打ちになり、同じ名前ばかり並んで見える。
+ */
+const NAME_HEADS: readonly string[] = [
+  'mori', 'tsuki', 'kaze', 'yoru', 'asagiri', 'shiro', 'umi', 'kumo',
+  'hazama', 'towa', 'nemuri', 'kagerou', 'hikari', 'mizu', 'ao', 'yuki',
+  'hoshi', 'nami', 'sora', 'kusa', 'ame', 'kiri', 'hana', 'fuyu',
+  'natsu', 'haru', 'aki', 'kage', 'shizuku', 'tori', 'iwa', 'tani',
+  'nagi', 'miya', 'sugi', 'take', 'ishi', 'yama', 'kawa', 'no',
 ]
+const NAME_TAILS: readonly string[] = [
+  '', '_no_oto', '.bi', '_ya', '_ni', '.neko', '_no_ue', '_to_hikari',
+  '_days', '.room', '_log', '.film', '_camera', '_memo', '.note', '_life',
+  '_walk', '.trip', '_scene', '.view', '_time', '.rec', '_clip', '.photo',
+]
+const NAME_SUFFIXES: readonly string[] = [
+  '', '', '', '_', '.', '3', '7', '22', '08', 'ch', 'tv', 'x',
+]
+
+/** ID から決まるアカウント名。同じ入力なら毎回同じ */
+export function accountHandle(...parts: readonly string[]): string {
+  return (
+    pickBy(NAME_HEADS, ...parts, 'h') +
+    pickBy(NAME_TAILS, ...parts, 't') +
+    pickBy(NAME_SUFFIXES, ...parts, 's')
+  )
+}
 
 export interface Comment {
   name: string
@@ -240,9 +422,9 @@ export function commentsFor(clipId: string, loops: number, count = 8): Comment[]
     }
     usedText.add(text)
 
-    let name = pickBy(COMMENT_NAMES, clipId, `n${i}`)
-    for (let retry = 1; usedName.has(name) && retry < COMMENT_NAMES.length; retry++) {
-      name = pickBy(COMMENT_NAMES, clipId, `n${i}`, `r${retry}`)
+    let name = accountHandle(clipId, `n${i}`)
+    for (let retry = 1; usedName.has(name) && retry < 8; retry++) {
+      name = accountHandle(clipId, `n${i}`, `r${retry}`)
     }
     usedName.add(name)
 
