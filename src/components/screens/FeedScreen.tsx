@@ -14,6 +14,7 @@ import { audio } from '../../audio/engine'
 import { useDreadTimer } from '../../hooks/useDreadTimer'
 import { useDreadNotices } from '../../hooks/useDreadEffects'
 import { effectiveFx, useSettings } from '../../state/settingsStore'
+import { pushSeenFrame } from '../../state/seenFrames'
 import { FeedVideo, type FeedVideoHandle } from '../game/FeedVideo'
 import { SideActions } from '../game/SideActions'
 import { Notifications } from '../game/Notifications'
@@ -98,6 +99,18 @@ export function FeedScreen({
     )
   }, [clip, dread, fx])
 
+  /**
+   * 答える。巻き戻しで使うので、送る前にいまのコマを控えておく。
+   * 送ったあとでは、もう次の動画に変わっている。
+   */
+  const answer = useCallback(
+    (verdict: Verdict) => {
+      pushSeenFrame(video.current?.snapshot() ?? null)
+      onAnswer(verdict)
+    },
+    [onAnswer],
+  )
+
   const replay = useCallback(() => {
     video.current?.replay()
     // 映像を頭に戻すので、音楽も同じところへ戻す
@@ -156,7 +169,7 @@ export function FeedScreen({
         preload={preload}
         enabled={interactive && !sheetOpen}
         paused={!interactive}
-        onAdvance={() => onAnswer('keep')}
+        onAdvance={() => answer('keep')}
         onTap={replay}
         onVideoError={onVideoError}
         renderOverlay={(postClip, isCurrent, offset) => (
@@ -234,7 +247,7 @@ export function FeedScreen({
           <ReportSheet
             onJudge={() => {
               setReportOpen(false)
-              onAnswer('report')
+              answer('report')
             }}
             onClose={() => setReportOpen(false)}
           />

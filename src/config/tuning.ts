@@ -52,8 +52,8 @@ export const FEED = {
 export const CUTSCENE = {
   /** ミス時：画面が一瞬固まる（ms） */
   freezeMs: 700,
-  /** ミス時：画面が壊れる（ms） */
-  glitchMs: 1300,
+  /** ミス時：送ってきた投稿を逆にさかのぼる（ms） */
+  rewindMs: 1300,
   /** ミス時：「おすすめがリセットされました」の通知（ms） */
   resetNoticeMs: 1800,
   /** 段階が上がったときの間（ms）。0 にすると完全にノンストップ */

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react'
 import { isCorrect, type Verdict } from './core/types'
 import { currentClip } from './core/session'
 import { audio } from './audio/engine'
+import { clearSeenFrames } from './state/seenFrames'
 import { APP } from './config/app'
 import { useGame } from './state/gameStore'
 import { useSettings } from './state/settingsStore'
@@ -73,6 +74,8 @@ export default function App() {
 
   const onStart = useCallback(() => {
     void audio.unlock()
+    // 前回の巻き戻し用のコマは捨てる。持ち越すと前の回の投稿までさかのぼってしまう
+    clearSeenFrames()
     send({ type: 'start' })
   }, [send])
 
@@ -82,7 +85,8 @@ export default function App() {
       if (clip) {
         const pan = verdict === 'keep' ? 0.6 : -0.6
         if (isCorrect(clip, verdict)) audio.playCorrect(pan)
-        else audio.playMiss(pan)
+        // 間違えたら、いま流れていた曲がその場で逆再生される
+        else if (!audio.playReverse()) audio.playMiss(pan)
       }
       send({ type: 'answer', verdict })
     },
@@ -91,7 +95,11 @@ export default function App() {
 
   const onReplay = useCallback(() => send({ type: 'replay' }), [send])
   const onDarkness = useCallback(() => send({ type: 'darkness' }), [send])
-  const onCutsceneDone = useCallback(() => send({ type: 'cutsceneDone' }), [send])
+  const onCutsceneDone = useCallback(() => {
+    // 一本目まで戻したので、さかのぼる先も無くなる
+    clearSeenFrames()
+    send({ type: 'cutsceneDone' })
+  }, [send])
 
   // エンディングに到達したら記録する
   const endingId = session?.phase.name === 'ending' ? session.phase.endingId : null

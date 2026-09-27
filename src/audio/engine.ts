@@ -480,7 +480,32 @@ class AudioEngine {
     osc.stop(t + 0.2)
   }
 
-  /** ミス：不協和音 */
+  /**
+   * ミス：いま流れていた曲を、その場で逆再生する。
+   *
+   * ゲームの効果音ではなく「アプリの音がおかしくなった」音にしたいので、
+   * 鳴らす素材はそのとき流れていた曲そのものにしている。
+   * 曲を持っていなければ false を返すので、呼ぶ側で不協和音に落とすこと。
+   */
+  playReverse(seconds = 2.2): boolean {
+    const ctx = this.ctx
+    const master = this.master
+    const buffer = this.bgmSrc?.buffer ?? this.currentBuffer
+    if (!ctx || !master || !buffer) return false
+
+    const t = ctx.currentTime
+    const src = ctx.createBufferSource()
+    src.buffer = reversed(ctx, buffer, this.loopStart, this.loopEnd)
+    const gain = ctx.createGain()
+    gain.gain.setValueAtTime(BGM.gain, t)
+    gain.gain.setTargetAtTime(0.0001, t + seconds * 0.5, seconds * 0.22)
+    src.connect(gain).connect(master)
+    src.start(t)
+    src.stop(t + seconds)
+    return true
+  }
+
+  /** ミス：不協和音。曲が無いときの代わり */
   playMiss(pan = 0) {
     if (!this.ctx || !this.master) return
     const t = this.ctx.currentTime
@@ -572,6 +597,25 @@ class AudioEngine {
 }
 
 export const audio = new AudioEngine()
+
+/** 範囲を切り出して前後をひっくり返した写しを作る */
+function reversed(
+  ctx: AudioContext,
+  buffer: AudioBuffer,
+  start: number,
+  end: number,
+): AudioBuffer {
+  const from = Math.floor(start * buffer.sampleRate)
+  const to = Math.min(buffer.length, Math.floor(end * buffer.sampleRate))
+  const len = Math.max(1, to - from)
+  const out = ctx.createBuffer(buffer.numberOfChannels, len, buffer.sampleRate)
+  for (let c = 0; c < buffer.numberOfChannels; c++) {
+    const src = buffer.getChannelData(c)
+    const dst = out.getChannelData(c)
+    for (let i = 0; i < len; i++) dst[i] = src[to - 1 - i]
+  }
+  return out
+}
 
 const NO_BGM: BgmManifest = { version: 0, loopStart: 0, loopEnd: 0, tracks: [] }
 

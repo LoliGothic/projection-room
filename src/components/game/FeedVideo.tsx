@@ -7,7 +7,16 @@ import { useFeedGesture } from '../../hooks/useFeedGesture'
 export interface FeedVideoHandle {
   /** 最初から再生し直す */
   replay: () => void
+  /**
+   * いま映っているコマの写しを返す。取れなければ null。
+   * 間違えたときの巻き戻しで、送ってきた投稿を並べるのに使う。
+   */
+  snapshot: () => string | null
 }
+
+/** 写しの大きさ。巻き戻しで流れていくだけなので小さくてよい */
+const SNAPSHOT_WIDTH = 180
+const SNAPSHOT_HEIGHT = 320
 
 interface Props {
   current: Clip
@@ -108,6 +117,29 @@ export function FeedVideo({
         if (!v) return
         v.currentTime = 0
         void v.play().catch(() => {})
+      },
+      snapshot: () => {
+        const v = videos.current[activeSlot]
+        if (!v || !v.videoWidth) return null
+        const cv = document.createElement('canvas')
+        cv.width = SNAPSHOT_WIDTH
+        cv.height = SNAPSHOT_HEIGHT
+        const ctx = cv.getContext('2d')
+        if (!ctx) return null
+        try {
+          // object-fit: cover と同じ見え方になるよう、中央を切り取る
+          const scale = Math.max(cv.width / v.videoWidth, cv.height / v.videoHeight)
+          const dw = v.videoWidth * scale
+          const dh = v.videoHeight * scale
+          ctx.drawImage(v, (cv.width - dw) / 2, (cv.height - dh) / 2, dw, dh)
+          return cv.toDataURL('image/jpeg', 0.6)
+        } catch {
+          /*
+            動画を別の場所から配信するようになると、canvas が汚染されて
+            ここで例外になる。そのときは <video> に crossOrigin を付けること。
+          */
+          return null
+        }
       },
     }),
     [activeSlot],
