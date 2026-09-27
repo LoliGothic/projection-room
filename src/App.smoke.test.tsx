@@ -535,14 +535,13 @@ describe('フィードが動く', () => {
 
   it('遊び方は起動画面に書かれていて、フィードには出さない', async () => {
     await toLaunch()
-    expect(screen.getByText(/AIが生成したものが紛れています/)).toBeTruthy()
-    expect(screen.getByText(/そのまま上にスクロールして次へ/)).toBeTruthy()
+    expect(screen.getByText('AIが生成した動画を報告してください。')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'はじめる' }))
     await waitFor(() => expect(document.querySelector('.feed-slot video')).toBeTruthy())
 
     // 映像の上に操作説明は重ねない（実在のアプリに見せかける狙いが崩れるため）
-    expect(screen.queryByText(/そのまま上にスクロールして次へ/)).toBeNull()
+    expect(screen.queryByText('AIが生成した動画を報告してください。')).toBeNull()
     expect(document.querySelector('.hint')).toBeNull()
   })
 
