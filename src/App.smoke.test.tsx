@@ -80,13 +80,17 @@ async function tapLike() {
   })
 }
 
-/** 「…」から報告する＝AIだと答える */
+/** 報告 →「AIが生成した動画」＝AIだと答える */
 async function tapReport() {
   await act(async () => {
-    fireEvent.click(inPost('その他'))
+    fireEvent.click(inPost('報告'))
+  })
+  // 出てきた直後は受け付けないので、少し待つ
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 300))
   })
   await act(async () => {
-    fireEvent.click(inPost('報告する', 'menuitem'))
+    fireEvent.click(screen.getByRole('button', { name: 'AIが生成した動画' }))
   })
 }
 
@@ -138,7 +142,7 @@ describe('フィードが動く', () => {
     await toFeed()
     expect(activeClip()).toBeDefined()
     expect(inPost(/^いいね/)).toBeTruthy()
-    expect(inPost('その他')).toBeTruthy()
+    expect(inPost('報告')).toBeTruthy()
   })
 
   it('右側のボタンとキャプションは投稿ごとにあり、映像と一緒に送られる', async () => {
@@ -232,14 +236,65 @@ describe('フィードが動く', () => {
     expect(document.querySelector('.resetting')).toBeTruthy()
   })
 
-  it('メニューを開いただけでは回答にならない', async () => {
+  it('報告ボタンを押しただけでは回答にならない', async () => {
     await toFeed()
     const before = activeClip()!.id
+
     await act(async () => {
-      fireEvent.click(inPost('その他'))
+      fireEvent.click(inPost('報告'))
     })
-    expect(inPost('報告する', 'menuitem')).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: '報告' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'AIが生成した動画' })).toBeTruthy()
     expect(activeClip()!.id).toBe(before)
+    expect(document.querySelector('.resetting')).toBeNull()
+  })
+
+  it('出てきた直後の報告シートは、項目を受け付けない（連打よけ）', async () => {
+    await toFeed()
+    const before = activeClip()!.id
+
+    await act(async () => {
+      fireEvent.click(inPost('報告'))
+    })
+    // 開いた瞬間に指が当たっても効かない
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'AIが生成した動画' }))
+    })
+    expect(activeClip()!.id).toBe(before)
+    expect(screen.getByRole('dialog', { name: '報告' })).toBeTruthy()
+  })
+
+  it('AI以外の理由を選んでも判定にならない', async () => {
+    await toFeed()
+    const before = activeClip()!.id
+
+    await act(async () => {
+      fireEvent.click(inPost('報告'))
+    })
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 300))
+    })
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'スパム・誤解を招く内容' }))
+    })
+
+    expect(screen.getByText(/報告を受け付けました/)).toBeTruthy()
+    expect(activeClip()!.id).toBe(before)
+    expect(document.querySelector('.resetting')).toBeNull()
+  })
+
+  it('報告シートを開いているあいだは送りの操作が止まる', async () => {
+    await toFeed()
+    const before = activeClip()!.id
+
+    await act(async () => {
+      fireEvent.click(inPost('報告'))
+    })
+    await scrollNext()
+    expect(activeClip()!.id).toBe(before)
+
+    fireEvent.click(screen.getByRole('button', { name: '報告を閉じる' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '報告' })).toBeNull())
   })
 
   it('コメントを開くと書き込みが並び、送りの操作は止まる', async () => {
@@ -317,10 +372,10 @@ describe('フィードが動く', () => {
   it('右側のアイコンに数字が出て、動画ごとに変わる', async () => {
     await toFeed()
     const labels = [...currentPost().querySelectorAll('.side-label')].map((e) => e.textContent)
-    // いいね / コメント / 共有 / その他
+    // いいね / コメント / 共有 / 報告
     expect(labels).toHaveLength(4)
     expect(labels[2]).toBe('共有')
-    expect(labels[3]).toBe('その他')
+    expect(labels[3]).toBe('報告')
     // いいねとコメントには数字が出ている（共有には出さない）
     for (const t of labels.slice(0, 2)) expect(t).toMatch(/[\d,万億]/)
 

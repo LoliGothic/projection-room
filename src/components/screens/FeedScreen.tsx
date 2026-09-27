@@ -19,6 +19,7 @@ import { FeedVideo, type FeedVideoHandle } from '../game/FeedVideo'
 import { SideActions } from '../game/SideActions'
 import { Notifications } from '../game/Notifications'
 import { CommentSheet } from '../game/CommentSheet'
+import { ReportSheet } from '../game/ReportSheet'
 
 interface Props {
   session: Session
@@ -104,11 +105,18 @@ export function FeedScreen({
 
   const onDecorative = useCallback(() => audio.playTap(), [])
 
-  // コメント欄。開いているあいだは送りの操作を止める
+  // シートを開いているあいだは送りの操作を止める
   const [commentsOpen, setCommentsOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const sheetOpen = commentsOpen || reportOpen
+
   const openComments = useCallback(() => {
     audio.playTap()
     setCommentsOpen(true)
+  }, [])
+  const openReport = useCallback(() => {
+    audio.playTap()
+    setReportOpen(true)
   }, [])
 
   /** 共有。外部サイトを新しいタブで開くだけで、こちらからは何も送らない */
@@ -144,7 +152,7 @@ export function FeedScreen({
         previous={previous}
         turn={turn}
         preload={preload}
-        enabled={interactive && !commentsOpen}
+        enabled={interactive && !sheetOpen}
         paused={!interactive}
         onAdvance={() => onAnswer('keep')}
         onTap={replay}
@@ -155,11 +163,11 @@ export function FeedScreen({
               // 動画が変わったらメニューやハートの状態を持ち越さない
               key={postClip.id}
               counters={isCurrent ? counters : baseCounters(postClip.id)}
-              onReport={() => onAnswer('report')}
+              onReport={openReport}
               onComments={openComments}
               onShare={share}
               onDecorative={onDecorative}
-              enabled={isCurrent && interactive && !commentsOpen}
+              enabled={isCurrent && interactive && !sheetOpen}
             />
             <div className="feed-bottom">
               <p className="account">
@@ -217,6 +225,16 @@ export function FeedScreen({
             loops={stats.loops}
             total={counters.comments}
             onClose={() => setCommentsOpen(false)}
+          />
+        )}
+
+        {reportOpen && (
+          <ReportSheet
+            onJudge={() => {
+              setReportOpen(false)
+              onAnswer('report')
+            }}
+            onClose={() => setReportOpen(false)}
           />
         )}
 

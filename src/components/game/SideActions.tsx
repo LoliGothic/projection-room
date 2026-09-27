@@ -3,7 +3,7 @@ import { formatCount, type Counters } from '../../core/counters'
 
 interface Props {
   counters: Counters
-  /** メニューから報告＝この動画はAI生成だ、という判定 */
+  /** 報告シートを開く。判定になるのはシートで「AIが生成した動画」を選んだとき */
   onReport: () => void
   /** コメント欄を開く */
   onComments: () => void
@@ -17,7 +17,8 @@ interface Props {
 /**
  * 投稿ごとの右側の縦並びアイコン。
  *
- * 判定になるのは「…」からの報告だけ。
+ * 判定になるのは報告だけ。押すと理由を選ぶシートが出るので、
+ * ここを押した時点ではまだ何も起きない。
  * 本物だと思ったら、そのまま上にスクロールして送る。
  *
  * ハート・コメント・共有は飾り。数字は動画の ID から決まるので、
@@ -31,10 +32,7 @@ export function SideActions({
   onDecorative,
   enabled,
 }: Props) {
-  const [open, setOpen] = useState(false)
   const [liked, setLiked] = useState(false)
-  // 操作できないあいだは開いていないものとして扱う
-  const menuOpen = open && enabled
 
   return (
     <div className="side-actions">
@@ -82,39 +80,19 @@ export function SideActions({
         <span className="side-label">共有</span>
       </button>
 
-      <div className="side-menu-wrap">
-        <button
-          type="button"
-          className="side-item"
-          onClick={() => setOpen((v) => !v)}
-          disabled={!enabled}
-          aria-label="その他"
-          aria-expanded={menuOpen}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="5" r="1.4" />
-            <circle cx="12" cy="12" r="1.4" />
-            <circle cx="12" cy="19" r="1.4" />
-          </svg>
-          <span className="side-label">その他</span>
-        </button>
-
-        {menuOpen && (
-          <div className="side-menu" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              className="danger"
-              onClick={() => {
-                setOpen(false)
-                onReport()
-              }}
-            >
-              報告する
-            </button>
-          </div>
-        )}
-      </div>
+      <button
+        type="button"
+        className="side-item report"
+        onClick={onReport}
+        disabled={!enabled}
+        aria-label="報告"
+      >
+        {/* 旗。押すと理由を選ぶシートが出る */}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 21V4M5 5h12l-2.5 4L17 13H5" />
+        </svg>
+        <span className="side-label">報告</span>
+      </button>
     </div>
   )
 }
