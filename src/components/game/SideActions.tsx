@@ -73,12 +73,13 @@ export function SideActions({
         className="side-item"
         onClick={onShare}
         disabled={!enabled}
-        aria-label={`共有 ${counters.shares}`}
+        aria-label="共有"
       >
+        {/* 右へ向かう矢印。箱＋上矢印だとダウンロードに見えてしまう */}
         <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M4 12v7h16v-7M12 3v12M8 7l4-4 4 4" />
+          <path d="M13 4.5 21 11l-8 6.5V14c-4.7 0-8 1.6-10.5 4.6C3.3 12 6.7 8.3 13 7.8V4.5Z" />
         </svg>
-        <span className="side-label">{formatCount(counters.shares)}</span>
+        <span className="side-label">共有</span>
       </button>
 
       <div className="side-menu-wrap">

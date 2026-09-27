@@ -270,7 +270,7 @@ describe('フィードが動く', () => {
     const before = activeClip()!.id
 
     await act(async () => {
-      fireEvent.click(inPost(/^共有/))
+      fireEvent.click(inPost('共有'))
     })
 
     expect(open).toHaveBeenCalled()
@@ -319,15 +319,16 @@ describe('フィードが動く', () => {
     const labels = [...currentPost().querySelectorAll('.side-label')].map((e) => e.textContent)
     // いいね / コメント / 共有 / その他
     expect(labels).toHaveLength(4)
+    expect(labels[2]).toBe('共有')
     expect(labels[3]).toBe('その他')
-    // いいね・コメント・共有には数字が出ている
-    for (const t of labels.slice(0, 3)) expect(t).toMatch(/[\d,万億]/)
+    // いいねとコメントには数字が出ている（共有には出さない）
+    for (const t of labels.slice(0, 2)) expect(t).toMatch(/[\d,万億]/)
 
-    const before = labels.slice(0, 3).join()
+    const before = labels.slice(0, 2).join()
     await answer(true)
     await waitFor(() => {
       const now = [...currentPost().querySelectorAll('.side-label')]
-        .slice(0, 3)
+        .slice(0, 2)
         .map((e) => e.textContent)
         .join()
       expect(now).not.toBe(before)
