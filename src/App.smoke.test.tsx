@@ -429,26 +429,26 @@ describe('フィードが動く', () => {
     expect(activeClip()!.id).toBe(before)
   })
 
-  it('閉じるボタンでホームに戻れる（2回押すまで戻らない）', async () => {
+  it('やめるボタンでホームに戻れる（2回押すまで戻らない）', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     await toFeed()
 
-    fireEvent.click(screen.getByRole('button', { name: '閉じる' }))
-    expect(screen.getByRole('button', { name: 'もう一度押すと閉じる' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'やめる' }))
+    expect(screen.getByRole('button', { name: 'もう一度押すとやめる' })).toBeTruthy()
     expect(document.querySelector('.feed-slot video')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'もう一度押すと閉じる' }))
+    fireEvent.click(screen.getByRole('button', { name: 'もう一度押すとやめる' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
   })
 
-  it('閉じる確認は放っておくと引っ込む', async () => {
+  it('やめる確認は放っておくと引っ込む', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     await toFeed()
-    fireEvent.click(screen.getByRole('button', { name: '閉じる' }))
+    fireEvent.click(screen.getByRole('button', { name: 'やめる' }))
     await act(async () => {
       vi.advanceTimersByTime(4000)
     })
-    expect(screen.getByRole('button', { name: '閉じる' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'やめる' })).toBeTruthy()
   })
 
   it('画面を離れると映像が止まる', async () => {

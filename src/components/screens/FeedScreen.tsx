@@ -191,7 +191,7 @@ export function FeedScreen({
         <div className="feed-top">
           <div className="top-row">
             {/*
-              アプリを閉じる操作。投稿ごとの「…」とは別に置く。
+              フィードを抜けてホームに戻る操作。投稿ごとのボタンとは別に置く。
               あちらは投稿に対する操作で、送ると流れていってしまうため。
             */}
             <button
@@ -199,7 +199,7 @@ export function FeedScreen({
               className={quitArmed ? 'quit-link armed' : 'quit-link'}
               onClick={() => (quitArmed ? onQuit() : setQuitArmed(true))}
             >
-              {quitArmed ? 'もう一度押すと閉じる' : '閉じる'}
+              {quitArmed ? 'もう一度押すとやめる' : 'やめる'}
             </button>
 
             {/*
