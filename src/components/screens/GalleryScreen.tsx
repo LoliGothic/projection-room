@@ -16,7 +16,12 @@ export function GalleryScreen({ onBack }: Props) {
   const [code, setCode] = useState('')
   const [message, setMessage] = useState<string | null>(null)
 
-  const seen = new Set(records.seenEndings)
+  /*
+    取りやめたエンディングを見ている記録が残っていることがある。
+    いまある分だけを数に入れないと「5 / 4」のような表示になってしまう。
+  */
+  const ids = new Set(ENDINGS.map((e) => e.id))
+  const seen = new Set(records.seenEndings.filter((id) => ids.has(id)))
 
   return (
     <div className="panel">

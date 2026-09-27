@@ -64,11 +64,15 @@ export interface EndingDef {
 /**
  * セーブコードの互換性のため、この並びは変えないこと。
  * 追加するときは必ず末尾に足す。
+ *
+ * 取りやめたエンディングも枠だけ残す。詰めると以降の並びがずれて、
+ * すでに配ったセーブコードで過去の記録が別のものとして読まれてしまう。
  */
 export const ENDING_ORDER: readonly string[] = [
   'closed',
   'true',
   'endless',
+  /* 取りやめ: 「見すぎ」。暗転と同じ行動を測っていたうえ、到達もできなかった */
   'watched',
   'blackout',
 ]
@@ -77,8 +81,6 @@ export const ENDING_ORDER: readonly string[] = [
 export const ENDING_THRESHOLDS = {
   /** 「無限スクロール」になる累計ループ回数 */
   endlessLoops: 20,
-  /** 「見すぎ」になる 1本あたりの平均リプレイ回数 */
-  watchedAvgReplays: 3,
 } as const
 
 /**
@@ -149,30 +151,13 @@ export const ENDINGS: readonly EndingDef[] = [
     conditions: [{ stat: 'loops', op: 'gt', value: ENDING_THRESHOLDS.endlessLoops }],
     cards: [
       n('八段階を完了しました', 'notice', 2600),
+      n('このアプリを {loops} 回開き直しました', 'record', 3000),
       // 通したのに、やめる資格がないと言われる
       n('利用を終了する条件を確認しています', 'system', 2800),
       n('条件を満たしていません', 'system', 3200),
       n('おすすめの表示を続けます', 'system', 4400),
     ],
     hint: '何度もリセットされた末に、それでも通すこと。',
-  },
-  {
-    id: 'watched',
-    title: '見すぎ',
-    trigger: 'escape',
-    priority: 30,
-    conditions: [{ stat: 'avgReplays', op: 'gte', value: ENDING_THRESHOLDS.watchedAvgReplays }],
-    cards: [
-      n('見返した回数　{replays} 回', 'record', 3000),
-      /*
-        ひねりではなく、アプリからの助言として置く。
-        本物も偽物だったとは一言も言わないまま、正解した動画のほうへ
-        疑いが伸びていく。
-      */
-      n('疑ってくださりありがとうございます', 'system', 3200),
-      n('すべての動画を疑うことをおすすめします', 'system', 4600),
-    ],
-    hint: '同じ動画を何度も見返しながら通すこと。',
   },
   {
     id: 'closed',

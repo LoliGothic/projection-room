@@ -47,13 +47,10 @@ describe('resolveEnding', () => {
     expect(resolveEnding(s, 'escape')?.id).toBe('closed')
   })
 
-  it('リプレイが多いと見すぎエンド', () => {
-    const s = stats({
-      loops: 3,
-      presented: 10,
-      replays: 10 * ENDING_THRESHOLDS.watchedAvgReplays,
-    })
-    expect(resolveEnding(s, 'escape')?.id).toBe('watched')
+  it('リプレイをいくら重ねても、それだけでは分岐しない', () => {
+    // 「見すぎ」は取りやめた。暗転と同じ行動を測っていたため
+    const s = stats({ loops: 3, presented: 10, replays: 100 })
+    expect(resolveEnding(s, 'escape')?.id).toBe('closed')
   })
 
   it('どれにも当てはまらなければ通常エンド', () => {
@@ -87,7 +84,12 @@ describe('エンディング定義', () => {
 
   it('セーブコード用の並びに全エンディングが載っている', () => {
     for (const e of ENDINGS) expect(ENDING_ORDER).toContain(e.id)
-    expect(ENDING_ORDER).toHaveLength(ENDINGS.length)
+  })
+
+  it('取りやめたエンディングも並びから抜かない', () => {
+    // 詰めると以降の並びがずれて、既存のセーブコードが別の記録として読まれる
+    expect(ENDING_ORDER).toContain('watched')
+    expect(ENDING_ORDER.indexOf('blackout')).toBe(4)
   })
 
   it('どのエンディングにも文章とヒントがある', () => {
