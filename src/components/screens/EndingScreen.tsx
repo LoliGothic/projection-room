@@ -12,10 +12,10 @@ interface Props {
   onHome: () => void
 }
 
-/** 最初の文が出るまで、暗いまま待つ時間 */
-const LEAD_MS = 3000
-/** 最後の文が消えてから、締めの画面が出るまで */
-const SETTLE_MS = 4000
+/** 最初の文が出るまで暗いまま待つ時間の既定。エンディングごとに上書きできる */
+const LEAD_MS = 0
+/** 最後の文が消えてから、締めの画面が出るまでの既定 */
+const SETTLE_MS = 1400
 /** 通知が同時に見えている数。溜まっていく感じだけ出せばよい */
 const NOTICE_STACK = 3
 
@@ -26,14 +26,16 @@ const NOTICE_STACK = 3
  * 実際のアプリでもそう振る舞うので、並べ方だけで「これはアプリの画面だ」と
  * 伝わる。全部を積み上げると、ただの台本に見えてしまう。
  *
- * 文の前後は暗いまま待たせる。文章を足すより、黙っている時間のほうが
- * 持たせられる。プレイヤーは遊び終わった直後で、すでに自分で怖がっている。
+ * 前後にどれだけ黙るかはエンディングごとに決める（leadMs / settleMs）。
+ * 文を減らして間で持たせたいものだけ、長めに取る。
  */
 export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props) {
   const ending = endingById(endingId)
   const cards = useMemo(() => ending?.cards ?? [], [ending])
+  const lead = ending?.leadMs ?? LEAD_MS
+  const settle = ending?.settleMs ?? SETTLE_MS
   const [index, setIndex] = useState(0)
-  const [started, setStarted] = useState(false)
+  const [started, setStarted] = useState(lead <= 0)
   const [settled, setSettled] = useState(false)
   const done = index >= cards.length
 
@@ -41,9 +43,10 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
 
   // 暗いまま待ってから最初の文を出す
   useEffect(() => {
-    const id = window.setTimeout(() => setStarted(true), LEAD_MS)
+    if (lead <= 0) return
+    const id = window.setTimeout(() => setStarted(true), lead)
     return () => window.clearTimeout(id)
-  }, [])
+  }, [lead])
 
   useEffect(() => {
     if (!started || done) return
@@ -54,9 +57,9 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
   // 最後の文が消えたあと、少し黙ってから締める
   useEffect(() => {
     if (!started || !done) return
-    const id = window.setTimeout(() => setSettled(true), SETTLE_MS)
+    const id = window.setTimeout(() => setSettled(true), settle)
     return () => window.clearTimeout(id)
-  }, [started, done])
+  }, [started, done, settle])
 
   /**
    * いま見えている文。
