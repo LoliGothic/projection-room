@@ -33,7 +33,7 @@ export function GalleryScreen({ onBack }: Props) {
           <dd>{records.plays}</dd>
         </div>
         <div>
-          <dt>到達</dt>
+          <dt>クリア</dt>
           <dd>{records.escapes}</dd>
         </div>
         <div>

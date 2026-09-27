@@ -152,7 +152,7 @@ export const ENDINGS: readonly EndingDef[] = [
       */
       n('本物と判定された動画を学習に使用しました', 'system', 5200),
     ],
-    hint: '一度もリセットされずに、八段階を通すこと。',
+    hint: '一度もリセットされずにクリアすること。',
   },
   {
     id: 'endless',
@@ -168,7 +168,7 @@ export const ENDINGS: readonly EndingDef[] = [
       n('条件を満たしていません', 'system', 3200),
       n('おすすめの表示を続けます', 'system', 4400),
     ],
-    hint: '何度もリセットされた末に、それでも通すこと。',
+    hint: '何度もリセットされた末に、それでもクリアすること。',
   },
   {
     id: 'closed',
@@ -186,7 +186,7 @@ export const ENDINGS: readonly EndingDef[] = [
       */
       n('アプリを終了します', 'system', 3400),
     ],
-    hint: '八段階すべてを通して、アプリを閉じること。',
+    hint: '8段階すべてをクリアすること。',
   },
 ]
 
