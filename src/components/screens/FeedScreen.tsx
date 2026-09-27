@@ -9,6 +9,7 @@ import {
 } from '../../core/dread'
 import { baseCounters, driftedCounters } from '../../core/counters'
 import { accountNameFor, captionFor, stageLabel } from '../../config/feed.data'
+import { APP } from '../../config/app'
 import { DREAD, FX, RULES } from '../../config/tuning'
 import { audio } from '../../audio/engine'
 import { useDreadTimer } from '../../hooks/useDreadTimer'
@@ -17,6 +18,7 @@ import { effectiveFx, useSettings } from '../../state/settingsStore'
 import { FeedVideo, type FeedVideoHandle } from '../game/FeedVideo'
 import { SideActions } from '../game/SideActions'
 import { Notifications } from '../game/Notifications'
+import { CommentSheet } from '../game/CommentSheet'
 
 interface Props {
   session: Session
@@ -102,6 +104,25 @@ export function FeedScreen({
 
   const onDecorative = useCallback(() => audio.playTap(), [])
 
+  // コメント欄。開いているあいだは送りの操作を止める
+  const [commentsOpen, setCommentsOpen] = useState(false)
+  const openComments = useCallback(() => {
+    audio.playTap()
+    setCommentsOpen(true)
+  }, [])
+
+  /** 共有。外部サイトを新しいタブで開くだけで、こちらからは何も送らない */
+  const share = useCallback(() => {
+    audio.playTap()
+    const url = encodeURIComponent(window.location.href)
+    const text = encodeURIComponent(APP.shareText)
+    window.open(
+      `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+      '_blank',
+      'noopener,noreferrer',
+    )
+  }, [])
+
   // 確認の表示は放っておけば引っ込む
   useEffect(() => {
     if (!quitArmed) return
@@ -123,7 +144,7 @@ export function FeedScreen({
         previous={previous}
         turn={turn}
         preload={preload}
-        enabled={interactive}
+        enabled={interactive && !commentsOpen}
         paused={!interactive}
         onAdvance={() => onAnswer('keep')}
         onTap={replay}
@@ -135,9 +156,10 @@ export function FeedScreen({
               key={postClip.id}
               counters={isCurrent ? counters : baseCounters(postClip.id)}
               onReport={() => onAnswer('report')}
-              onReplay={replay}
+              onComments={openComments}
+              onShare={share}
               onDecorative={onDecorative}
-              enabled={isCurrent && interactive}
+              enabled={isCurrent && interactive && !commentsOpen}
             />
             <div className="feed-bottom">
               <p className="account">
@@ -161,6 +183,18 @@ export function FeedScreen({
         <div className="feed-top">
           <div className="top-row">
             {/*
+              アプリを閉じる操作。投稿ごとの「…」とは別に置く。
+              あちらは投稿に対する操作で、送ると流れていってしまうため。
+            */}
+            <button
+              type="button"
+              className={quitArmed ? 'quit-link armed' : 'quit-link'}
+              onClick={() => (quitArmed ? onQuit() : setQuitArmed(true))}
+            >
+              {quitArmed ? 'もう一度押すと閉じる' : '閉じる'}
+            </button>
+
+            {/*
               画面上端いっぱいのセグメントバーにすると、実在のアプリの
               ストーリーズに見えてしまい、タップで進むと誤解される。
               小さなゲージとテキストに留める。
@@ -173,17 +207,18 @@ export function FeedScreen({
               <span className="stage-gauge-ring" aria-hidden="true" />
               <span className="stage-gauge-text">{stageLabel(stage)}</span>
             </div>
-
-            <button
-              type="button"
-              className={quitArmed ? 'quit-link armed' : 'quit-link'}
-              onClick={() => (quitArmed ? onQuit() : setQuitArmed(true))}
-            >
-              {quitArmed ? 'もう一度押すとやめる' : 'やめる'}
-            </button>
           </div>
           <Notifications notices={notices} />
         </div>
+
+        {commentsOpen && (
+          <CommentSheet
+            clipId={clip.id}
+            loops={stats.loops}
+            total={counters.comments}
+            onClose={() => setCommentsOpen(false)}
+          />
+        )}
 
         <div className="hint" style={{ opacity: stats.presented >= 6 ? 0.35 : 1 }}>
           本物だと思ったら<b>上にスクロール</b>、

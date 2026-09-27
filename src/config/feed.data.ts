@@ -136,6 +136,131 @@ export function accountNameFor(
   return slot < ratio * 100 ? CROWDING_NAME : base
 }
 
+/**
+ * コメント欄に出す書き込み。
+ * ループが増えるほど、こちらに気づいているような文言が混ざる。
+ *
+ * どの動画にも同じ配列から選ぶので、本物か AI かの手がかりにはならない。
+ */
+export const COMMENTS: readonly { minLoops: number; lines: readonly string[] }[] = [
+  {
+    minLoops: 0,
+    lines: [
+      'きれい',
+      'どこですか？',
+      '保存しました',
+      '癒される〜',
+      'music名前わかる人いますか',
+      '毎日見てる',
+      'ここ行きたい',
+      '画質すご',
+      '朝から見れてよかった',
+      '何回も見ちゃう',
+      'おすすめに出てきた',
+      '好き',
+    ],
+  },
+  {
+    minLoops: 1,
+    lines: [
+      'これ前も流れてきた',
+      'さっき見たばかりなんだけど',
+      'また出てきた',
+      'アルゴリズム壊れてる？',
+      'なんか見覚えある',
+    ],
+  },
+  {
+    minLoops: 5,
+    lines: [
+      'ここ、地図に載ってないですよね',
+      '撮影者のアカウントが見つからない',
+      'この場所いつのですか',
+      '誰が撮ったんですか？',
+      '調べたけど出てこなかった',
+    ],
+  },
+  {
+    minLoops: 10,
+    lines: [
+      'まだ見てるんですか',
+      'そろそろ閉じたほうがいいよ',
+      '何回目ですか',
+      'ずっと同じところにいますね',
+      '私も抜けられませんでした',
+    ],
+  },
+  {
+    minLoops: 20,
+    lines: [
+      'おかえりなさい',
+      'ここから出た人を見たことがない',
+      'もう数えていません',
+      '次もまた会いましょう',
+    ],
+  },
+]
+
+/** コメントに添える名前 */
+const COMMENT_NAMES: readonly string[] = [
+  'mori_no_oto',
+  'tsuki3',
+  'kaze.to.hikari',
+  'yoru_ni',
+  'asagiri',
+  'shiro_neko',
+  'umi_bi',
+  'kumo_no_ue',
+  'hazama',
+  'towa.',
+  'nemuri_ya',
+  'kagerou',
+]
+
+export interface Comment {
+  name: string
+  text: string
+  likes: number
+}
+
+/** ID から決まる 0..1 の値 */
+function unit(seed: string, salt: string): number {
+  let h = 2166136261
+  for (const ch of `${seed}:${salt}`) {
+    h ^= ch.charCodeAt(0)
+    h = Math.imul(h, 16777619)
+  }
+  return (h >>> 0) / 4294967296
+}
+
+/**
+ * コメント欄の中身。
+ * 同じ動画なら毎回同じ並びになる。ループが増えるほど、
+ * 上のほうに「こちらに気づいている」書き込みが混ざる。
+ */
+export function commentsFor(clipId: string, loops: number, count = 8): Comment[] {
+  const calm = COMMENTS[0].lines
+  const eerie: string[] = []
+  for (const tier of COMMENTS) {
+    if (tier.minLoops > 0 && loops >= tier.minLoops) eerie.push(...tier.lines)
+  }
+  // ループが増えるほど、不穏な書き込みの割合が上がる
+  const eerieCount = eerie.length === 0 ? 0 : Math.min(count - 1, Math.round(loops / 4))
+
+  const out: Comment[] = []
+  for (let i = 0; i < count; i++) {
+    const useEerie = i < eerieCount
+    const pool = useEerie ? eerie : calm
+    const pick = Math.floor(unit(clipId, `c${i}`) * pool.length)
+    out.push({
+      name: COMMENT_NAMES[Math.floor(unit(clipId, `n${i}`) * COMMENT_NAMES.length)],
+      text: pool[pick % pool.length],
+      likes: Math.floor(unit(clipId, `l${i}`) * 240),
+    })
+  }
+  return out
+}
+
 /** 段階の見出し */
 export function stageLabel(stage: number): string {
   return `${stage} / 8`

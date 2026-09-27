@@ -176,16 +176,35 @@ describe('フィードが動く', () => {
     expect(activeClip()!.id).toBe(before)
   })
 
-  it('少ししか動かさなければ送られない', async () => {
+  it('ゆっくり少しだけ動かしたのでは送られない', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     await toFeed()
     const before = activeClip()!.id
     const area = document.querySelector('.feed-video') as HTMLElement
+
     await act(async () => {
       fireEvent.pointerDown(area, { pointerId: 1, clientX: 180, clientY: 600 })
       fireEvent.pointerMove(area, { pointerId: 1, clientX: 180, clientY: 560 })
+      // 距離も速度も足りない指の動き
+      vi.advanceTimersByTime(500)
       fireEvent.pointerUp(area, { pointerId: 1, clientX: 180, clientY: 555 })
     })
     expect(activeClip()!.id).toBe(before)
+  })
+
+  it('速く弾けば、距離が短くても送られる', async () => {
+    await toFeed()
+    // 送ること自体が「本物だ」という答えになるので、本物の投稿で試す
+    await advanceUntil(false)
+    const before = activeClip()!.id
+    const area = document.querySelector('.feed-video') as HTMLElement
+
+    await act(async () => {
+      fireEvent.pointerDown(area, { pointerId: 1, clientX: 180, clientY: 600 })
+      fireEvent.pointerMove(area, { pointerId: 1, clientX: 180, clientY: 540 })
+      fireEvent.pointerUp(area, { pointerId: 1, clientX: 180, clientY: 540 })
+    })
+    await waitFor(() => expect(activeClip()!.id).not.toBe(before))
   })
 
   it('AIに「…」から報告すると正解になり、次の動画が上がってくる', async () => {
@@ -223,15 +242,39 @@ describe('フィードが動く', () => {
     expect(activeClip()!.id).toBe(before)
   })
 
-  it('メニューの飾りの項目を押しても回答にならない', async () => {
+  it('コメントを開くと書き込みが並び、送りの操作は止まる', async () => {
     await toFeed()
     const before = activeClip()!.id
+
+    await act(async () => {
+      fireEvent.click(inPost(/^コメント/))
+    })
+    expect(screen.getByRole('dialog', { name: 'コメント' })).toBeTruthy()
+    expect(document.querySelectorAll('.comment-list li').length).toBeGreaterThan(3)
+
+    // 開いているあいだは上へ送れない
+    await scrollNext()
+    expect(activeClip()!.id).toBe(before)
+
+    fireEvent.click(screen.getByRole('button', { name: 'コメントを閉じる' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('共有は外部サイトを開くだけで、回答にはならない', async () => {
+    const open = vi.fn()
+    vi.stubGlobal('open', open)
+    await toFeed()
+    const before = activeClip()!.id
+
     await act(async () => {
       fireEvent.click(inPost('その他'))
     })
     await act(async () => {
-      fireEvent.click(inPost('興味がない', 'menuitem'))
+      fireEvent.click(inPost('共有する', 'menuitem'))
     })
+
+    expect(open).toHaveBeenCalled()
+    expect(String(open.mock.calls[0][0])).toContain('twitter.com/intent/tweet')
     expect(activeClip()!.id).toBe(before)
   })
 
@@ -274,10 +317,9 @@ describe('フィードが動く', () => {
   it('右側のアイコンに数字が出て、動画ごとに変わる', async () => {
     await toFeed()
     const labels = [...currentPost().querySelectorAll('.side-label')].map((e) => e.textContent)
-    // いいね / コメント / 最初から / その他
-    expect(labels).toHaveLength(4)
-    expect(labels[2]).toBe('最初から')
-    expect(labels[3]).toBe('その他')
+    // いいね / コメント / その他
+    expect(labels).toHaveLength(3)
+    expect(labels[2]).toBe('その他')
     // いいねとコメントには数字が出ている
     expect(labels[0]).toMatch(/[\d,万億]/)
     expect(labels[1]).toMatch(/[\d,万億]/)
@@ -332,26 +374,26 @@ describe('フィードが動く', () => {
     expect(activeClip()!.id).toBe(before)
   })
 
-  it('やめるボタンでホームに戻れる（2回押すまで戻らない）', async () => {
+  it('閉じるボタンでホームに戻れる（2回押すまで戻らない）', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     await toFeed()
 
-    fireEvent.click(screen.getByRole('button', { name: 'やめる' }))
-    expect(screen.getByRole('button', { name: 'もう一度押すとやめる' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '閉じる' }))
+    expect(screen.getByRole('button', { name: 'もう一度押すと閉じる' })).toBeTruthy()
     expect(document.querySelector('.feed-slot video')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'もう一度押すとやめる' }))
+    fireEvent.click(screen.getByRole('button', { name: 'もう一度押すと閉じる' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'はじめる' })).toBeTruthy())
   })
 
-  it('やめる確認は放っておくと引っ込む', async () => {
+  it('閉じる確認は放っておくと引っ込む', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     await toFeed()
-    fireEvent.click(screen.getByRole('button', { name: 'やめる' }))
+    fireEvent.click(screen.getByRole('button', { name: '閉じる' }))
     await act(async () => {
       vi.advanceTimersByTime(4000)
     })
-    expect(screen.getByRole('button', { name: 'やめる' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '閉じる' })).toBeTruthy()
   })
 
   it('画面を離れると映像が止まる', async () => {

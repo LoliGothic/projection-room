@@ -9,4 +9,6 @@ export const APP = {
   shortName: '撮影者不明',
   /** 起動画面に出す一言 */
   tagline: 'あなたへのおすすめ',
+  /** 共有したときに載る文章 */
+  shareText: '「撮影者不明」で遊んでいます。',
 } as const

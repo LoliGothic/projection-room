@@ -156,7 +156,7 @@ body {
   white-space: nowrap;
 }
 
-/* フィードを閉じてホームに戻る。誤爆しないよう控えめに置く */
+/* アプリを閉じてホームに戻る。誤爆しないよう2回押させる */
 .quit-link {
   border: 0;
   border-radius: 999px;
@@ -503,6 +503,73 @@ body {
 }
 
 /* ---- セーブコード ---- */
+/* ---- コメント欄 ---- */
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  animation: fade-in 160ms ease-out;
+}
+
+.comment-sheet {
+  width: 100%;
+  max-height: 62%;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: env(safe-area-inset-bottom);
+  animation: sheet-up 220ms cubic-bezier(0.22, 0.9, 0.24, 1);
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.8rem 1rem 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.sheet-title { font-size: 0.86rem; font-weight: 600; }
+.sheet-close {
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+}
+.sheet-close:hover { color: var(--text); }
+
+.comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.comment-name { margin: 0; font-size: 0.72rem; color: var(--muted); }
+.comment-text { margin: 0.15rem 0 0; font-size: 0.84rem; line-height: 1.6; }
+.comment-likes { margin: 0.2rem 0 0; font-size: 0.68rem; color: var(--dim); }
+.comment-foot {
+  margin: 0;
+  padding: 0.7rem 1rem 1rem;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--dim);
+}
+
 .save-block { display: flex; flex-direction: column; gap: 0.55rem; }
 .save-code {
   display: block;

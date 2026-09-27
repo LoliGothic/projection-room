@@ -28,7 +28,8 @@ export function useFeedGesture({ onAdvance, onTap, enabled }: Options) {
       // ボタンやメニューを押したときは、送りの操作として扱わない
       if ((e.target as HTMLElement).closest('button, [role="menu"]')) return
       height.current = (e.currentTarget as HTMLElement).clientHeight || 1
-      start.current = { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId }
+      // 合成イベントの timeStamp は環境によって基準が違うので、自分で測る
+      start.current = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId }
       setDragging(true)
       ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
     },
@@ -52,7 +53,7 @@ export function useFeedGesture({ onAdvance, onTap, enabled }: Options) {
 
       const dy = e.clientY - s.y
       const dx = e.clientX - s.x
-      const dt = Math.max(1, e.timeStamp - s.t)
+      const dt = Math.max(1, performance.now() - s.t)
       const speed = -dy / dt
 
       const far = -dy >= height.current * FEED.advanceRatio

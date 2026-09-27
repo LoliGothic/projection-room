@@ -5,25 +5,34 @@ interface Props {
   counters: Counters
   /** メニューから報告＝この動画はAI生成だ、という判定 */
   onReport: () => void
-  onReplay: () => void
+  /** コメント欄を開く */
+  onComments: () => void
+  /** 共有（外部サイトを開く） */
+  onShare: () => void
   /** 飾りのボタンを押したときの反応（音だけ鳴らす） */
   onDecorative: () => void
   enabled: boolean
 }
 
 /**
- * 右側の縦並びアイコン。
+ * 投稿ごとの右側の縦並びアイコン。
  *
  * 判定になるのは「…」からの報告だけ。
  * 本物だと思ったら、そのまま上にスクロールして送る。
  *
- * ハート・コメント・共有は飾り。数字は動画の ID から決まるので、
- * 本物か AI かの手がかりにはならない。
+ * ハートは飾り。数字は動画の ID から決まるので、本物か AI かの手がかりにはならない。
  */
-export function SideActions({ counters, onReport, onReplay, onDecorative, enabled }: Props) {
-  const [liked, setLiked] = useState(false)
+export function SideActions({
+  counters,
+  onReport,
+  onComments,
+  onShare,
+  onDecorative,
+  enabled,
+}: Props) {
   const [open, setOpen] = useState(false)
-  // 操作できないあいだは開いていないものとして扱う（別の動画に移ったら閉じる）
+  const [liked, setLiked] = useState(false)
+  // 操作できないあいだは開いていないものとして扱う
   const menuOpen = open && enabled
 
   return (
@@ -48,7 +57,7 @@ export function SideActions({ counters, onReport, onReplay, onDecorative, enable
       <button
         type="button"
         className="side-item"
-        onClick={onDecorative}
+        onClick={onComments}
         disabled={!enabled}
         aria-label={`コメント ${counters.comments}`}
       >
@@ -56,19 +65,6 @@ export function SideActions({ counters, onReport, onReplay, onDecorative, enable
           <path d="M4 5h16v11H9l-5 4V5Z" />
         </svg>
         <span className="side-label">{formatCount(counters.comments)}</span>
-      </button>
-
-      <button
-        type="button"
-        className="side-item"
-        onClick={onReplay}
-        disabled={!enabled}
-        aria-label="最初から再生"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M3 12a9 9 0 1 0 2.6-6.4M3 4v5h5" />
-        </svg>
-        <span className="side-label">最初から</span>
       </button>
 
       <div className="side-menu-wrap">
@@ -90,14 +86,15 @@ export function SideActions({ counters, onReport, onReplay, onDecorative, enable
 
         {menuOpen && (
           <div className="side-menu" role="menu">
-            <button type="button" role="menuitem" onClick={onDecorative}>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false)
+                onShare()
+              }}
+            >
               共有する
-            </button>
-            <button type="button" role="menuitem" onClick={onDecorative}>
-              保存する
-            </button>
-            <button type="button" role="menuitem" onClick={onDecorative}>
-              興味がない
             </button>
             <button
               type="button"
