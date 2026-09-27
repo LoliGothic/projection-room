@@ -56,7 +56,7 @@ describe('applyAnswer', () => {
   })
 
   it('本物を報告するとミスになり、第1段階に戻る', () => {
-    const start = clearClips(createProgress(), RULES.clipsPerStage) // 第2巻へ
+    const start = clearClips(createProgress(), RULES.clipsPerStage) // 第2段階へ
     expect(start.stage).toBe(2)
 
     const { progress, outcome } = applyAnswer(start, real, 'report')

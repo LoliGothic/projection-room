@@ -24,7 +24,7 @@ export interface ClipsFile {
   clips: Clip[]
 }
 
-/** プレイヤーの回答。右スワイプ＝残す、左スワイプ＝報告する */
+/** プレイヤーの回答。スクロールして次へ＝残す、報告する＝AIだと答える */
 export type Verdict = 'keep' | 'report'
 
 /** その回答が正しかったか */

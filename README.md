@@ -173,7 +173,7 @@ Vite の `base` を `'./'` にし、実行時に `import.meta.env.BASE_URL` と�
 | ファイル | 中身 |
 | --- | --- |
 | `app.ts` | アプリ名（1か所で定義） |
-| `tuning.ts` | 段階の構成・不穏タイマーの秒数・スワイプの閾値・演出の長さと強さ |
+| `tuning.ts` | 段階の構成・不穏タイマーの秒数・送りの閾値・演出の長さと強さ |
 | — | 設定画面の「演出を弱める」は、揺れ・明るさの変化・通知の連続表示をまとめて弱めます（不穏タイマー自体は止まりません） |
 | `endings.data.ts` | エンディングの条件（`{stat, op, value}`）と文章 |
 | `feed.data.ts` | キャプション・投稿者名・通知の文言 |
@@ -191,7 +191,7 @@ src/
                dread（不穏タイマー）/ endings（判定）/ records・saveCode（記録）
   state/       Zustand ストア。core を薄く包むだけ
   audio/       Web Audio による合成音
-  hooks/       スワイプ入力・不穏タイマー
+  hooks/       送りの操作・不穏タイマー
   components/  画面とゲーム部品
 scripts/       ffmpeg スクリプト（ダミー生成・正規化・アイコン生成）
 public/clips/  配信する動画（git 管理外）

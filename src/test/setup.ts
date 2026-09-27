@@ -18,7 +18,7 @@ if (typeof window !== 'undefined') {
     value: vi.fn(),
   })
 
-  // jsdom は canvas を実装していない。FilmGrain は ctx が無ければ何もしない
+  // jsdom は canvas を実装していない。コマの写しを取る側は ctx が無ければ何もしない
   Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
     configurable: true,
     value: vi.fn(() => null),
