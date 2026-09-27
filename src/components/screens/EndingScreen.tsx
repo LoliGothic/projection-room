@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Clip } from '../../core/types'
-import { endingById, fillCard, type EndingCard, type EndingNumbers } from '../../config/endings.data'
+import { endingById, fillCard, type EndingNumbers } from '../../config/endings.data'
 
 interface Props {
   endingId: string
@@ -16,15 +16,12 @@ interface Props {
 const LEAD_MS = 0
 /** 最後の文が消えてから、締めの画面が出るまでの既定 */
 const SETTLE_MS = 1400
-/** 通知が同時に見えている数。溜まっていく感じだけ出せばよい */
-const NOTICE_STACK = 3
-
 /**
- * エンディング。文章を1枚ずつ出していく。
+ * エンディング。黒い画面に、文を1つずつ出しては消す。
  *
- * 通知として出した文は下に溜まり、画面そのものに出した文は前の文と入れ替わる。
- * 実際のアプリでもそう振る舞うので、並べ方だけで「これはアプリの画面だ」と
- * 伝わる。全部を積み上げると、ただの台本に見えてしまう。
+ * 囲いは付けず、積み上げもしない。並べて残すと台本のリストに見えるし、
+ * 囲いを付けると、どれが通知でどれが画面なのかを見分けさせることになる。
+ * 一度に一文だけ置くのが、いちばん逃げ場がない。
  *
  * 前後にどれだけ黙るかはエンディングごとに決める（leadMs / settleMs）。
  * 文を減らして間で持たせたいものだけ、長めに取る。
@@ -61,20 +58,7 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
     return () => window.clearTimeout(id)
   }, [started, done, settle])
 
-  /**
-   * いま見えている文。
-   * 通知は直前まで続いた通知と一緒に溜まり、それ以外は1枚だけ残る。
-   */
-  const shown = useMemo(() => {
-    const current = started ? cards[index] : undefined
-    if (!current) return []
-    if (current.as !== 'notice') return [{ card: current, key: index }]
-    const run: { card: EndingCard; key: number }[] = []
-    for (let i = index; i >= 0 && cards[i].as === 'notice'; i--) {
-      run.unshift({ card: cards[i], key: i })
-    }
-    return run.slice(-NOTICE_STACK)
-  }, [cards, index, started])
+  const current = started ? cards[index] : undefined
 
   if (!ending) {
     return (
@@ -104,16 +88,12 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
         />
       )}
 
-      {started && !done && (
+      {current && (
         <div className="ending-cards">
-          {shown.map(({ card, key }) => (
-            <p
-              key={key}
-              className={`ending-card as-${card.as}${key === index ? ' now' : ''}`}
-            >
-              {fillCard(card.text, numbers)}
-            </p>
-          ))}
+          {/* key を付けて、文が変わるたびに出現のアニメーションをやり直す */}
+          <p key={index} className="ending-card">
+            {fillCard(current.text, numbers)}
+          </p>
         </div>
       )}
 

@@ -34,16 +34,14 @@ export interface Condition {
 }
 
 /**
- * 文の見せ方。
- * - notice 通知として出る。続けて並ぶと下に溜まっていく
- * - system 画面そのものに出る。前の文と入れ替わる
- * - record 記録の画面として出る。数字を見せるとき
+ * 出す文。囲いは付けず、黒い画面に文字だけを出す。
+ *
+ * はじめは通知として囲うものと、画面そのものに出すものを分けていたが、
+ * どちらも画面の中央に出していたため、意味のある区別に見えず
+ * ただ不揃いなだけになっていた。
  */
-export type CardAs = 'notice' | 'system' | 'record'
-
 export interface EndingCard {
   text: string
-  as: CardAs
   /** 次の文に移るまで（ms） */
   holdMs: number
 }
@@ -116,7 +114,7 @@ export function fillCard(text: string, numbers?: EndingNumbers): string {
   })
 }
 
-const n = (text: string, as: CardAs, holdMs: number): EndingCard => ({ text, as, holdMs })
+const n = (text: string, holdMs: number): EndingCard => ({ text, holdMs })
 
 export const ENDINGS: readonly EndingDef[] = [
   {
@@ -133,7 +131,7 @@ export const ENDINGS: readonly EndingDef[] = [
     leadMs: 3000,
     settleMs: 4000,
     cards: [
-      n('一定時間、操作がありませんでした', 'system', 4500),
+      n('一定時間、操作がありませんでした', 4500),
     ],
     hint: '一本の動画を、長く見つめすぎると。',
   },
@@ -144,13 +142,13 @@ export const ENDINGS: readonly EndingDef[] = [
     priority: 10,
     conditions: [{ stat: 'loops', op: 'eq', value: 0 }],
     cards: [
-      n('確認ありがとうございました', 'notice', 2600),
+      n('確認ありがとうございました', 2600),
       /*
         材料になっていたのは偽物ではなく本物のほう、という置き方。
         本物が本物だったことは否定していない。よくできた偽物を作るのに
         要るのは本物なので、理屈も通る。
       */
-      n('本物と判定された動画を学習に使用しました', 'system', 5200),
+      n('本物と判定された動画を学習に使用しました', 5200),
     ],
     hint: '一度もリセットされずにクリアすること。',
   },
@@ -161,12 +159,12 @@ export const ENDINGS: readonly EndingDef[] = [
     priority: 20,
     conditions: [{ stat: 'loops', op: 'gt', value: ENDING_THRESHOLDS.endlessLoops }],
     cards: [
-      n('八段階を完了しました', 'notice', 2600),
-      n('このアプリを {loops} 回開き直しました', 'record', 3000),
+      n('八段階を完了しました', 2600),
+      n('このアプリを {loops} 回開き直しました', 3000),
       // 通したのに、やめる資格がないと言われる
-      n('利用を終了する条件を確認しています', 'system', 2800),
-      n('条件を満たしていません', 'system', 3200),
-      n('おすすめの表示を続けます', 'system', 4400),
+      n('利用を終了する条件を確認しています', 2800),
+      n('条件を満たしていません', 3200),
+      n('おすすめの表示を続けます', 4400),
     ],
     hint: '何度もリセットされた末に、それでもクリアすること。',
   },
@@ -177,14 +175,14 @@ export const ENDINGS: readonly EndingDef[] = [
     priority: 100,
     conditions: [],
     cards: [
-      n('おすすめの表示を停止しました', 'notice', 2400),
-      n('ご利用ありがとうございました', 'notice', 2600),
+      n('おすすめの表示を停止しました', 2400),
+      n('ご利用ありがとうございました', 2600),
       /*
         五つのうち、これだけ最後まで異常が無い。
         ほかを見たあとだと、何も起きないことのほうが信じられなくなる。
         素直に通した人へのご褒美が「何も無い」という置き方。
       */
-      n('アプリを終了します', 'system', 3400),
+      n('アプリを終了します', 3400),
     ],
     hint: '8段階すべてをクリアすること。',
   },
