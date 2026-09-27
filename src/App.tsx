@@ -143,7 +143,7 @@ export default function App() {
               実在のアプリに見せかける狙いが崩れる。
               この手のゲームの大枠は知られている前提で、一行に留める。
             */}
-            <p className="launch-rule">AIが生成した動画を報告してください。</p>
+            <p className="launch-rule">AIが生成した動画を報告してください</p>
 
             <button type="button" className="primary-button" onClick={onStart}>
               はじめる

@@ -535,7 +535,7 @@ describe('フィードが動く', () => {
 
   it('遊び方は起動画面に書かれていて、フィードには出さない', async () => {
     await toLaunch()
-    expect(screen.getByText('AIが生成した動画を報告してください。')).toBeTruthy()
+    expect(screen.getByText('AIが生成した動画を報告してください')).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'はじめる' }))
     await waitFor(() => expect(document.querySelector('.feed-slot video')).toBeTruthy())
