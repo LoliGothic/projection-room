@@ -1,7 +1,7 @@
 import { noiseBuffer, rewindBuffer } from './synth'
 import { startMusic, type Music } from './music'
 import { BGM, STATIC, type BgmManifest, type BgmTrack } from '../config/audio'
-import { bgmIndexAt } from '../core/bgmQueue'
+import { bgmIndexAt, randomBgmSeed } from '../core/bgmQueue'
 
 /**
  * 音楽を流す場面。
@@ -49,6 +49,10 @@ class AudioEngine {
   private turn = 0
   /** いま鳴らすべきもの。フィードの外では音楽を止める */
   private scene: MusicScene = 'off'
+  /** 曲順の種。遊び直すたびに引き直す */
+  private seed = randomBgmSeed()
+  /** 一度でもフィードに入ったか。1回目は先読みした曲と合わせたいので引き直さない */
+  private seedUsed = false
   /** いまの投稿の曲。場面が戻ったときはこれを鳴らし直す */
   private currentBuffer: AudioBuffer | null = null
 
@@ -156,7 +160,7 @@ class AudioEngine {
     this.loopStart = manifest.loopStart
     this.loopEnd = manifest.loopEnd
     if (this.tracks.length === 0) return
-    await this.bytesFor(this.tracks[bgmIndexAt(this.tracks.length, 0)])
+    await this.bytesFor(this.tracks[bgmIndexAt(this.tracks.length, 0, this.seed)])
   }
 
   /**
@@ -165,7 +169,7 @@ class AudioEngine {
    */
   private async applyTrack(immediate = false) {
     if (this.tracks.length === 0) return
-    const next = bgmIndexAt(this.tracks.length, this.turn)
+    const next = bgmIndexAt(this.tracks.length, this.turn, this.seed)
     if (next === this.trackIndex) return
     this.trackIndex = next
 
@@ -180,7 +184,7 @@ class AudioEngine {
       this.applyDreadToMusic()
     }
     // 次の曲を先に読んでおく。送った瞬間に鳴り始めないと動画とずれる
-    void this.bufferFor(this.tracks[bgmIndexAt(this.tracks.length, this.turn + 1)])
+    void this.bufferFor(this.tracks[bgmIndexAt(this.tracks.length, this.turn + 1, this.seed)])
   }
 
   /**
@@ -319,14 +323,24 @@ class AudioEngine {
    */
   setScene(scene: MusicScene) {
     if (scene === this.scene) return
+    const prev = this.scene
     this.scene = scene
 
     if (scene === 'feed') {
       this.stopStatic()
-      if (this.currentBuffer) {
+      if (prev === 'off') {
+        // 遊び直すたびに曲順を引き直す。同じでは二度目から順番を覚えられてしまう。
+        // 1回目だけは、起動時に先読みした曲と食い違わないよう据え置く
+        if (this.seedUsed) this.seed = randomBgmSeed()
+        this.seedUsed = true
+        this.trackIndex = -1
+        this.currentBuffer = null
+        void this.applyTrack(true)
+      } else if (this.currentBuffer) {
         this.startLoop(this.currentBuffer, BGM.switchSec)
         this.applyDreadToMusic()
-      } else if (this.tracks.length === 0 && this.ctx && this.musicGain && !this.music) {
+      }
+      if (this.tracks.length === 0 && this.ctx && this.musicGain && !this.music) {
         this.music = startMusic(this.ctx, this.musicGain)
       }
       return

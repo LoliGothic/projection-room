@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bgmIndexAt, bgmOrder } from './bgmQueue'
+import { bgmIndexAt, bgmOrder, randomBgmSeed } from './bgmQueue'
 
 const COUNT = 66
 
@@ -18,6 +18,38 @@ describe('bgmOrder', () => {
 
   it('同じ周なら何度呼んでも同じ並び', () => {
     expect(bgmOrder(COUNT, 3)).toEqual(bgmOrder(COUNT, 3))
+  })
+})
+
+describe('種', () => {
+  it('種が違えば並びも違う', () => {
+    expect(bgmOrder(COUNT, 0, 1)).not.toEqual(bgmOrder(COUNT, 0, 2))
+  })
+
+  it('同じ種なら同じ並び', () => {
+    expect(bgmOrder(COUNT, 0, 7)).toEqual(bgmOrder(COUNT, 0, 7))
+  })
+
+  it('種が違っても一巡の性質は保たれる', () => {
+    for (const seed of [0, 1, 99, 4294967295]) {
+      const seen = new Set<number>()
+      for (let turn = 0; turn < COUNT; turn++) seen.add(bgmIndexAt(COUNT, turn, seed))
+      expect(seen.size).toBe(COUNT)
+    }
+  })
+
+  it('種が違っても周の変わり目で同じ曲が続かない', () => {
+    for (const seed of [0, 1, 99, 4294967295]) {
+      for (let cycle = 1; cycle < 8; cycle++) {
+        const last = bgmIndexAt(COUNT, cycle * COUNT - 1, seed)
+        expect(bgmIndexAt(COUNT, cycle * COUNT, seed)).not.toBe(last)
+      }
+    }
+  })
+
+  it('引き直すたびに違う種が出る', () => {
+    const seeds = new Set(Array.from({ length: 40 }, () => randomBgmSeed()))
+    expect(seeds.size).toBeGreaterThan(30)
   })
 })
 
