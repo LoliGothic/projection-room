@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createStats, type Stats } from './progress'
 import { matches, resolveEnding, statValue } from './endings'
-import { ENDINGS, ENDING_ORDER, ENDING_THRESHOLDS, type EndingDef } from '../config/endings.data'
+import { ENDINGS, ENDING_ORDER, ENDING_THRESHOLDS, fillCard, type EndingDef } from '../config/endings.data'
 
 function stats(patch: Partial<Stats> = {}): Stats {
   return { ...createStats(), presented: 24, correct: 24, ...patch }
@@ -90,10 +90,35 @@ describe('エンディング定義', () => {
     expect(ENDING_ORDER).toHaveLength(ENDINGS.length)
   })
 
-  it('どのエンディングにも字幕カードとヒントがある', () => {
+  it('どのエンディングにも文章とヒントがある', () => {
     for (const e of ENDINGS) {
       expect(e.cards.length).toBeGreaterThan(0)
       expect(e.hint.length).toBeGreaterThan(0)
+      for (const c of e.cards) {
+        expect(c.text.length).toBeGreaterThan(0)
+        expect(c.holdMs).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('差し込みは、その回の数字で埋まる', () => {
+    const numbers = { presented: 1234, replays: 7, loops: 0, correct: 8 }
+    expect(fillCard('{presented} 件の動画を確認しました', numbers)).toBe(
+      '1,234 件の動画を確認しました',
+    )
+    expect(fillCard('見返した回数　{replays} 回', numbers)).toBe('見返した回数　7 回')
+  })
+
+  it('数字が無いときも文が壊れない', () => {
+    expect(fillCard('{presented} 件')).toBe('— 件')
+  })
+
+  it('文章に使う差し込みは、すべて埋められる', () => {
+    const numbers = { presented: 1, replays: 1, loops: 1, correct: 1 }
+    for (const e of ENDINGS) {
+      for (const c of e.cards) {
+        expect(fillCard(c.text, numbers)).not.toMatch(/[{}]/)
+      }
     }
   })
 

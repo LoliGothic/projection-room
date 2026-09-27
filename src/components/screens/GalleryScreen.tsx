@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ENDINGS } from '../../config/endings.data'
+import { ENDINGS, fillCard } from '../../config/endings.data'
 import { useRecords } from '../../state/recordsStore'
 
 interface Props {
@@ -49,7 +49,10 @@ export function GalleryScreen({ onBack }: Props) {
           return (
             <li key={e.id} className={found ? 'ending-row found' : 'ending-row'}>
               <span className="ending-name">{found ? e.title : '？？？'}</span>
-              <span className="ending-hint">{found ? e.cards[e.cards.length - 1] : e.hint}</span>
+              {/* 見たものは最後の一文を、まだのものはヒントを出す */}
+              <span className="ending-hint">
+                {found ? fillCard(e.cards[e.cards.length - 1].text) : e.hint}
+              </span>
             </li>
           )
         })}

@@ -492,19 +492,65 @@ body {
 }
 .ending-card {
   margin: 0;
+  line-height: 1.9;
+  animation: notice-in 300ms ease-out;
+}
+
+/* 通知として出る文。下に溜まっていくので、古いものほど薄い */
+.ending-card.as-notice {
   padding: 0.75rem 0.95rem;
   border-radius: 12px;
   background: rgba(18, 18, 24, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.08);
   font-size: 0.86rem;
-  line-height: 1.8;
   text-align: left;
-  opacity: 0.55;
-  animation: notice-in 300ms ease-out;
+  opacity: 0.4;
 }
-.ending-card.now { opacity: 1; }
 
-.ending-final { position: relative; }
+/*
+  画面そのものに出る文。囲いを付けない。
+  通知なら「アプリが知らせている」が、囲いが無いと「画面がそうなっている」
+  になり、逃げ場が無くなる。
+*/
+.ending-card.as-system {
+  padding: 0.4rem 0;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--dim);
+  opacity: 0;
+  animation: ending-system-in 900ms ease-out forwards;
+}
+
+/* 記録の画面。数字を大きく見せる */
+.ending-card.as-record {
+  padding: 1.6rem 1.2rem;
+  border-radius: 14px;
+  background: rgba(14, 14, 19, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 1.18rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  text-align: center;
+  opacity: 0;
+  animation: ending-system-in 900ms ease-out forwards;
+}
+
+.ending-card.as-notice.now { opacity: 1; }
+
+@keyframes ending-system-in {
+  from { opacity: 0; letter-spacing: 0.22em; }
+  to { opacity: 1; }
+}
+
+.ending-final {
+  position: relative;
+  animation: ending-final-in 1600ms ease-out both;
+}
+@keyframes ending-final-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 .ending-label { margin: 0; font-size: 0.68rem; letter-spacing: 0.3em; color: var(--muted); }
 .ending-title { margin: 0.5rem 0 1.8rem; font-size: 1.7rem; }
 .ending-actions { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }

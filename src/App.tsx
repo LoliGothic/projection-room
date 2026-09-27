@@ -213,6 +213,14 @@ export default function App() {
                 ? clipsById.get(endingById(phase.endingId)!.clipId!)
                 : undefined
             }
+            numbers={
+              stats && {
+                presented: stats.presented,
+                replays: stats.replays,
+                loops: stats.loops,
+                correct: stats.correct,
+              }
+            }
             onRecap={() => goto({ name: 'recap' })}
             onHome={toHome}
           />
