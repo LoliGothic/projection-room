@@ -1,7 +1,15 @@
-import { rewindBuffer } from './synth'
+import { noiseBuffer, rewindBuffer } from './synth'
 import { startMusic, type Music } from './music'
-import { BGM, type BgmManifest, type BgmTrack } from '../config/audio'
+import { BGM, STATIC, type BgmManifest, type BgmTrack } from '../config/audio'
 import { bgmIndexAt } from '../core/bgmQueue'
+
+/**
+ * 音楽を流す場面。
+ * - feed   フィードを見ているあいだ。投稿ごとの10秒ループ
+ * - static ミス演出のあいだ。曲を切って砂嵐に差し替える
+ * - off    起動画面・エンディング・記録など。音楽は鳴らさない
+ */
+export type MusicScene = 'feed' | 'static' | 'off'
 
 /**
  * ゲームの音。動画は常に無音で、音はすべてここで鳴らす。
@@ -33,6 +41,15 @@ class AudioEngine {
   private loopEnd = 0
   /** 何回目の投稿か。一覧が届く前に来た指定もここに残して、あとから反映する */
   private turn = 0
+  /** いま鳴らすべきもの。フィードの外では音楽を止める */
+  private scene: MusicScene = 'off'
+  /** いまの投稿の曲。場面が戻ったときはこれを鳴らし直す */
+  private currentBuffer: AudioBuffer | null = null
+
+  private staticSrc: AudioBufferSourceNode | null = null
+  private staticGain: GainNode | null = null
+  private staticLfo: OscillatorNode | null = null
+  private rumbleSrc: OscillatorNode | null = null
 
   private rewind: AudioBuffer | null = null
 
@@ -83,7 +100,8 @@ class AudioEngine {
       await this.applyTrack(true)
       return
     }
-    this.music = startMusic(ctx, gain)
+    // 一覧が読めないときの仮のBGM。場面が feed のときだけ鳴らす
+    if (this.scene === 'feed') this.music = startMusic(ctx, gain)
   }
 
   /** 曲を読む。一度読めば使い回す */
@@ -120,8 +138,11 @@ class AudioEngine {
     // 読んでいるあいだに次の投稿へ送られていたら、こちらは捨てる
     if (!buffer || token !== this.loadToken) return
 
-    this.startLoop(buffer, immediate ? 0 : BGM.switchSec)
-    this.applyDreadToMusic()
+    this.currentBuffer = buffer
+    if (this.scene === 'feed') {
+      this.startLoop(buffer, immediate ? 0 : BGM.switchSec)
+      this.applyDreadToMusic()
+    }
     // 次の曲を先に読んでおく。送った瞬間に鳴り始めないと動画とずれる
     void this.bufferFor(this.tracks[bgmIndexAt(this.tracks.length, this.turn + 1)])
   }
@@ -167,6 +188,122 @@ class AudioEngine {
     this.bgmSrcGain = gain
   }
 
+  /** 鳴らしているループを消す */
+  private stopLoop(fadeSec: number) {
+    const ctx = this.ctx
+    const src = this.bgmSrc
+    const gain = this.bgmSrcGain
+    this.bgmSrc = null
+    this.bgmSrcGain = null
+    if (!ctx || !src || !gain) return
+    const t = ctx.currentTime
+    gain.gain.cancelScheduledValues(t)
+    gain.gain.setValueAtTime(gain.gain.value, t)
+    gain.gain.linearRampToValueAtTime(0, t + fadeSec)
+    src.stop(t + fadeSec + 0.02)
+  }
+
+  /**
+   * ミス演出のあいだ流す砂嵐。
+   * 帯域の中心をゆっくり上下させて、受信が乱れているように聞かせる。
+   */
+  private startStatic() {
+    const ctx = this.ctx
+    if (!ctx || !this.musicGain || this.staticSrc) return
+    const t = ctx.currentTime
+
+    const gain = ctx.createGain()
+    gain.gain.setValueAtTime(0, t)
+    gain.gain.linearRampToValueAtTime(STATIC.gain, t + STATIC.fadeSec)
+    gain.connect(this.musicGain)
+
+    const band = ctx.createBiquadFilter()
+    band.type = 'bandpass'
+    band.frequency.value = STATIC.centerHz
+    band.Q.value = 0.6
+    band.connect(gain)
+
+    const lfo = ctx.createOscillator()
+    lfo.frequency.value = STATIC.sweepRate
+    const lfoDepth = ctx.createGain()
+    lfoDepth.gain.value = STATIC.sweepHz
+    lfo.connect(lfoDepth).connect(band.frequency)
+    lfo.start(t)
+
+    const src = ctx.createBufferSource()
+    src.buffer = noiseBuffer(ctx, 2)
+    src.loop = true
+    src.connect(band)
+    src.start(t)
+
+    // 下に敷く低いうなり
+    const rumble = ctx.createOscillator()
+    rumble.type = 'sawtooth'
+    rumble.frequency.value = 48
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.value = 200
+    const rumbleGain = ctx.createGain()
+    rumbleGain.gain.value = STATIC.rumbleGain
+    rumble.connect(lp).connect(rumbleGain).connect(gain)
+    rumble.start(t)
+
+    this.staticSrc = src
+    this.staticGain = gain
+    this.staticLfo = lfo
+    this.rumbleSrc = rumble
+  }
+
+  private stopStatic(fadeSec: number = STATIC.fadeSec) {
+    const ctx = this.ctx
+    const src = this.staticSrc
+    const gain = this.staticGain
+    const lfo = this.staticLfo
+    const rumble = this.rumbleSrc
+    this.staticSrc = null
+    this.staticGain = null
+    this.staticLfo = null
+    this.rumbleSrc = null
+    if (!ctx || !src || !gain) return
+    const t = ctx.currentTime
+    gain.gain.cancelScheduledValues(t)
+    gain.gain.setValueAtTime(gain.gain.value, t)
+    gain.gain.linearRampToValueAtTime(0, t + fadeSec)
+    const at = t + fadeSec + 0.02
+    src.stop(at)
+    lfo?.stop(at)
+    rumble?.stop(at)
+  }
+
+  /**
+   * いま鳴らすものを切り替える。
+   *
+   * フィードを離れたら音楽は止める。起動画面やエンディングまで曲が続くと、
+   * ゲームが終わったのかどうか分からなくなる。
+   */
+  setScene(scene: MusicScene) {
+    if (scene === this.scene) return
+    this.scene = scene
+
+    if (scene === 'feed') {
+      this.stopStatic()
+      if (this.currentBuffer) {
+        this.startLoop(this.currentBuffer, BGM.switchSec)
+        this.applyDreadToMusic()
+      } else if (this.tracks.length === 0 && this.ctx && this.musicGain && !this.music) {
+        this.music = startMusic(this.ctx, this.musicGain)
+      }
+      return
+    }
+
+    // 画面が壊れる瞬間は、曲も断ち切れたように消す
+    this.stopLoop(scene === 'static' ? 0 : BGM.switchSec)
+    this.music?.stop()
+    this.music = null
+    if (scene === 'static') this.startStatic()
+    else this.stopStatic()
+  }
+
   /** 投稿が変わったことを伝える。曲もここで変わる */
   setTurn(turn: number) {
     if (turn === this.turn) return
@@ -176,6 +313,7 @@ class AudioEngine {
 
   /** 映像を頭出ししたとき。音楽も同じところへ戻して、ずれないようにする */
   restartLoop() {
+    if (this.scene !== 'feed') return
     const buffer = this.bgmSrc?.buffer
     if (buffer) this.startLoop(buffer)
   }
@@ -371,7 +509,10 @@ class AudioEngine {
     this.bgmSrc?.stop()
     this.bgmSrc = null
     this.bgmSrcGain = null
+    this.currentBuffer = null
     this.buffers.clear()
+    this.stopStatic(0)
+    this.scene = 'off'
     this.trackIndex = -1
     void this.ctx?.close()
     this.ctx = null

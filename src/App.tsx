@@ -55,6 +55,19 @@ export default function App() {
     audio.setMuted(muted)
   }, [muted])
 
+  /*
+    音楽はフィードの中だけのもの。
+    起動画面やエンディングまで曲が続くと、ゲームが終わったのか分からない。
+    ミス演出のあいだは曲を断ち切って砂嵐に差し替える。画面だけが壊れて
+    音楽がそのまま流れていると、映像だけの演出に見えてしまう。
+  */
+  const phaseName = session?.phase.name
+  useEffect(() => {
+    audio.setScene(
+      phaseName === 'playing' ? 'feed' : phaseName === 'resetting' ? 'static' : 'off',
+    )
+  }, [phaseName])
+
   const onStart = useCallback(() => {
     void audio.unlock()
     send({ type: 'start' })

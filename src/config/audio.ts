@@ -34,3 +34,20 @@ export interface BgmManifest {
   loopEnd: number
   tracks: BgmTrack[]
 }
+
+/**
+ * ミス演出のあいだ流す砂嵐。BGM の代わりに鳴る。
+ *
+ * 画面が壊れているのに曲がそのまま流れていると、画面だけの演出に見えてしまう。
+ * 音のほうも一緒に壊れることで、アプリ自体がおかしくなったように見せる。
+ */
+export const STATIC = {
+  gain: 0.28,
+  /** 下に敷く低いうなり */
+  rumbleGain: 0.05,
+  /** 帯域の中心（Hz）と、その上下する幅・速さ */
+  centerHz: 900,
+  sweepHz: 520,
+  sweepRate: 0.4,
+  fadeSec: 0.12,
+} as const

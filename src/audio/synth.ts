@@ -3,6 +3,15 @@
  * ここの関数だけ差し替えれば engine.ts は触らずに済む。
  */
 
+/** ホワイトノイズのループ用バッファ */
+export function noiseBuffer(ctx: BaseAudioContext, seconds = 2): AudioBuffer {
+  const len = Math.floor(ctx.sampleRate * seconds)
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate)
+  const data = buf.getChannelData(0)
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1
+  return buf
+}
+
 /** 巻き戻し：高速で逆回転する音 */
 export function rewindBuffer(ctx: BaseAudioContext, seconds = 1.1): AudioBuffer {
   const len = Math.floor(ctx.sampleRate * seconds)
