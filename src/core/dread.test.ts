@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  ambienceLevel,
   counterDrift,
   dreadAt,
   dreadStage,
@@ -73,12 +72,6 @@ describe('段階から決まる演出値', () => {
   it('数字が増える速さは強さに比例する', () => {
     expect(counterDrift(dreadAt(0))).toBe(0)
     expect(counterDrift(dreadAt(T[3]))).toBe(1)
-  })
-
-  it('環境音は最初の段階に入るまで鳴らない', () => {
-    expect(ambienceLevel(dreadAt(0))).toBe(0)
-    expect(ambienceLevel(dreadAt(T[0]))).toBeGreaterThan(0)
-    expect(ambienceLevel(dreadAt(T[3]))).toBeLessThanOrEqual(1)
   })
 
   it('通知の間隔は強さが上がるほど短くなる', () => {

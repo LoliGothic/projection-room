@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Verdict } from '../../core/types'
 import { currentClip, preloadClips, previousClip, type Session } from '../../core/session'
 import {
-  ambienceLevel,
   counterDrift,
   screenBrightness,
   type Dread,
@@ -67,11 +66,8 @@ export function FeedScreen({
 
   // 音は外部システムなので効果として同期する
   useEffect(() => {
-    audio.setDread(dread.intensity * fx, ambienceLevel(dread) * fx)
+    audio.setDread(dread.intensity * fx)
   }, [dread, fx])
-  useEffect(() => {
-    audio.setLoops(stats.loops)
-  }, [stats.loops])
   // 投稿が変わるたびに BGM も変える
   useEffect(() => {
     audio.setTurn(turn)

@@ -77,12 +77,6 @@ export default function App() {
   const onDarkness = useCallback(() => send({ type: 'darkness' }), [send])
   const onCutsceneDone = useCallback(() => send({ type: 'cutsceneDone' }), [send])
 
-  // リセット演出のあいだは環境音を止める
-  const phaseName = session?.phase.name
-  useEffect(() => {
-    audio.setAmbienceRunning(phaseName === 'playing')
-  }, [phaseName])
-
   // エンディングに到達したら記録する
   const endingId = session?.phase.name === 'ending' ? session.phase.endingId : null
   const stats = session?.progress.stats

@@ -56,11 +56,6 @@ export function counterDrift(d: Dread): number {
   return d.intensity
 }
 
-/** 低い環境音の大きさ 0..1。最初の段階に入るまでは鳴らさない */
-export function ambienceLevel(d: Dread): number {
-  return d.stage === 0 ? 0 : Math.min(1, (d.intensity - 0.15) / 0.85)
-}
-
 /** 通知が届く間隔（ms）。強さが上がるほど短くなる */
 export function noticeIntervalMs(d: Dread, range: readonly [number, number]): number {
   return range[0] + (range[1] - range[0]) * d.intensity
