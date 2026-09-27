@@ -58,6 +58,26 @@ export default defineConfig({
             },
           },
           {
+            // 曲の一覧も同じ理由で事前キャッシュしない
+            urlPattern: /audio\/bgm\.json$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'projection-room-bgm-manifest',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 2 },
+            },
+          },
+          {
+            urlPattern: /\/audio\/bgm\/.*\.mp3$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'projection-room-bgm',
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              rangeRequests: true,
+              cacheableResponse: { statuses: [0, 200, 206] },
+            },
+          },
+          {
             urlPattern: /\/clips\/.*\.mp4$/,
             handler: 'CacheFirst',
             options: {

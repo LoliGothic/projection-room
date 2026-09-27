@@ -1,6 +1,6 @@
 import type { Clip } from '../../core/types'
 import { APP } from '../../config/app'
-import { BGM, hasBgmFile } from '../../config/audio'
+import { BGM } from '../../config/audio'
 
 interface Props {
   clips: readonly Clip[]
@@ -83,25 +83,13 @@ export function CreditsScreen({ clips, onBack }: Props) {
             <p className="credit-sub">Web Audio API による合成音</p>
           </li>
           <li>
+            {/* 表記は不要とされているが、出どころは残しておきたいので一行だけ書く */}
             <p className="credit-title">BGM</p>
-            {hasBgmFile() ? (
-              <>
-                <p className="credit-sub">
-                  {BGM.title}
-                  {BGM.author ? ` / ${BGM.author}` : ''}
-                </p>
-                {BGM.license && <p className="credit-sub">{BGM.license}</p>}
-                {BGM.url && (
-                  <p className="credit-sub">
-                    <a href={BGM.url} target="_blank" rel="noreferrer">
-                      {BGM.url}
-                    </a>
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="credit-sub">Web Audio API による合成音（音源ファイルは未設定）</p>
-            )}
+            <p className="credit-sub">
+              <a href={BGM.url} target="_blank" rel="noreferrer">
+                {BGM.credit}
+              </a>
+            </p>
           </li>
         </ul>
       </section>

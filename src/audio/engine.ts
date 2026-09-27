@@ -1,6 +1,7 @@
 import { creakBuffer, noiseBuffer, projectorBuffer, rewindBuffer } from './synth'
 import { startMusic, type Music } from './music'
-import { BGM, hasBgmFile } from '../config/audio'
+import { BGM, type BgmManifest, type BgmTrack } from '../config/audio'
+import { bgmIndexAt } from '../core/bgmQueue'
 
 /**
  * ゲームの音。動画は常に無音で、音はすべてここで鳴らす。
@@ -27,7 +28,12 @@ class AudioEngine {
 
   private music: Music | null = null
   private musicGain: GainNode | null = null
-  private bgmSrc: AudioBufferSourceNode | null = null
+  private bgmEl: HTMLAudioElement | null = null
+  private bgmNode: MediaElementAudioSourceNode | null = null
+  private tracks: BgmTrack[] = []
+  private trackIndex = -1
+  /** 何回目の投稿か。一覧が届く前に来た指定もここに残して、あとから反映する */
+  private turn = 0
 
   private creak: AudioBuffer | null = null
   private rewind: AudioBuffer | null = null
@@ -36,6 +42,7 @@ class AudioEngine {
 
   private volume = 0.7
   private muted = false
+  private dread = 0
 
   get ready(): boolean {
     return this.ctx !== null
@@ -143,8 +150,7 @@ class AudioEngine {
 
   /**
    * BGM を始める。
-   * config/audio.ts に音源が指定されていればそれを流し、
-   * 無ければ合成した仮のBGMを鳴らす。
+   * 音源の一覧が読めればそこから流し、読めなければ合成した仮のBGMを鳴らす。
    */
   private async startBgm(ctx: AudioContext, master: GainNode) {
     const gain = ctx.createGain()
@@ -152,24 +158,63 @@ class AudioEngine {
     gain.connect(master)
     this.musicGain = gain
 
-    if (hasBgmFile()) {
-      try {
-        const url = import.meta.env.BASE_URL + BGM.file.replace(/^\.?\//, '')
-        const res = await fetch(url)
-        if (!res.ok) throw new Error(String(res.status))
-        const buffer = await ctx.decodeAudioData(await res.arrayBuffer())
-        const src = ctx.createBufferSource()
-        src.buffer = buffer
-        src.loop = true
-        src.connect(gain)
-        src.start()
-        this.bgmSrc = src
-        return
-      } catch {
-        // 読めなければ合成のほうへ落とす。音が無いより鳴っていたほうがよい
-      }
+    this.tracks = await loadTracks()
+    if (this.tracks.length > 0) {
+      /*
+        <audio> 越しに流す。decodeAudioData だと曲まるごとメモリに展開するので、
+        投稿ごとに切り替える作りには重すぎる。
+        別の場所から配信する場合に音が消えないよう crossOrigin を付けておく。
+      */
+      const el = new Audio()
+      el.crossOrigin = 'anonymous'
+      el.loop = true
+      el.preload = 'auto'
+      // 再生速度を落としたときに音程も下がる。テープが伸びたように聞こえる
+      el.preservesPitch = false
+      this.bgmEl = el
+      this.bgmNode = ctx.createMediaElementSource(el)
+      this.bgmNode.connect(gain)
+      this.applyTrack(true)
+      return
     }
     this.music = startMusic(ctx, gain)
+  }
+
+  /** いまの turn に対応する曲へ移る。immediate なら音量を落とさずに始める */
+  private applyTrack(immediate = false) {
+    const el = this.bgmEl
+    if (!el || this.tracks.length === 0) return
+    const next = bgmIndexAt(this.tracks.length, this.turn)
+    if (next === this.trackIndex) return
+    this.trackIndex = next
+
+    const src = import.meta.env.BASE_URL + this.tracks[next].src.replace(/^\.?\//, '')
+    const start = () => {
+      el.src = src
+      el.currentTime = 0
+      void el.play().catch(() => {
+        /* 端末が拒んでも他の音は鳴っているので、そのままにする */
+      })
+    }
+
+    if (immediate || !this.ctx || !this.musicGain) {
+      start()
+      return
+    }
+    // 切り替えの段差を消すため、いったん絞ってから差し替える
+    const t = this.ctx.currentTime
+    this.musicGain.gain.setTargetAtTime(0, t, BGM.switchSec / 3)
+    window.setTimeout(() => {
+      start()
+      this.applyDreadToMusic()
+    }, BGM.switchSec * 1000)
+  }
+
+  /** 投稿が変わったことを伝える。曲もここで変わる */
+  setTurn(turn: number) {
+    if (turn === this.turn) return
+    this.turn = turn
+    this.applyTrack()
   }
 
   /* ---- 状態の反映 ---- */
@@ -203,11 +248,23 @@ class AudioEngine {
     this.droneGain?.gain.setTargetAtTime(0.08 + intensity * 0.16, t, 0.5)
     this.breathGain?.gain.setTargetAtTime(ambience * 0.2, t, 0.5)
 
-    // BGM も一緒に歪ませる。音源ファイルのときは再生速度を落とす
+    // BGM も一緒に歪ませる
     this.music?.setDread(intensity)
-    if (this.bgmSrc) this.bgmSrc.playbackRate.setTargetAtTime(1 - intensity * 0.12, t, 0.8)
+    this.dread = intensity
+    this.applyDreadToMusic()
+  }
+
+  /**
+   * 不穏の度合いを BGM に反映する。
+   * 曲を切り替えたあとにも呼ぶので、setDread とは分けてある。
+   */
+  private applyDreadToMusic() {
+    if (!this.ctx) return
+    const t = this.ctx.currentTime
+    // 音源ファイルのときは再生速度を落とす
+    if (this.bgmEl) this.bgmEl.playbackRate = 1 - this.dread * 0.12
     // 不穏になるほど BGM は引っ込み、環境音が前に出る
-    this.musicGain?.gain.setTargetAtTime(BGM.gain * (1 - intensity * 0.45), t, 0.8)
+    this.musicGain?.gain.setTargetAtTime(BGM.gain * (1 - this.dread * 0.45), t, 0.8)
   }
 
   /** ループ回数。増えるほど映写機の異音が増える */
@@ -379,8 +436,10 @@ class AudioEngine {
   dispose() {
     this.music?.stop()
     this.music = null
-    this.bgmSrc?.stop()
-    this.bgmSrc = null
+    this.bgmEl?.pause()
+    this.bgmEl = null
+    this.bgmNode = null
+    this.trackIndex = -1
     if (this.creakTimer !== null) window.clearTimeout(this.creakTimer)
     this.creakTimer = null
     this.projectorSrc?.stop()
@@ -394,3 +453,16 @@ class AudioEngine {
 }
 
 export const audio = new AudioEngine()
+
+/** 曲の一覧を読む。無ければ空。合成BGMに落ちるだけなので失敗しても構わない */
+async function loadTracks(): Promise<BgmTrack[]> {
+  try {
+    const url = import.meta.env.BASE_URL + BGM.manifest.replace(/^\.?\//, '')
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(String(res.status))
+    const data = (await res.json()) as BgmManifest
+    return Array.isArray(data.tracks) ? data.tracks.filter((t) => t?.src) : []
+  } catch {
+    return []
+  }
+}

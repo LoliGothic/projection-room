@@ -13,7 +13,8 @@
     "gen:dummy": "node scripts/gen-dummy.mjs",
     "gen:icons": "node scripts/gen-icons.mjs",
     "gen:dummy:if-missing": "node scripts/gen-dummy.mjs --if-missing",
-    "normalize": "node scripts/normalize.mjs"
+    "normalize": "node scripts/normalize.mjs",
+    "prep:bgm": "node scripts/prep-bgm.mjs"
   },
   "dependencies": {
     "react": "^19.3.0",

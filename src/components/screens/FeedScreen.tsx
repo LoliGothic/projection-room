@@ -72,6 +72,10 @@ export function FeedScreen({
   useEffect(() => {
     audio.setLoops(stats.loops)
   }, [stats.loops])
+  // 投稿が変わるたびに BGM も変える
+  useEffect(() => {
+    audio.setTurn(turn)
+  }, [turn])
 
   // 通知が増えたら鳴らす
   const noticeCount = notices.length
