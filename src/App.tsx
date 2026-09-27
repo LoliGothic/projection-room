@@ -219,8 +219,6 @@ export default function App() {
                 replays: stats.replays,
                 loops: stats.loops,
                 correct: stats.correct,
-                // アプリ側の記録は、確認した本数より必ず 1 多い
-                logged: stats.presented + 1,
               }
             }
             onRecap={() => goto({ name: 'recap' })}
