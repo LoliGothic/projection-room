@@ -5,14 +5,7 @@
  * 本物か AI かは一切見ていない。見分けの手がかりにしないため。
  */
 
-function hash(seed: string, salt: string): number {
-  let h = 2166136261
-  for (const ch of `${seed}:${salt}`) {
-    h ^= ch.charCodeAt(0)
-    h = Math.imul(h, 16777619)
-  }
-  return (h >>> 0) / 4294967296
-}
+import { unitHash } from './hash'
 
 export interface Counters {
   likes: number
@@ -22,14 +15,14 @@ export interface Counters {
 
 /** 素の値。落ち着いた桁に収める */
 export function baseCounters(clipId: string): Counters {
-  const likes = Math.round(180 + hash(clipId, 'like') * 42_000)
+  const likes = Math.round(180 + unitHash(clipId, 'like') * 42_000)
   // 共有はハートではなくコメントを基準にする。
   // それぞれ独立に振ると、共有のほうが多い不自然な並びになることがある
-  const comments = Math.max(1, Math.round(likes * (0.012 + hash(clipId, 'cm') * 0.05)))
+  const comments = Math.max(1, Math.round(likes * (0.012 + unitHash(clipId, 'cm') * 0.05)))
   return {
     likes,
     comments,
-    shares: Math.max(0, Math.round(comments * (0.08 + hash(clipId, 'sh') * 0.4))),
+    shares: Math.max(0, Math.round(comments * (0.08 + unitHash(clipId, 'sh') * 0.4))),
   }
 }
 

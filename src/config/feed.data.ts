@@ -1,3 +1,5 @@
+import { pickBy, unitHash } from '../core/hash'
+
 /**
  * フィードに表示する文言。ここだけ触れば差し替えられる。
  *
@@ -103,16 +105,6 @@ const FALLBACK_NAMES: readonly string[] = [
   'towa.clip',
 ]
 
-/** ID から決まる 0..1 の値 */
-function hashUnit(seed: string): number {
-  let h = 2166136261
-  for (const ch of seed) {
-    h ^= ch.charCodeAt(0)
-    h = Math.imul(h, 16777619)
-  }
-  return (h >>> 0) / 4294967296
-}
-
 /**
  * 表示する投稿者名。
  * ループが増えるほど、同じ名前に置き換わる割合が上がる。
@@ -126,9 +118,7 @@ export function accountNameFor(
   index: number,
   clipId = '',
 ): string {
-  const base =
-    contributor?.trim() ||
-    FALLBACK_NAMES[Math.floor(hashUnit(clipId) * FALLBACK_NAMES.length) % FALLBACK_NAMES.length]
+  const base = contributor?.trim() || pickBy(FALLBACK_NAMES, clipId)
   if (loops <= 0) return base
   // 20 ループで半分ほどが同じ名前になる
   const ratio = Math.min(0.55, loops / 36)
@@ -223,16 +213,6 @@ export interface Comment {
   likes: number
 }
 
-/** ID から決まる 0..1 の値 */
-function unit(seed: string, salt: string): number {
-  let h = 2166136261
-  for (const ch of `${seed}:${salt}`) {
-    h ^= ch.charCodeAt(0)
-    h = Math.imul(h, 16777619)
-  }
-  return (h >>> 0) / 4294967296
-}
-
 /**
  * コメント欄の中身。
  * 同じ動画なら毎回同じ並びになる。ループが増えるほど、
@@ -248,15 +228,25 @@ export function commentsFor(clipId: string, loops: number, count = 8): Comment[]
   const eerieCount = eerie.length === 0 ? 0 : Math.min(count - 1, Math.round(loops / 4))
 
   const out: Comment[] = []
+  const usedText = new Set<string>()
+  const usedName = new Set<string>()
+
   for (let i = 0; i < count; i++) {
-    const useEerie = i < eerieCount
-    const pool = useEerie ? eerie : calm
-    const pick = Math.floor(unit(clipId, `c${i}`) * pool.length)
-    out.push({
-      name: COMMENT_NAMES[Math.floor(unit(clipId, `n${i}`) * COMMENT_NAMES.length)],
-      text: pool[pick % pool.length],
-      likes: Math.floor(unit(clipId, `l${i}`) * 240),
-    })
+    const pool = i < eerieCount ? eerie : calm
+    // 同じ書き込みが並ばないよう、重なったら少しずらして引き直す
+    let text = pickBy(pool, clipId, `c${i}`)
+    for (let retry = 1; usedText.has(text) && retry < pool.length; retry++) {
+      text = pickBy(pool, clipId, `c${i}`, `r${retry}`)
+    }
+    usedText.add(text)
+
+    let name = pickBy(COMMENT_NAMES, clipId, `n${i}`)
+    for (let retry = 1; usedName.has(name) && retry < COMMENT_NAMES.length; retry++) {
+      name = pickBy(COMMENT_NAMES, clipId, `n${i}`, `r${retry}`)
+    }
+    usedName.add(name)
+
+    out.push({ name, text, likes: Math.floor(unitHash(clipId, `l${i}`) * 240) })
   }
   return out
 }

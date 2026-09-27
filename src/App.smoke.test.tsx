@@ -250,7 +250,10 @@ describe('フィードが動く', () => {
       fireEvent.click(inPost(/^コメント/))
     })
     expect(screen.getByRole('dialog', { name: 'コメント' })).toBeTruthy()
-    expect(document.querySelectorAll('.comment-list li').length).toBeGreaterThan(3)
+    const texts = [...document.querySelectorAll('.comment-text')].map((e) => e.textContent)
+    expect(texts.length).toBeGreaterThan(3)
+    // 同じ書き込みが並ばない
+    expect(new Set(texts).size).toBe(texts.length)
 
     // 開いているあいだは上へ送れない
     await scrollNext()
@@ -267,10 +270,7 @@ describe('フィードが動く', () => {
     const before = activeClip()!.id
 
     await act(async () => {
-      fireEvent.click(inPost('その他'))
-    })
-    await act(async () => {
-      fireEvent.click(inPost('共有する', 'menuitem'))
+      fireEvent.click(inPost(/^共有/))
     })
 
     expect(open).toHaveBeenCalled()
@@ -317,18 +317,17 @@ describe('フィードが動く', () => {
   it('右側のアイコンに数字が出て、動画ごとに変わる', async () => {
     await toFeed()
     const labels = [...currentPost().querySelectorAll('.side-label')].map((e) => e.textContent)
-    // いいね / コメント / その他
-    expect(labels).toHaveLength(3)
-    expect(labels[2]).toBe('その他')
-    // いいねとコメントには数字が出ている
-    expect(labels[0]).toMatch(/[\d,万億]/)
-    expect(labels[1]).toMatch(/[\d,万億]/)
+    // いいね / コメント / 共有 / その他
+    expect(labels).toHaveLength(4)
+    expect(labels[3]).toBe('その他')
+    // いいね・コメント・共有には数字が出ている
+    for (const t of labels.slice(0, 3)) expect(t).toMatch(/[\d,万億]/)
 
-    const before = labels.slice(0, 2).join()
+    const before = labels.slice(0, 3).join()
     await answer(true)
     await waitFor(() => {
       const now = [...currentPost().querySelectorAll('.side-label')]
-        .slice(0, 2)
+        .slice(0, 3)
         .map((e) => e.textContent)
         .join()
       expect(now).not.toBe(before)

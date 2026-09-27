@@ -20,7 +20,8 @@ interface Props {
  * 判定になるのは「…」からの報告だけ。
  * 本物だと思ったら、そのまま上にスクロールして送る。
  *
- * ハートは飾り。数字は動画の ID から決まるので、本物か AI かの手がかりにはならない。
+ * ハート・コメント・共有は飾り。数字は動画の ID から決まるので、
+ * 本物か AI かの手がかりにはならない。
  */
 export function SideActions({
   counters,
@@ -67,6 +68,19 @@ export function SideActions({
         <span className="side-label">{formatCount(counters.comments)}</span>
       </button>
 
+      <button
+        type="button"
+        className="side-item"
+        onClick={onShare}
+        disabled={!enabled}
+        aria-label={`共有 ${counters.shares}`}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 12v7h16v-7M12 3v12M8 7l4-4 4 4" />
+        </svg>
+        <span className="side-label">{formatCount(counters.shares)}</span>
+      </button>
+
       <div className="side-menu-wrap">
         <button
           type="button"
@@ -86,16 +100,6 @@ export function SideActions({
 
         {menuOpen && (
           <div className="side-menu" role="menu">
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setOpen(false)
-                onShare()
-              }}
-            >
-              共有する
-            </button>
             <button
               type="button"
               role="menuitem"
