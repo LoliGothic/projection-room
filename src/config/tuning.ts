@@ -37,6 +37,16 @@ export const FEED = {
   tapSlopPx: 10,
   /** これ以内に離せばタップとみなす（ms） */
   tapMaxMs: 300,
+  /**
+   * 次へ送るのに必要な、上方向の移動量（画面の高さに対する割合）。
+   * 送ること自体が「本物だと答える」ことになるので、指が滑ったくらいでは
+   * 送られないよう、やや大きめにしてある。
+   */
+  advanceRatio: 0.22,
+  /** 距離が足りなくても送る速度（px/ms） */
+  advanceVelocity: 0.6,
+  /** 下方向には送れない。引っ張られても動く量をこの割合に抑える */
+  overdragResist: 0.25,
 } as const
 
 export const CUTSCENE = {

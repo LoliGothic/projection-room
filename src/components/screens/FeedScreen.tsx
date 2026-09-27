@@ -125,8 +125,28 @@ export function FeedScreen({
         preload={preload}
         enabled={interactive}
         paused={!interactive}
+        onAdvance={() => onAnswer('keep')}
         onTap={replay}
         onVideoError={onVideoError}
+        renderOverlay={(postClip, isCurrent, offset) => (
+          <div className="post-overlay">
+            <SideActions
+              // 動画が変わったらメニューやハートの状態を持ち越さない
+              key={postClip.id}
+              counters={isCurrent ? counters : baseCounters(postClip.id)}
+              onReport={() => onAnswer('report')}
+              onReplay={replay}
+              onDecorative={onDecorative}
+              enabled={isCurrent && interactive}
+            />
+            <div className="feed-bottom">
+              <p className="account">
+                @{accountNameFor(postClip.contributor, stats.loops, turn + offset, postClip.id)}
+              </p>
+              <p className="caption">{captionFor(stats.loops, turn + offset)}</p>
+            </div>
+          </div>
+        )}
       />
 
       {failed && (
@@ -137,7 +157,7 @@ export function FeedScreen({
         </p>
       )}
 
-      <div className="feed-overlay">
+      <div className="app-chrome">
         <div className="feed-top">
           <div className="top-row">
             {/*
@@ -165,21 +185,10 @@ export function FeedScreen({
           <Notifications notices={notices} />
         </div>
 
-        <SideActions
-          counters={counters}
-          onLike={() => onAnswer('keep')}
-          onReport={() => onAnswer('report')}
-          onReplay={replay}
-          onDecorative={onDecorative}
-          enabled={interactive}
-        />
-
-        <div className="feed-bottom">
-          <p className="account">@{accountNameFor(clip.contributor, stats.loops, turn, clip.id)}</p>
-          <p className="caption">{captionFor(stats.loops, turn)}</p>
-          <div className="hint" style={{ opacity: stats.presented >= 6 ? 0.35 : 1 }}>
-            本物なら<b>♥</b>、AIが作ったものなら<b>⋯</b>から<b>報告</b>
-          </div>
+        <div className="hint" style={{ opacity: stats.presented >= 6 ? 0.35 : 1 }}>
+          本物だと思ったら<b>上にスクロール</b>、
+          <br />
+          AIが作ったものだと思ったら<b>⋯</b>から<b>報告</b>
         </div>
       </div>
     </>

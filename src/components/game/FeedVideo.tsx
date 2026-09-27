@@ -2,7 +2,7 @@ import { useEffect, useImperativeHandle, useMemo, useRef } from 'react'
 import type { Clip } from '../../core/types'
 import { buildSlots } from '../../core/videoRing'
 import { FEED, RULES } from '../../config/tuning'
-import { useTapInput } from '../../hooks/useTapInput'
+import { useFeedGesture } from '../../hooks/useFeedGesture'
 
 export interface FeedVideoHandle {
   /** 最初から再生し直す */
@@ -17,10 +17,17 @@ interface Props {
   turn: number
   /** 先読みしておく動画 */
   preload: readonly Clip[]
+  /** 上へ送りきったとき（＝本物だと答える） */
+  onAdvance: () => void
   /** 映像をタップしたとき（頭出し） */
   onTap?: () => void
   /** 動画が読み込めなかったとき */
   onVideoError?: () => void
+  /**
+   * 投稿ごとに重ねるUI（右側のボタン・投稿者名・キャプション）。
+   * 映像と一緒に上へ送られるよう、枠の中に置く。
+   */
+  renderOverlay?: (clip: Clip, isCurrent: boolean, offset: number) => React.ReactNode
   enabled: boolean
   /** 演出中は映像も止める */
   paused?: boolean
@@ -42,14 +49,20 @@ export function FeedVideo({
   previous,
   turn,
   preload,
+  onAdvance,
   onTap,
   onVideoError,
+  renderOverlay,
   enabled,
   paused = false,
   ref,
 }: Props) {
   const videos = useRef<(HTMLVideoElement | null)[]>([])
-  const { handlers } = useTapInput(onTap ?? (() => {}), enabled)
+  const { dragY, dragging, handlers } = useFeedGesture({
+    onAdvance,
+    onTap: onTap ?? (() => {}),
+    enabled,
+  })
 
   // 上へ抜けた1本 → 表示中 → 先読み、の順
   const ids = useMemo(
@@ -111,9 +124,13 @@ export function FeedVideo({
           <div
             key={i}
             className="feed-slot"
+            // 上へ抜けた / 表示中 / これから、のどれか
+            data-pos={offset === 0 ? 'previous' : offset === 1 ? 'current' : 'next'}
             style={{
-              transform: `translateY(${y}%)`,
-              transitionDuration: `${FEED.scrollMs}ms`,
+              // 指に追従しているあいだは、そのぶんだけずらす
+              transform: `translateY(calc(${y}% + ${dragY}px))`,
+              // 追従中は補間しない。離してから動かす
+              transitionDuration: dragging ? '0ms' : `${FEED.scrollMs}ms`,
               // 表示中と、その前後だけ見えていればよい
               visibility: Math.abs(y) <= 100 ? 'visible' : 'hidden',
             }}
@@ -131,6 +148,7 @@ export function FeedVideo({
               disablePictureInPicture
               onError={i === activeSlot ? onVideoError : undefined}
             />
+            {clip && renderOverlay?.(clip, i === activeSlot, offset)}
           </div>
         )
       })}

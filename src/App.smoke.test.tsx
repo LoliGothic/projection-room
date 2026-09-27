@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import App from './App'
 import { RULES } from './config/tuning'
 import type { ClipsFile } from './core/types'
@@ -47,27 +47,46 @@ afterEach(() => {
 
 /** いま映っている動画の clips.json 上の定義（画面の中央にある枠が表示中） */
 function activeClip() {
-  const shown = [...document.querySelectorAll('.feed-slot')].find(
-    (el) => (el as HTMLElement).style.transform === 'translateY(0%)',
-  )
+  const shown = document.querySelector('.feed-slot[data-pos="current"]')
   const src = shown?.querySelector('video')?.getAttribute('src') ?? ''
   return clipsFile.clips.find((c) => src.endsWith(`${c.id}.mp4`))
 }
 
-/** ハートを押す＝本物だと答える */
+/** いま画面に出ている投稿の枠。ボタンは投稿ごとにあるので、ここに絞って探す */
+function currentPost(): HTMLElement {
+  const el = document.querySelector('.feed-slot[data-pos="current"]')
+  if (!el) throw new Error('表示中の投稿が見つかりません')
+  return el as HTMLElement
+}
+
+function inPost(name: string | RegExp, role: 'button' | 'menuitem' = 'button') {
+  return within(currentPost()).getByRole(role, { name })
+}
+
+/** 上へスクロールして送る＝本物だと答える */
+async function scrollNext() {
+  const area = document.querySelector('.feed-video') as HTMLElement
+  await act(async () => {
+    fireEvent.pointerDown(area, { pointerId: 1, clientX: 180, clientY: 620 })
+    fireEvent.pointerMove(area, { pointerId: 1, clientX: 180, clientY: 420 })
+    fireEvent.pointerUp(area, { pointerId: 1, clientX: 180, clientY: 180 })
+  })
+}
+
+/** ハートを押す（飾り。判定にはならない） */
 async function tapLike() {
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: /^いいね/ }))
+    fireEvent.click(inPost(/^いいね/))
   })
 }
 
 /** 「…」から報告する＝AIだと答える */
 async function tapReport() {
   await act(async () => {
-    fireEvent.click(screen.getByRole('button', { name: 'その他' }))
+    fireEvent.click(inPost('その他'))
   })
   await act(async () => {
-    fireEvent.click(screen.getByRole('menuitem', { name: '報告する' }))
+    fireEvent.click(inPost('報告する', 'menuitem'))
   })
 }
 
@@ -86,7 +105,7 @@ async function answer(correct: boolean) {
   if (!clip) throw new Error('映っている動画が見つかりません')
   const report = correct ? clip.isAI : !clip.isAI
   if (report) await tapReport()
-  else await tapLike()
+  else await scrollNext()
 }
 
 /** 初回の注意表示を抜けて起動画面まで出す */
@@ -118,8 +137,16 @@ describe('フィードが動く', () => {
   it('起動画面から「はじめる」でフィードに入る', async () => {
     await toFeed()
     expect(activeClip()).toBeDefined()
-    expect(screen.getByRole('button', { name: /^いいね/ })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'その他' })).toBeTruthy()
+    expect(inPost(/^いいね/)).toBeTruthy()
+    expect(inPost('その他')).toBeTruthy()
+  })
+
+  it('右側のボタンとキャプションは投稿ごとにあり、映像と一緒に送られる', async () => {
+    await toFeed()
+    // 先読みぶんも含めて、各投稿が自分のUIを持っている
+    expect(document.querySelectorAll('.feed-slot .post-overlay').length).toBeGreaterThan(1)
+    // 表示中の投稿にも、その投稿の投稿者名がある
+    expect(within(currentPost()).getByText(/^@/)).toBeTruthy()
   })
 
   it('先読みぶんを含めて枠が縦に並んでいる', async () => {
@@ -127,21 +154,38 @@ describe('フィードが動く', () => {
     // 上へ抜けた1本 + 表示中 + 先読み2本
     expect(document.querySelectorAll('.feed-slot')).toHaveLength(RULES.preloadAhead + 2)
     // 次の1本は画面の下に控えている
-    const below = [...document.querySelectorAll('.feed-slot')].filter(
-      (el) => (el as HTMLElement).style.transform === 'translateY(100%)',
-    )
-    expect(below.length).toBeGreaterThan(0)
+    expect(document.querySelectorAll('.feed-slot[data-pos="next"]').length).toBeGreaterThan(0)
   })
 
-  it('本物にハートを押すと正解になり、次の動画が上がってくる', async () => {
+  it('本物を上にスクロールして送ると正解になる', async () => {
     await toFeed()
     await advanceUntil(false)
     const before = activeClip()!.id
 
-    await tapLike()
+    await scrollNext()
 
     expect(document.querySelector('.resetting')).toBeNull()
     await waitFor(() => expect(activeClip()!.id).not.toBe(before))
+  })
+
+  it('ハートは飾りで、押しても判定にならない', async () => {
+    await toFeed()
+    const before = activeClip()!.id
+    await tapLike()
+    expect(document.querySelector('.resetting')).toBeNull()
+    expect(activeClip()!.id).toBe(before)
+  })
+
+  it('少ししか動かさなければ送られない', async () => {
+    await toFeed()
+    const before = activeClip()!.id
+    const area = document.querySelector('.feed-video') as HTMLElement
+    await act(async () => {
+      fireEvent.pointerDown(area, { pointerId: 1, clientX: 180, clientY: 600 })
+      fireEvent.pointerMove(area, { pointerId: 1, clientX: 180, clientY: 560 })
+      fireEvent.pointerUp(area, { pointerId: 1, clientX: 180, clientY: 555 })
+    })
+    expect(activeClip()!.id).toBe(before)
   })
 
   it('AIに「…」から報告すると正解になり、次の動画が上がってくる', async () => {
@@ -155,10 +199,10 @@ describe('フィードが動く', () => {
     await waitFor(() => expect(activeClip()!.id).not.toBe(before))
   })
 
-  it('AIにハートを押すとミスになる', async () => {
+  it('AIを送ってしまうとミスになる', async () => {
     await toFeed()
     await advanceUntil(true)
-    await tapLike()
+    await scrollNext()
     expect(document.querySelector('.resetting')).toBeTruthy()
   })
 
@@ -173,9 +217,9 @@ describe('フィードが動く', () => {
     await toFeed()
     const before = activeClip()!.id
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'その他' }))
+      fireEvent.click(inPost('その他'))
     })
-    expect(screen.getByRole('menuitem', { name: '報告する' })).toBeTruthy()
+    expect(inPost('報告する', 'menuitem')).toBeTruthy()
     expect(activeClip()!.id).toBe(before)
   })
 
@@ -183,10 +227,10 @@ describe('フィードが動く', () => {
     await toFeed()
     const before = activeClip()!.id
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'その他' }))
+      fireEvent.click(inPost('その他'))
     })
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: '興味がない' }))
+      fireEvent.click(inPost('興味がない', 'menuitem'))
     })
     expect(activeClip()!.id).toBe(before)
   })
@@ -229,7 +273,7 @@ describe('フィードが動く', () => {
 
   it('右側のアイコンに数字が出て、動画ごとに変わる', async () => {
     await toFeed()
-    const labels = [...document.querySelectorAll('.side-label')].map((e) => e.textContent)
+    const labels = [...currentPost().querySelectorAll('.side-label')].map((e) => e.textContent)
     // いいね / コメント / 最初から / その他
     expect(labels).toHaveLength(4)
     expect(labels[2]).toBe('最初から')
@@ -241,7 +285,7 @@ describe('フィードが動く', () => {
     const before = labels.slice(0, 2).join()
     await answer(true)
     await waitFor(() => {
-      const now = [...document.querySelectorAll('.side-label')]
+      const now = [...currentPost().querySelectorAll('.side-label')]
         .slice(0, 2)
         .map((e) => e.textContent)
         .join()
@@ -251,8 +295,8 @@ describe('フィードが動く', () => {
 
   it('投稿者名とキャプションが出る', async () => {
     await toFeed()
-    expect(document.querySelector('.account')?.textContent).toMatch(/^@/)
-    expect((document.querySelector('.caption')?.textContent ?? '').length).toBeGreaterThan(0)
+    expect(currentPost().querySelector('.account')?.textContent).toMatch(/^@/)
+    expect((currentPost().querySelector('.caption')?.textContent ?? '').length).toBeGreaterThan(0)
   })
 
   it('段階の進捗が小さなゲージで出る（ストーリーズ風のバーは使わない）', async () => {
@@ -312,8 +356,8 @@ describe('フィードが動く', () => {
 
   it('画面を離れると映像が止まる', async () => {
     await toFeed()
-    const shown = [...document.querySelectorAll('.feed-slot')]
-      .find((el) => (el as HTMLElement).style.transform === 'translateY(0%)')!
+    const shown = document
+      .querySelector('.feed-slot[data-pos="current"]')!
       .querySelector('video') as HTMLVideoElement
 
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })

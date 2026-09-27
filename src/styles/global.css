@@ -86,8 +86,27 @@ body {
   .feed-slot { transition-duration: 1ms !important; }
 }
 
-/* ---- 映像に重ねる UI ---- */
-.feed-overlay {
+/* ---- アプリ側のUI（送っても動かない） ---- */
+.app-chrome {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  padding:
+    calc(0.7rem + env(safe-area-inset-top))
+    calc(0.7rem + env(safe-area-inset-right))
+    calc(0.7rem + env(safe-area-inset-bottom))
+    calc(0.7rem + env(safe-area-inset-left));
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+.app-chrome button { pointer-events: auto; }
+
+/*
+  投稿ごとのUI（映像と一緒に上へ送られる）。
+  右側のボタンやキャプションが固定だと、映像だけが動いて不自然に見える。
+*/
+.post-overlay {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -98,9 +117,12 @@ body {
     calc(0.7rem + env(safe-area-inset-bottom))
     calc(0.7rem + env(safe-area-inset-left));
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr auto;
+  grid-template-columns: 1fr auto;
 }
-.feed-overlay button { pointer-events: auto; }
+.post-overlay button { pointer-events: auto; }
+.post-overlay .side-actions { grid-column: 2; grid-row: 1 / -1; }
+.post-overlay .feed-bottom { grid-column: 1; grid-row: 2; }
 
 /*
   上部：段階の進捗。
@@ -214,6 +236,8 @@ body {
 .side-item:hover:not(:disabled) { color: var(--accent); }
 .side-item:disabled { opacity: 0.45; cursor: default; }
 .side-item.like:hover:not(:disabled) { color: var(--danger); }
+.side-item.like.on { color: var(--danger); }
+.side-item.like.on svg { fill: currentColor; }
 
 .side-menu-wrap { position: relative; }
 .side-menu {
@@ -255,7 +279,9 @@ body {
 .account { margin: 0; font-size: 0.92rem; font-weight: 700; }
 .caption { margin: 0; font-size: 0.84rem; line-height: 1.6; color: #e4e4ea; }
 .hint {
-  margin-top: 0.7rem;
+  align-self: end;
+  margin-top: 0;
+  padding-right: 64px;
   font-size: 0.72rem;
   line-height: 1.7;
   color: var(--muted);

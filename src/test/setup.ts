@@ -24,6 +24,12 @@ if (typeof window !== 'undefined') {
     value: vi.fn(() => null),
   })
 
+  // jsdom は高さを 0 と答える。送りのしきい値が意味を持つように実寸を与える
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+    configurable: true,
+    get: () => 800,
+  })
+
   if (!window.matchMedia) {
     window.matchMedia = vi.fn().mockReturnValue({
       matches: false,

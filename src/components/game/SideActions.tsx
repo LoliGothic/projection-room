@@ -3,8 +3,6 @@ import { formatCount, type Counters } from '../../core/counters'
 
 interface Props {
   counters: Counters
-  /** ハート＝この動画は本物だ、という判定 */
-  onLike: () => void
   /** メニューから報告＝この動画はAI生成だ、という判定 */
   onReport: () => void
   onReplay: () => void
@@ -16,20 +14,14 @@ interface Props {
 /**
  * 右側の縦並びアイコン。
  *
- * ハートと「…」からの報告が、そのまま判定になる。
- * 報告はひと手間かかる位置に置く。実際のアプリでも、いいねは一押し、
- * 報告はメニューの奥にある。
+ * 判定になるのは「…」からの報告だけ。
+ * 本物だと思ったら、そのまま上にスクロールして送る。
  *
- * 数字は動画の ID から決まるので、本物か AI かの手がかりにはならない。
+ * ハート・コメント・共有は飾り。数字は動画の ID から決まるので、
+ * 本物か AI かの手がかりにはならない。
  */
-export function SideActions({
-  counters,
-  onLike,
-  onReport,
-  onReplay,
-  onDecorative,
-  enabled,
-}: Props) {
+export function SideActions({ counters, onReport, onReplay, onDecorative, enabled }: Props) {
+  const [liked, setLiked] = useState(false)
   const [open, setOpen] = useState(false)
   // 操作できないあいだは開いていないものとして扱う（別の動画に移ったら閉じる）
   const menuOpen = open && enabled
@@ -38,15 +30,19 @@ export function SideActions({
     <div className="side-actions">
       <button
         type="button"
-        className="side-item like"
-        onClick={onLike}
+        className={liked ? 'side-item like on' : 'side-item like'}
+        onClick={() => {
+          setLiked((v) => !v)
+          onDecorative()
+        }}
         disabled={!enabled}
         aria-label={`いいね ${counters.likes}`}
+        aria-pressed={liked}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 20s-7-4.6-7-9.4A4 4 0 0 1 12 8a4 4 0 0 1 7-2.6c0 4.8-7 14.6-7 14.6Z" />
         </svg>
-        <span className="side-label">{formatCount(counters.likes)}</span>
+        <span className="side-label">{formatCount(counters.likes + (liked ? 1 : 0))}</span>
       </button>
 
       <button
