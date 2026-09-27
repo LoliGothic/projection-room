@@ -100,6 +100,8 @@ export function FeedScreen({
 
   const replay = useCallback(() => {
     video.current?.replay()
+    // 映像を頭に戻すので、音楽も同じところへ戻す
+    audio.restartLoop()
     onReplay()
   }, [onReplay])
 

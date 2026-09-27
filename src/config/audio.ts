@@ -4,6 +4,9 @@
  * 音源は raw/bgm/ に置いて `npm run prep:bgm` を走らせる。
  * public/audio/bgm/ に切り出され、一覧 public/audio/bgm.json ができる。
  * 一覧が読めなければ Web Audio で合成した仮のBGMに落ちる。
+ *
+ * ループの長さは一覧のほうに入っている。動画と同じ周期にする必要があり、
+ * 書き出しと再生で食い違うと意味がなくなるので、作った側が持つようにしてある。
  */
 export const BGM = {
   /** 曲の一覧。public/ からの相対パス */
@@ -26,5 +29,8 @@ export interface BgmTrack {
 
 export interface BgmManifest {
   version: number
+  /** ループに使う範囲（秒）。loopEnd - loopStart が動画1本と同じ長さになる */
+  loopStart: number
+  loopEnd: number
   tracks: BgmTrack[]
 }

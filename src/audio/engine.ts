@@ -20,10 +20,17 @@ class AudioEngine {
 
   private music: Music | null = null
   private musicGain: GainNode | null = null
-  private bgmEl: HTMLAudioElement | null = null
-  private bgmNode: MediaElementAudioSourceNode | null = null
+  private bgmSrc: AudioBufferSourceNode | null = null
+  /** 曲ごとの音量。重ねて差し替えるので、曲と一対一で持つ */
+  private bgmSrcGain: GainNode | null = null
   private tracks: BgmTrack[] = []
   private trackIndex = -1
+  /** 読み込み済みの曲。10秒ぶんなので何曲か抱えていても軽い */
+  private buffers = new Map<string, AudioBuffer>()
+  /** 読み込みの追い越しよけ。差し替えるたびに増やす */
+  private loadToken = 0
+  private loopStart = 0
+  private loopEnd = 0
   /** 何回目の投稿か。一覧が届く前に来た指定もここに残して、あとから反映する */
   private turn = 0
 
@@ -68,63 +75,109 @@ class AudioEngine {
     gain.connect(master)
     this.musicGain = gain
 
-    this.tracks = await loadTracks()
+    const manifest = await loadManifest()
+    this.tracks = manifest.tracks
+    this.loopStart = manifest.loopStart
+    this.loopEnd = manifest.loopEnd
     if (this.tracks.length > 0) {
-      /*
-        <audio> 越しに流す。decodeAudioData だと曲まるごとメモリに展開するので、
-        投稿ごとに切り替える作りには重すぎる。
-        別の場所から配信する場合に音が消えないよう crossOrigin を付けておく。
-      */
-      const el = new Audio()
-      el.crossOrigin = 'anonymous'
-      el.loop = true
-      el.preload = 'auto'
-      // 再生速度を落としたときに音程も下がる。テープが伸びたように聞こえる
-      el.preservesPitch = false
-      this.bgmEl = el
-      this.bgmNode = ctx.createMediaElementSource(el)
-      this.bgmNode.connect(gain)
-      this.applyTrack(true)
+      await this.applyTrack(true)
       return
     }
     this.music = startMusic(ctx, gain)
   }
 
-  /** いまの turn に対応する曲へ移る。immediate なら音量を落とさずに始める */
-  private applyTrack(immediate = false) {
-    const el = this.bgmEl
-    if (!el || this.tracks.length === 0) return
+  /** 曲を読む。一度読めば使い回す */
+  private async bufferFor(track: BgmTrack): Promise<AudioBuffer | null> {
+    const cached = this.buffers.get(track.id)
+    if (cached) return cached
+    const ctx = this.ctx
+    if (!ctx) return null
+    try {
+      const url = import.meta.env.BASE_URL + track.src.replace(/^\.?\//, '')
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(String(res.status))
+      const buffer = await ctx.decodeAudioData(await res.arrayBuffer())
+      this.buffers.set(track.id, buffer)
+      return buffer
+    } catch {
+      // 読めなければ無音のまま進む。音が出ないだけで遊べる
+      return null
+    }
+  }
+
+  /**
+   * いまの turn に対応する曲を、動画と同じ周期で回し始める。
+   * immediate なら音量を落とさずに始める（最初の一本）。
+   */
+  private async applyTrack(immediate = false) {
+    if (this.tracks.length === 0) return
     const next = bgmIndexAt(this.tracks.length, this.turn)
     if (next === this.trackIndex) return
     this.trackIndex = next
 
-    const src = import.meta.env.BASE_URL + this.tracks[next].src.replace(/^\.?\//, '')
-    const start = () => {
-      el.src = src
-      el.currentTime = 0
-      void el.play().catch(() => {
-        /* 端末が拒んでも他の音は鳴っているので、そのままにする */
-      })
+    const token = ++this.loadToken
+    const buffer = await this.bufferFor(this.tracks[next])
+    // 読んでいるあいだに次の投稿へ送られていたら、こちらは捨てる
+    if (!buffer || token !== this.loadToken) return
+
+    this.startLoop(buffer, immediate ? 0 : BGM.switchSec)
+    this.applyDreadToMusic()
+    // 次の曲を先に読んでおく。送った瞬間に鳴り始めないと動画とずれる
+    void this.bufferFor(this.tracks[bgmIndexAt(this.tracks.length, this.turn + 1)])
+  }
+
+  /**
+   * ループを頭から回し始める。
+   *
+   * loopStart / loopEnd はサンプル単位で効くので、周期は 10.000 秒ちょうどになる。
+   * 動画も送られた瞬間に頭出しされるので、二つのループは揃ったまま進む。
+   *
+   * 前の曲は止めずに重ねたまま消していく。止めてから始めると、消えるのを
+   * 待つぶんだけ動画から遅れて回り始めてしまう。
+   */
+  private startLoop(buffer: AudioBuffer, fadeSec = 0) {
+    const ctx = this.ctx
+    if (!ctx || !this.musicGain) return
+    const t = ctx.currentTime
+
+    const prevSrc = this.bgmSrc
+    const prevGain = this.bgmSrcGain
+    if (prevSrc && prevGain) {
+      prevGain.gain.cancelScheduledValues(t)
+      prevGain.gain.setValueAtTime(prevGain.gain.value, t)
+      prevGain.gain.linearRampToValueAtTime(0, t + fadeSec)
+      prevSrc.stop(t + fadeSec + 0.02)
     }
 
-    if (immediate || !this.ctx || !this.musicGain) {
-      start()
-      return
-    }
-    // 切り替えの段差を消すため、いったん絞ってから差し替える
-    const t = this.ctx.currentTime
-    this.musicGain.gain.setTargetAtTime(0, t, BGM.switchSec / 3)
-    window.setTimeout(() => {
-      start()
-      this.applyDreadToMusic()
-    }, BGM.switchSec * 1000)
+    const gain = ctx.createGain()
+    gain.gain.value = fadeSec > 0 ? 0 : 1
+    if (fadeSec > 0) gain.gain.linearRampToValueAtTime(1, t + fadeSec)
+    gain.connect(this.musicGain)
+
+    const src = ctx.createBufferSource()
+    src.buffer = buffer
+    src.loop = true
+    src.loopStart = this.loopStart
+    src.loopEnd = this.loopEnd
+    // 速度を落とすと音程も下がる。テープが伸びたように聞こえる
+    src.playbackRate.value = 1 - this.dread * 0.12
+    src.connect(gain)
+    src.start(t, this.loopStart)
+    this.bgmSrc = src
+    this.bgmSrcGain = gain
   }
 
   /** 投稿が変わったことを伝える。曲もここで変わる */
   setTurn(turn: number) {
     if (turn === this.turn) return
     this.turn = turn
-    this.applyTrack()
+    void this.applyTrack()
+  }
+
+  /** 映像を頭出ししたとき。音楽も同じところへ戻して、ずれないようにする */
+  restartLoop() {
+    const buffer = this.bgmSrc?.buffer
+    if (buffer) this.startLoop(buffer)
   }
 
   /* ---- 状態の反映 ---- */
@@ -160,9 +213,12 @@ class AudioEngine {
   private applyDreadToMusic() {
     if (!this.ctx) return
     const t = this.ctx.currentTime
-    // 音源ファイルのときは再生速度を落とす
-    if (this.bgmEl) this.bgmEl.playbackRate = 1 - this.dread * 0.12
-    // 不穏になるほど BGM は引っ込み、環境音が前に出る
+    /*
+      速度を落とすと音程も下がる。テープが伸びたように聞こえる。
+      同時に、動画の10秒ループから音楽が少しずつ遅れていく。
+      揃っていたものがずれていくこと自体を、時間が経った合図にしている。
+    */
+    this.bgmSrc?.playbackRate.setTargetAtTime(1 - this.dread * 0.12, t, 0.8)
     this.musicGain?.gain.setTargetAtTime(BGM.gain * (1 - this.dread * 0.45), t, 0.8)
   }
 
@@ -312,9 +368,10 @@ class AudioEngine {
   dispose() {
     this.music?.stop()
     this.music = null
-    this.bgmEl?.pause()
-    this.bgmEl = null
-    this.bgmNode = null
+    this.bgmSrc?.stop()
+    this.bgmSrc = null
+    this.bgmSrcGain = null
+    this.buffers.clear()
     this.trackIndex = -1
     void this.ctx?.close()
     this.ctx = null
@@ -324,15 +381,18 @@ class AudioEngine {
 
 export const audio = new AudioEngine()
 
-/** 曲の一覧を読む。無ければ空。合成BGMに落ちるだけなので失敗しても構わない */
-async function loadTracks(): Promise<BgmTrack[]> {
+const NO_BGM: BgmManifest = { version: 0, loopStart: 0, loopEnd: 0, tracks: [] }
+
+/** 曲の一覧を読む。読めなければ合成BGMに落ちるだけなので、失敗しても構わない */
+async function loadManifest(): Promise<BgmManifest> {
   try {
     const url = import.meta.env.BASE_URL + BGM.manifest.replace(/^\.?\//, '')
     const res = await fetch(url)
     if (!res.ok) throw new Error(String(res.status))
     const data = (await res.json()) as BgmManifest
-    return Array.isArray(data.tracks) ? data.tracks.filter((t) => t?.src) : []
+    if (!Array.isArray(data.tracks) || !(data.loopEnd > data.loopStart)) return NO_BGM
+    return { ...data, tracks: data.tracks.filter((t) => t?.id && t?.src) }
   } catch {
-    return []
+    return NO_BGM
   }
 }
