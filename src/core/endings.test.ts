@@ -102,7 +102,7 @@ describe('エンディング定義', () => {
   })
 
   it('差し込みは、その回の数字で埋まる', () => {
-    const numbers = { presented: 1234, replays: 7, loops: 0, correct: 8 }
+    const numbers = { presented: 1234, replays: 7, loops: 0, correct: 8, logged: 1235 }
     expect(fillCard('{presented} 件の動画を確認しました', numbers)).toBe(
       '1,234 件の動画を確認しました',
     )
@@ -114,7 +114,7 @@ describe('エンディング定義', () => {
   })
 
   it('文章に使う差し込みは、すべて埋められる', () => {
-    const numbers = { presented: 1, replays: 1, loops: 1, correct: 1 }
+    const numbers = { presented: 1, replays: 1, loops: 1, correct: 1, logged: 2 }
     for (const e of ENDINGS) {
       for (const c of e.cards) {
         expect(fillCard(c.text, numbers)).not.toMatch(/[{}]/)
