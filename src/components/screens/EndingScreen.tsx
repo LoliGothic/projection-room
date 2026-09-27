@@ -12,8 +12,10 @@ interface Props {
   onHome: () => void
 }
 
+/** 最初の文が出るまで、暗いまま待つ時間 */
+const LEAD_MS = 3000
 /** 最後の文が消えてから、締めの画面が出るまで */
-const SETTLE_MS = 1400
+const SETTLE_MS = 4000
 /** 通知が同時に見えている数。溜まっていく感じだけ出せばよい */
 const NOTICE_STACK = 3
 
@@ -23,35 +25,45 @@ const NOTICE_STACK = 3
  * 通知として出した文は下に溜まり、画面そのものに出した文は前の文と入れ替わる。
  * 実際のアプリでもそう振る舞うので、並べ方だけで「これはアプリの画面だ」と
  * 伝わる。全部を積み上げると、ただの台本に見えてしまう。
+ *
+ * 文の前後は暗いまま待たせる。文章を足すより、黙っている時間のほうが
+ * 持たせられる。プレイヤーは遊び終わった直後で、すでに自分で怖がっている。
  */
 export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props) {
   const ending = endingById(endingId)
   const cards = useMemo(() => ending?.cards ?? [], [ending])
   const [index, setIndex] = useState(0)
+  const [started, setStarted] = useState(false)
   const [settled, setSettled] = useState(false)
   const done = index >= cards.length
 
   const next = useCallback(() => setIndex((i) => Math.min(i + 1, cards.length)), [cards.length])
 
+  // 暗いまま待ってから最初の文を出す
   useEffect(() => {
-    if (done) return
+    const id = window.setTimeout(() => setStarted(true), LEAD_MS)
+    return () => window.clearTimeout(id)
+  }, [])
+
+  useEffect(() => {
+    if (!started || done) return
     const id = window.setTimeout(next, cards[index]?.holdMs ?? 2800)
     return () => window.clearTimeout(id)
-  }, [index, done, next, cards])
+  }, [started, index, done, next, cards])
 
   // 最後の文が消えたあと、少し黙ってから締める
   useEffect(() => {
-    if (!done) return
+    if (!started || !done) return
     const id = window.setTimeout(() => setSettled(true), SETTLE_MS)
     return () => window.clearTimeout(id)
-  }, [done])
+  }, [started, done])
 
   /**
    * いま見えている文。
    * 通知は直前まで続いた通知と一緒に溜まり、それ以外は1枚だけ残る。
    */
   const shown = useMemo(() => {
-    const current = cards[index]
+    const current = started ? cards[index] : undefined
     if (!current) return []
     if (current.as !== 'notice') return [{ card: current, key: index }]
     const run: { card: EndingCard; key: number }[] = []
@@ -59,7 +71,7 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
       run.unshift({ card: cards[i], key: i })
     }
     return run.slice(-NOTICE_STACK)
-  }, [cards, index])
+  }, [cards, index, started])
 
   if (!ending) {
     return (
@@ -70,7 +82,13 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
   }
 
   return (
-    <div className="ending" onPointerDown={done ? undefined : next} role="presentation">
+    <div
+      className="ending"
+      onPointerDown={
+        !started ? () => setStarted(true) : done ? undefined : next
+      }
+      role="presentation"
+    >
       {clip && (
         <video
           className="ending-clip"
@@ -83,7 +101,7 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
         />
       )}
 
-      {!done && (
+      {started && !done && (
         <div className="ending-cards">
           {shown.map(({ card, key }) => (
             <p
