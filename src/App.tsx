@@ -3,6 +3,7 @@ import { isCorrect, type Verdict } from './core/types'
 import { currentClip } from './core/session'
 import { audio } from './audio/engine'
 import { APP } from './config/app'
+import { RULES } from './config/tuning'
 import { useGame } from './state/gameStore'
 import { useSettings } from './state/settingsStore'
 import { endingById } from './config/endings.data'
@@ -137,6 +138,34 @@ export default function App() {
           <div className="launch">
             <h1 className="launch-name">{APP.name}</h1>
             <p className="launch-tagline">{APP.tagline}</p>
+
+            {/*
+              遊び方はここにだけ書く。
+              フィードの上に操作説明を重ねると、実在のアプリに見せかける狙いが崩れる。
+            */}
+            <div className="launch-rules">
+              <p className="launch-lead">
+                流れてくる動画の中に、
+                <br />
+                AIが生成したものが紛れています。
+              </p>
+              <dl className="rule-list">
+                <div>
+                  <dt>本物</dt>
+                  <dd>そのまま上にスクロールして次へ</dd>
+                </div>
+                <div>
+                  <dt>AI</dt>
+                  <dd>報告 →「AIが生成した動画」</dd>
+                </div>
+              </dl>
+              <p className="launch-note">
+                {RULES.totalStages} 本続けて見分けられたら、アプリを閉じられます。
+                <br />
+                一度でも間違えると、おすすめは最初に戻ります。
+              </p>
+            </div>
+
             <button type="button" className="primary-button" onClick={onStart}>
               はじめる
             </button>

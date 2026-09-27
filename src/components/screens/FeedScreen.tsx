@@ -238,11 +238,6 @@ export function FeedScreen({
           />
         )}
 
-        <div className="hint" style={{ opacity: stats.presented >= 6 ? 0.35 : 1 }}>
-          本物だと思ったら<b>上にスクロール</b>、
-          <br />
-          AIが作ったものだと思ったら<b>⋯</b>から<b>報告</b>
-        </div>
       </div>
     </>
   )
