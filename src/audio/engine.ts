@@ -35,6 +35,12 @@ class AudioEngine {
   private trackIndex = -1
   /** 読み込み済みの曲。10秒ぶんなので何曲か抱えていても軽い */
   private buffers = new Map<string, AudioBuffer>()
+  /**
+   * 復号前の音源。
+   * 復号には AudioContext が要り、それを作れるのは「はじめる」を押したあと。
+   * 取ってくるだけなら先にできるので、ここに貯めておく。
+   */
+  private bytes = new Map<string, ArrayBuffer>()
   /** 読み込みの追い越しよけ。差し替えるたびに増やす */
   private loadToken = 0
   private loopStart = 0
@@ -92,10 +98,7 @@ class AudioEngine {
     gain.connect(master)
     this.musicGain = gain
 
-    const manifest = await loadManifest()
-    this.tracks = manifest.tracks
-    this.loopStart = manifest.loopStart
-    this.loopEnd = manifest.loopEnd
+    await this.prefetch()
     if (this.tracks.length > 0) {
       await this.applyTrack(true)
       return
@@ -111,16 +114,49 @@ class AudioEngine {
     const ctx = this.ctx
     if (!ctx) return null
     try {
-      const url = import.meta.env.BASE_URL + track.src.replace(/^\.?\//, '')
-      const res = await fetch(url)
-      if (!res.ok) throw new Error(String(res.status))
-      const buffer = await ctx.decodeAudioData(await res.arrayBuffer())
+      const bytes = await this.bytesFor(track)
+      if (!bytes) return null
+      // decodeAudioData は渡した領域を空にしてしまうので、写しを渡す
+      const buffer = await ctx.decodeAudioData(bytes.slice(0))
       this.buffers.set(track.id, buffer)
       return buffer
     } catch {
       // 読めなければ無音のまま進む。音が出ないだけで遊べる
       return null
     }
+  }
+
+  /** 音源を取ってくる。AudioContext が無くても動く */
+  private async bytesFor(track: BgmTrack): Promise<ArrayBuffer | null> {
+    const cached = this.bytes.get(track.id)
+    if (cached) return cached
+    try {
+      const url = import.meta.env.BASE_URL + track.src.replace(/^\.?\//, '')
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(String(res.status))
+      const bytes = await res.arrayBuffer()
+      this.bytes.set(track.id, bytes)
+      return bytes
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * 一覧と1本目の曲を先に取っておく。
+   *
+   * 「はじめる」を押してから取りに行くと、読み終わるまで音が始まらない。
+   * 動画は先に回り出しているので、そのぶん1本目だけループがずれてしまう。
+   * 音を鳴らすには操作が要るが、取ってくるだけなら先にできる。
+   */
+  async prefetch(): Promise<void> {
+    if (this.tracks.length > 0) return
+    const manifest = await loadManifest()
+    this.tracks = manifest.tracks
+    this.loopStart = manifest.loopStart
+    this.loopEnd = manifest.loopEnd
+    if (this.tracks.length === 0) return
+    await this.bytesFor(this.tracks[bgmIndexAt(this.tracks.length, 0)])
   }
 
   /**
@@ -511,6 +547,7 @@ class AudioEngine {
     this.bgmSrcGain = null
     this.currentBuffer = null
     this.buffers.clear()
+    this.bytes.clear()
     this.stopStatic(0)
     this.scene = 'off'
     this.trackIndex = -1

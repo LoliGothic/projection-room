@@ -30,6 +30,9 @@ export default function App() {
 
   useEffect(() => {
     void load()
+    // 音は操作がないと鳴らせないが、取ってくるのは先にできる。
+    // 「はじめる」を押してから読み始めると、1本目だけ動画とループがずれる
+    void audio.prefetch()
   }, [load])
 
   // ホームボタンやタブ切り替えで画面を離れたら、音と映像を止める
