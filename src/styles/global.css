@@ -348,13 +348,11 @@ body {
   .rewind-overlay.jolt { animation: none; }
 }
 
+/* 囲いは付けない。エンディングと同じく、黒い画面に文字だけを置く */
 .reset-notice {
   margin: 0;
-  padding: 0.9rem 1.3rem;
-  border-radius: 12px;
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.88rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
   color: var(--text);
   animation: notice-in 260ms ease-out;
 }
