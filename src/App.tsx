@@ -154,7 +154,8 @@ export default function App() {
 
         {phase.name === 'launch' && warningSeen && (
           <div className="launch">
-            <Backdrop src={APP.backdrop} />
+            {/* 何度も戻ってくる画面なので、じわじわ出さずにすぐ見せる */}
+            <Backdrop src={APP.backdrop} fadeMs={300} />
             <h1 className="launch-name">{APP.name}</h1>
             <p className="launch-tagline">{APP.tagline}</p>
 

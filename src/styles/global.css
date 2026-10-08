@@ -487,12 +487,18 @@ body {
   to { opacity: var(--backdrop-opacity, 0.6); }
 }
 /*
-  起動画面だけは、絵の中ほどに立つ人影を隠さないよう、文字とボタンを下に寄せる。
+  起動画面だけは、絵の中ほどでこちらに向けられたスマホを隠さないよう、
+  文字とボタンを手のすぐ下から始める。中央に置くとタイトルがスマホに乗ってしまう。
+  画面が低いときは余白のほうを縮めて、ボタンが下にはみ出さないようにする。
   暗くするのも下側だけにして、上半分は絵をそのまま見せる。
 */
 .launch:has(.backdrop) {
-  justify-content: flex-end;
-  padding-bottom: calc(3.2rem + env(safe-area-inset-bottom));
+  justify-content: flex-start;
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+}
+.launch:has(.backdrop)::before {
+  content: "";
+  flex: 0 1 54%;
 }
 .launch .backdrop { --backdrop-opacity: 0.75; }
 .launch .backdrop::after {
