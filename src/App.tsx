@@ -10,6 +10,7 @@ import { endingById } from './config/endings.data'
 import { useRecords } from './state/recordsStore'
 import { FeedScreen } from './components/screens/FeedScreen'
 import { ResetScreen } from './components/screens/ResetScreen'
+import { Backdrop } from './components/Backdrop'
 import { EndingScreen } from './components/screens/EndingScreen'
 import { RecapScreen } from './components/screens/RecapScreen'
 import { GalleryScreen } from './components/screens/GalleryScreen'
@@ -153,6 +154,7 @@ export default function App() {
 
         {phase.name === 'launch' && warningSeen && (
           <div className="launch">
+            <Backdrop src={APP.backdrop} />
             <h1 className="launch-name">{APP.name}</h1>
             <p className="launch-tagline">{APP.tagline}</p>
 

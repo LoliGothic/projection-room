@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Clip } from '../../core/types'
 import { endingById, fillCard, type EndingNumbers } from '../../config/endings.data'
+import { Backdrop } from '../Backdrop'
 
 interface Props {
   endingId: string
@@ -76,6 +77,8 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
       }
       role="presentation"
     >
+      {ending.backdrop && <Backdrop src={ending.backdrop} fadeMs={ending.backdropFadeMs} />}
+
       {clip && (
         <video
           className="ending-clip"

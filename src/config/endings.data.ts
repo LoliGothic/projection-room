@@ -64,6 +64,10 @@ export interface EndingDef {
   leadMs?: number
   /** 最後の文が消えてから、締めの画面が出るまで（ms）。既定は 1400 */
   settleMs?: number
+  /** 奥に敷く絵（public/ からの相対パス。任意） */
+  backdrop?: string
+  /** 絵が浮かび上がりきるまで（ms）。既定は 2400 */
+  backdropFadeMs?: number
   /** 演出用動画の clips.json 上の ID（任意） */
   clipId?: string
   /** 一覧で未達成のときに出すヒント */
@@ -130,6 +134,9 @@ export const ENDINGS: readonly EndingDef[] = [
     */
     leadMs: 3000,
     settleMs: 4000,
+    // 暗いままの間に、人影がゆっくり浮いてくる。気づいたときにはもう居る
+    backdrop: 'backdrops/blackout.jpg',
+    backdropFadeMs: 12000,
     cards: [
       n('一定時間、操作がありませんでした', 4500),
     ],
@@ -141,6 +148,7 @@ export const ENDINGS: readonly EndingDef[] = [
     trigger: 'escape',
     priority: 10,
     conditions: [{ stat: 'loops', op: 'eq', value: 0 }],
+    backdrop: 'backdrops/true.jpg',
     cards: [
       n('確認ありがとうございました', 2600),
       /*
@@ -158,6 +166,7 @@ export const ENDINGS: readonly EndingDef[] = [
     trigger: 'escape',
     priority: 20,
     conditions: [{ stat: 'loops', op: 'gt', value: ENDING_THRESHOLDS.endlessLoops }],
+    backdrop: 'backdrops/endless.jpg',
     cards: [
       n('8段階を完了しました', 2600),
       n('このアプリを {loops} 回開き直しました', 3000),
@@ -174,6 +183,7 @@ export const ENDINGS: readonly EndingDef[] = [
     trigger: 'escape',
     priority: 100,
     conditions: [],
+    backdrop: 'backdrops/closed.jpg',
     cards: [
       n('おすすめの表示を停止しました', 2400),
       n('ご利用ありがとうございました', 2600),

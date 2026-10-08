@@ -41,7 +41,7 @@ export default defineConfig({
           古い一覧を持った端末が「もう存在しないID」を要求し続けて、
           映像だけ出ない状態になる。
         */
-        globPatterns: ['**/*.{js,css,html,woff2}', 'icons/*.png'],
+        globPatterns: ['**/*.{js,css,html,woff2}', 'icons/*.png', 'backdrops/*.jpg'],
         // 古い世代のキャッシュを残さない
         cleanupOutdatedCaches: true,
         skipWaiting: true,
