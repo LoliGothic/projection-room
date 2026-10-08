@@ -15,6 +15,7 @@
 - 表示するときは暗く沈め、中央をさらに落とします（`src/styles/global.css` の `.backdrop`）。
   なので、元の絵は暗くしすぎないほうが形が残ります。
 - 「暗転」だけは12秒かけて浮かび上がります（`src/config/endings.data.ts` の `backdropFadeMs`）。
+- 元の絵が暗いもの（暗転・アプリを閉じる）は、沈めずにそのままの濃さで出します（同じく `backdropOpacity`）。
 - PWA ではアプリ本体と一緒に事前キャッシュします（`vite.config.ts` の `globPatterns`）。
   重いと初回の読み込みが遅くなるので、1枚300KB程度までを目安にしてください。
 
@@ -27,21 +28,18 @@
 ffmpeg -i 元画像.png -vf "crop=1090:1938:31:110,scale=720:1280:flags=lanczos,format=yuvj420p" -q:v 3 launch.jpg
 ```
 
-起動画面だけは、絵の中ほどに立つ人影を隠さないよう、文字とボタンを下に寄せています。
+起動画面だけは、絵の中ほどでこちらに向けられたスマホを隠さないよう、文字とボタンを手のすぐ下から始めています。
 絵を差し替えて人影の位置が変わったら、`global.css` の `.launch:has(.backdrop)` を見直してください。
 
-## 何を描くか
+## 何を描いているか
 
-同じフードの男を「起動画面」と「撮影者」に出して、つながりを作っています。
-「アプリを閉じる」だけは何も起きない絵にします。ほかのエンディングを見たあとだと、
-何も起きないことのほうが落ち着かなくなるためです。
-
-生成に使ったプロンプトの元は次のとおりです。
-
-| 画面 | 絵 | プロンプト |
+| ファイル | 絵 | ねらい |
 | --- | --- | --- |
-| 起動画面 | 暗い地下駐車場の奥に、フードの男がうっすら立っている | `grainy smartphone photo, empty underground parking garage at night, a hooded man standing far back in the shadows, face hidden, barely visible, cold flickering fluorescent light, heavy noise, vertical 9:16, no text` |
-| 暗転 | ほぼ真っ黒。窓の前に人影がこちらを向いて立っている | `almost completely black image, faint silhouette of a person standing in front of a curtained window at night, facing the camera, barely visible, heavy sensor noise, vertical 9:16, no text` |
-| 撮影者 | 同じフードの男が背を向けて座り、サムネイルの並ぶ無数の画面を見ている | `dark room lit only by many monitors showing grids of short video thumbnails, a hooded man sitting with his back to the camera, cold blue glow, grainy, vertical 9:16, no text` |
-| 無限スクロール | 真っ暗な寝室で、スマホの光だけに照らされた顔 | `person lying in bed in a pitch dark room at 3am, face lit only by a smartphone screen, tired wide eyes, grainy low light photo, vertical 9:16, no text` |
-| アプリを閉じる | 何も起きていない朝の部屋。伏せたスマホが置いてある | `quiet bedroom in soft morning light through white curtains, a smartphone lying face down on the bedside table, calm, muted colors, vertical 9:16, no text` |
+| `launch.jpg` | フードの男が、こちらにスマホを向けて撮っている | 題名の「撮影者不明」。開いた瞬間から、撮られる側にいる |
+| `blackout.jpg` | 闇の中に、顔がうっすら浮かんでいる | 動かずに見つめていた間、向こうからも見られていた |
+| `true.jpg` | 滝・猫・コーヒーなど何の変哲もない動画が、暗闇に塔のように積み上がっている | 本物と判定された動画が、偽物を作る材料として積まれていく |
+| `endless.jpg` | 何の変哲もない投稿が、四方の壁を埋めて奥へ果てしなく続く | 怖いのは中身ではなく、普通の映像がやめられずに続くこと |
+| `closed.jpg` | 暗い部屋に、画面の消えたスマホが置いてある | 何も起きない。ほかのエンディングを見たあとだと、それが落ち着かない |
+
+人の姿をはっきり出すのは起動画面だけにしています。
+エンディングで正体を見せると、題名の謎がそこで閉じてしまうためです。

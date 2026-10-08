@@ -77,7 +77,13 @@ export function EndingScreen({ endingId, clip, numbers, onRecap, onHome }: Props
       }
       role="presentation"
     >
-      {ending.backdrop && <Backdrop src={ending.backdrop} fadeMs={ending.backdropFadeMs} />}
+      {ending.backdrop && (
+        <Backdrop
+          src={ending.backdrop}
+          fadeMs={ending.backdropFadeMs}
+          opacity={ending.backdropOpacity}
+        />
+      )}
 
       {clip && (
         <video

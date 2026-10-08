@@ -5,6 +5,8 @@ interface Props {
   src: string
   /** 浮かび上がりきるまで（ms） */
   fadeMs?: number
+  /** 最終的な濃さ（0..1）。省略時は CSS の既定 */
+  opacity?: number
 }
 
 /**
@@ -13,11 +15,12 @@ interface Props {
  * 画像が置かれていなければ何も出ない（背景の読み込み失敗は黙って無視される）。
  * 絵が無くても成り立つ画面にしておき、あとから差し込めるようにするため。
  */
-export function Backdrop({ src, fadeMs = 2400 }: Props) {
+export function Backdrop({ src, fadeMs = 2400, opacity }: Props) {
   const url = import.meta.env.BASE_URL + src.replace(/^\.?\//, '')
   const style = {
     backgroundImage: `url("${url}")`,
     animationDuration: `${fadeMs}ms`,
+    ...(opacity !== undefined && { '--backdrop-opacity': opacity }),
   } as CSSProperties
   return <div className="backdrop" style={style} aria-hidden="true" />
 }
