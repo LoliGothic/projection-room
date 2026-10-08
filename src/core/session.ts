@@ -1,7 +1,7 @@
 import type { Clip, Verdict } from './types'
 import type { Rng } from './rng'
 import { createQueue, fillBuffer, type QueueState } from './clipQueue'
-import { applyAnswer, applyDarkness, applyReplay, createProgress, type Progress } from './progress'
+import { applyAnswer, applyDarkness, createProgress, type Progress } from './progress'
 import { resolveEnding } from './endings'
 import { RULES } from '../config/tuning'
 
@@ -48,7 +48,6 @@ export type SessionEvent =
   /** 起動画面からフィードを開く */
   | { type: 'start' }
   | { type: 'answer'; verdict: Verdict }
-  | { type: 'replay' }
   /** リセット演出の再生が終わった */
   | { type: 'cutsceneDone' }
   /** 不穏タイマーを使い切った */
@@ -115,11 +114,6 @@ export function reduce(s: Session, e: SessionEvent, rng: Rng): Session {
         return { ...s, deck: advance(s.pool, s.deck, rng), phase: { name: 'playing' } }
       }
       return s
-    }
-
-    case 'replay': {
-      if (s.phase.name !== 'playing') return s
-      return { ...s, progress: applyReplay(s.progress) }
     }
 
     case 'darkness': {

@@ -418,7 +418,7 @@ describe('フィードが動く', () => {
     }
   })
 
-  it('映像をタップしても回答にはならない（頭出しだけ）', async () => {
+  it('映像をタップしても何も起きない（回答にはならない）', async () => {
     await toFeed()
     const before = activeClip()!.id
     const area = document.querySelector('.feed-video') as HTMLElement

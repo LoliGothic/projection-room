@@ -4,8 +4,6 @@ import { FEED } from '../config/tuning'
 interface Options {
   /** 上へ送りきったとき（＝本物だと答える） */
   onAdvance: () => void
-  /** 軽く触れただけのとき（＝頭出し） */
-  onTap: () => void
   enabled: boolean
 }
 
@@ -16,7 +14,7 @@ interface Options {
  * 指が滑ったくらいでは送られないよう、しきい値は大きめにしてある。
  * 下へは送れない（戻れない）ので、引っ張られても少ししか動かさない。
  */
-export function useFeedGesture({ onAdvance, onTap, enabled }: Options) {
+export function useFeedGesture({ onAdvance, enabled }: Options) {
   const [dragY, setDragY] = useState(0)
   const [dragging, setDragging] = useState(false)
   const start = useRef<{ x: number; y: number; t: number; id: number } | null>(null)
@@ -52,7 +50,6 @@ export function useFeedGesture({ onAdvance, onTap, enabled }: Options) {
       setDragging(false)
 
       const dy = e.clientY - s.y
-      const dx = e.clientX - s.x
       const dt = Math.max(1, performance.now() - s.t)
       const speed = -dy / dt
 
@@ -66,12 +63,10 @@ export function useFeedGesture({ onAdvance, onTap, enabled }: Options) {
         return
       }
 
-      if (Math.abs(dy) < FEED.tapSlopPx && Math.abs(dx) < FEED.tapSlopPx && dt < FEED.tapMaxMs) {
-        onTap()
-      }
+      // 届かなければ元の位置に戻すだけ。軽く触れただけでも何も起きない
       setDragY(0)
     },
-    [onAdvance, onTap],
+    [onAdvance],
   )
 
   const onPointerCancel = useCallback(() => {

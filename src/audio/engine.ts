@@ -361,13 +361,6 @@ class AudioEngine {
     void this.applyTrack()
   }
 
-  /** 映像を頭出ししたとき。音楽も同じところへ戻して、ずれないようにする */
-  restartLoop() {
-    if (this.scene !== 'feed') return
-    const buffer = this.bgmSrc?.buffer
-    if (buffer) this.startLoop(buffer)
-  }
-
   /* ---- 状態の反映 ---- */
 
   setVolume(volume: number) {

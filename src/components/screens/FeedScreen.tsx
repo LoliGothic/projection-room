@@ -24,7 +24,6 @@ import { ReportSheet } from '../game/ReportSheet'
 interface Props {
   session: Session
   onAnswer: (verdict: Verdict) => void
-  onReplay: () => void
   onDarkness: () => void
   /** フィードを閉じて起動画面に戻る */
   onQuit: () => void
@@ -43,7 +42,6 @@ function elapsedSecOf(d: Dread): number {
 export function FeedScreen({
   session,
   onAnswer,
-  onReplay,
   onDarkness,
   onQuit,
   interactive,
@@ -58,7 +56,7 @@ export function FeedScreen({
   const { stage, stats } = session.progress
   const turn = session.deck.advances
 
-  // 経過時間は「デッキを進めた回数」が変わったときだけリセットする＝リプレイでは戻らない
+  // 経過時間は「デッキを進めた回数」が変わったときだけリセットする
   const dread = useDreadTimer(interactive, turn, onDarkness)
   const fx = effectiveFx(settings)
   const softened = settings.reduceFlashing
@@ -110,13 +108,6 @@ export function FeedScreen({
     },
     [onAnswer],
   )
-
-  const replay = useCallback(() => {
-    video.current?.replay()
-    // 映像を頭に戻すので、音楽も同じところへ戻す
-    audio.restartLoop()
-    onReplay()
-  }, [onReplay])
 
   const onDecorative = useCallback(() => audio.playTap(), [])
 
@@ -174,7 +165,6 @@ export function FeedScreen({
         }
         paused={!interactive}
         onAdvance={() => answer('keep')}
-        onTap={replay}
         onVideoError={onVideoError}
         renderOverlay={(postClip, isCurrent, offset) => (
           <div className="post-overlay">

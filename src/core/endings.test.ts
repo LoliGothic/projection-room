@@ -8,10 +8,6 @@ function stats(patch: Partial<Stats> = {}): Stats {
 }
 
 describe('statValue', () => {
-  it('平均リプレイ回数を導出する', () => {
-    expect(statValue(stats({ presented: 10, replays: 25 }), 'avgReplays')).toBe(2.5)
-  })
-
   it('そのままの統計も引ける', () => {
     expect(statValue(stats({ loops: 7 }), 'loops')).toBe(7)
   })
@@ -44,12 +40,6 @@ describe('resolveEnding', () => {
 
   it('しきい値ちょうどでは無限スクロールにならない', () => {
     const s = stats({ loops: ENDING_THRESHOLDS.endlessLoops })
-    expect(resolveEnding(s, 'escape')?.id).toBe('closed')
-  })
-
-  it('リプレイをいくら重ねても、それだけでは分岐しない', () => {
-    // 「見すぎ」は取りやめた。暗転と同じ行動を測っていたため
-    const s = stats({ loops: 3, presented: 10, replays: 100 })
     expect(resolveEnding(s, 'escape')?.id).toBe('closed')
   })
 
@@ -104,11 +94,13 @@ describe('エンディング定義', () => {
   })
 
   it('差し込みは、その回の数字で埋まる', () => {
-    const numbers = { presented: 1234, replays: 7, loops: 0, correct: 8 }
+    const numbers = { presented: 1234, loops: 7, correct: 8 }
     expect(fillCard('{presented} 件の動画を確認しました', numbers)).toBe(
       '1,234 件の動画を確認しました',
     )
-    expect(fillCard('見返した回数　{replays} 回', numbers)).toBe('見返した回数　7 回')
+    expect(fillCard('このアプリを {loops} 回開き直しました', numbers)).toBe(
+      'このアプリを 7 回開き直しました',
+    )
   })
 
   it('数字が無いときも文が壊れない', () => {
@@ -116,7 +108,7 @@ describe('エンディング定義', () => {
   })
 
   it('文章に使う差し込みは、すべて埋められる', () => {
-    const numbers = { presented: 1, replays: 1, loops: 1, correct: 1 }
+    const numbers = { presented: 1, loops: 1, correct: 1 }
     for (const e of ENDINGS) {
       for (const c of e.cards) {
         expect(fillCard(c.text, numbers)).not.toMatch(/[{}]/)
@@ -126,7 +118,7 @@ describe('エンディング定義', () => {
 
   it('きっかけごとに無条件の受け皿がある（必ずどれかに決まる）', () => {
     for (const trigger of ['escape', 'darkness'] as const) {
-      expect(resolveEnding(stats({ loops: 999, replays: 9999 }), trigger)).toBeDefined()
+      expect(resolveEnding(stats({ loops: 999, presented: 9999 }), trigger)).toBeDefined()
       expect(resolveEnding(createStats(), trigger)).toBeDefined()
     }
   })

@@ -3,8 +3,6 @@ import type { Clip } from './types'
 import {
   applyAnswer,
   applyDarkness,
-  applyReplay,
-  averageReplays,
   createProgress,
   type Progress,
 } from './progress'
@@ -116,23 +114,7 @@ describe('applyAnswer', () => {
   })
 })
 
-describe('リプレイと不穏タイマー', () => {
-  it('リプレイは回数だけ数え、進行には影響しない', () => {
-    const p = applyReplay(applyReplay(createProgress()))
-    expect(p.stats.replays).toBe(2)
-    expect(p.stage).toBe(1)
-    expect(p.clearedInStage).toBe(0)
-  })
-
-  it('平均リプレイ回数は出題数で割る', () => {
-    let p = createProgress()
-    p = applyReplay(applyReplay(p))
-    expect(averageReplays(p.stats)).toBe(0) // まだ 1 本も回答していない
-    p = applyAnswer(p, real, 'keep').progress
-    p = applyAnswer(p, real, 'keep').progress
-    expect(averageReplays(p.stats)).toBe(1)
-  })
-
+describe('不穏タイマー', () => {
   it('暗闇に達したことを記録する', () => {
     expect(applyDarkness(createProgress()).stats.wentDark).toBe(true)
   })

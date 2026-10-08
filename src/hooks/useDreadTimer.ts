@@ -10,7 +10,7 @@ interface Sample {
 
 /**
  * 1 本の動画が表示されてからの経過時間を測る。
- * resetKey が変わったときだけ 0 に戻るので、リプレイではリセットされない。
+ * resetKey が変わったとき（＝回答して次の動画に移ったとき）だけ 0 に戻る。
  * 最後の段階に達したら onDark を 1 回だけ呼ぶ。
  */
 export function useDreadTimer(active: boolean, resetKey: number, onDark: () => void): Dread {

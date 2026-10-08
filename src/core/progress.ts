@@ -23,8 +23,6 @@ export interface Stats {
   reportedReal: number
   /** AI を残してしまった回数 */
   missedAI: number
-  /** リプレイの総回数 */
-  replays: number
   /** 不穏タイマーを最後まで進めてしまったか */
   wentDark: boolean
   mistakes: Mistake[]
@@ -56,7 +54,6 @@ export function createStats(): Stats {
     loops: 0,
     reportedReal: 0,
     missedAI: 0,
-    replays: 0,
     wentDark: false,
     mistakes: [],
   }
@@ -113,17 +110,7 @@ export function applyAnswer(
   }
 }
 
-/** リプレイは罰なし。回数だけ数える */
-export function applyReplay(p: Progress): Progress {
-  return { ...p, stats: { ...p.stats, replays: p.stats.replays + 1 } }
-}
-
 /** 不穏タイマーを使い切った（暗転エンド） */
 export function applyDarkness(p: Progress): Progress {
   return { ...p, stats: { ...p.stats, wentDark: true } }
-}
-
-/** 1本あたりの平均リプレイ回数。まだ 1 本も出していなければ 0 */
-export function averageReplays(stats: Stats): number {
-  return stats.presented === 0 ? 0 : stats.replays / stats.presented
 }

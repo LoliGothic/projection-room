@@ -127,14 +127,6 @@ describe('session', () => {
     expect(seen.size).toBe(20)
   })
 
-  it('リプレイは回数を数えるだけで、出題も段階も変わらない', () => {
-    const s = started()
-    const replayed = send(send(s, { type: 'replay' }), { type: 'replay' })
-    expect(replayed.progress.stats.replays).toBe(2)
-    expect(currentClip(replayed)!.id).toBe(currentClip(s)!.id)
-    expect(replayed.progress.stage).toBe(1)
-  })
-
   it('一度もループせずに全8段階を通過すると協力者エンドになる', () => {
     let s = started()
     for (let i = 0; i < RULES.totalStages * RULES.clipsPerStage; i++) {
@@ -159,10 +151,9 @@ describe('session', () => {
     expect(s.progress.stats.wentDark).toBe(true)
   })
 
-  it('プレイ中でなければ回答もリプレイも無視する', () => {
+  it('プレイ中でなければ回答も暗転も無視する', () => {
     const s = createSession(makePool()) // 起動画面
     expect(send(s, { type: 'answer', verdict: 'report' })).toBe(s)
-    expect(send(s, { type: 'replay' })).toBe(s)
     expect(send(s, { type: 'darkness' })).toBe(s)
   })
 })

@@ -19,11 +19,8 @@ export type StatKey =
   | 'loops'
   | 'reportedReal'
   | 'missedAI'
-  | 'replays'
   | 'presented'
   | 'correct'
-  /** 1本あたりの平均リプレイ回数 */
-  | 'avgReplays'
 
 export type Op = 'lt' | 'lte' | 'gt' | 'gte' | 'eq'
 
@@ -106,7 +103,6 @@ export const ENDING_THRESHOLDS = {
  */
 export interface EndingNumbers {
   presented: number
-  replays: number
   loops: number
   correct: number
 }

@@ -1,5 +1,4 @@
 import type { Stats } from './progress'
-import { averageReplays } from './progress'
 import {
   ENDINGS,
   type Condition,
@@ -9,7 +8,6 @@ import {
 } from '../config/endings.data'
 
 export function statValue(stats: Stats, key: StatKey): number {
-  if (key === 'avgReplays') return averageReplays(stats)
   return stats[key]
 }
 

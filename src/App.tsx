@@ -94,7 +94,6 @@ export default function App() {
     [session, send],
   )
 
-  const onReplay = useCallback(() => send({ type: 'replay' }), [send])
   const onDarkness = useCallback(() => send({ type: 'darkness' }), [send])
   const onCutsceneDone = useCallback(() => {
     // 一本目まで戻したので、さかのぼる先も無くなる
@@ -199,7 +198,6 @@ export default function App() {
           <FeedScreen
             session={session}
             onAnswer={onAnswer}
-            onReplay={onReplay}
             onDarkness={onDarkness}
             onQuit={toHome}
             interactive={phase.name === 'playing'}
@@ -219,7 +217,6 @@ export default function App() {
             numbers={
               stats && {
                 presented: stats.presented,
-                replays: stats.replays,
                 loops: stats.loops,
                 correct: stats.correct,
               }

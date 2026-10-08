@@ -5,8 +5,6 @@ import { FEED, RULES } from '../../config/tuning'
 import { useFeedGesture } from '../../hooks/useFeedGesture'
 
 export interface FeedVideoHandle {
-  /** 最初から再生し直す */
-  replay: () => void
   /**
    * いま映っているコマの写しを返す。取れなければ null。
    * 間違えたときの巻き戻しで、送ってきた投稿を並べるのに使う。
@@ -28,8 +26,6 @@ interface Props {
   preload: readonly Clip[]
   /** 上へ送りきったとき（＝本物だと答える） */
   onAdvance: () => void
-  /** 映像をタップしたとき（頭出し） */
-  onTap?: () => void
   /** 動画が読み込めなかったとき */
   onVideoError?: () => void
   /**
@@ -65,7 +61,6 @@ export function FeedVideo({
   turn,
   preload,
   onAdvance,
-  onTap,
   onVideoError,
   renderOverlay,
   enabled,
@@ -76,7 +71,6 @@ export function FeedVideo({
   const videos = useRef<(HTMLVideoElement | null)[]>([])
   const { dragY, dragging, handlers } = useFeedGesture({
     onAdvance,
-    onTap: onTap ?? (() => {}),
     enabled,
   })
 
@@ -119,12 +113,6 @@ export function FeedVideo({
   useImperativeHandle(
     ref,
     () => ({
-      replay: () => {
-        const v = videos.current[activeSlot]
-        if (!v) return
-        v.currentTime = 0
-        void v.play().catch(() => {})
-      },
       snapshot: () => {
         const v = videos.current[activeSlot]
         if (!v || !v.videoWidth) return null
