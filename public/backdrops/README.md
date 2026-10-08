@@ -28,8 +28,7 @@
 ffmpeg -i 元画像.png -vf "crop=1090:1938:31:110,scale=720:1280:flags=lanczos,format=yuvj420p" -q:v 3 launch.jpg
 ```
 
-起動画面だけは、絵の中ほどでこちらに向けられたスマホを隠さないよう、文字とボタンを手のすぐ下から始めています。
-絵を差し替えて人影の位置が変わったら、`global.css` の `.launch:has(.backdrop)` を見直してください。
+起動画面は文字とボタンを中央にまとめ、そのぶん絵を暗く沈めています（`global.css` の `.launch .backdrop`）。
 
 ## 何を描いているか
 
