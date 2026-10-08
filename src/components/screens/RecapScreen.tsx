@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { Clip } from '../../core/types'
 import type { Mistake, Stats } from '../../core/progress'
-import { averageReplays } from '../../core/progress'
 
 interface Props {
   mistakes: readonly Mistake[]
@@ -36,10 +35,6 @@ export function RecapScreen({ mistakes, clipsById, stats, onBack }: Props) {
         <div>
           <dt>見逃し</dt>
           <dd>{stats.missedAI}</dd>
-        </div>
-        <div>
-          <dt>平均再生</dt>
-          <dd>{averageReplays(stats).toFixed(1)}</dd>
         </div>
       </dl>
 
