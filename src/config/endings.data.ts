@@ -144,7 +144,7 @@ export const ENDINGS: readonly EndingDef[] = [
   },
   {
     id: 'true',
-    title: '撮影者',
+    title: '協力者',
     trigger: 'escape',
     priority: 10,
     conditions: [{ stat: 'loops', op: 'eq', value: 0 }],

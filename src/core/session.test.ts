@@ -135,7 +135,7 @@ describe('session', () => {
     expect(replayed.progress.stage).toBe(1)
   })
 
-  it('一度もループせずに全8段階を通過すると撮影者エンドになる', () => {
+  it('一度もループせずに全8段階を通過すると協力者エンドになる', () => {
     let s = started()
     for (let i = 0; i < RULES.totalStages * RULES.clipsPerStage; i++) {
       s = skipCutscenes(answerCorrectly(s))

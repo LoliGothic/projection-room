@@ -474,7 +474,7 @@ describe('フィードが動く', () => {
     }
 
     await runEndingCards()
-    expect(screen.getByRole('heading', { name: '撮影者' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: '協力者' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: '振り返る' }))
     await waitFor(() => expect(screen.getByRole('heading', { name: '振り返り' })).toBeTruthy())

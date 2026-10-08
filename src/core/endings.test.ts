@@ -33,7 +33,7 @@ describe('matches', () => {
 })
 
 describe('resolveEnding', () => {
-  it('一度もループせずに通過すると撮影者エンド', () => {
+  it('一度もループせずに通過すると協力者エンド', () => {
     expect(resolveEnding(stats({ loops: 0 }), 'escape')?.id).toBe('true')
   })
 
