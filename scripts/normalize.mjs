@@ -69,7 +69,8 @@ function classify(relPath) {
   const parts = relPath.split(path.sep)
   const file = path.parse(parts[parts.length - 1]).name
   if (parts.length >= 2) return { category: parts[0], scene: file }
-  return { category: '未分類', scene: file }
+  // 直置きのファイル名（Pexels の番号や「動画12」）は場面名にならないので空にしておく
+  return { category: '未分類', scene: '' }
 }
 
 /** raw/<kind>/ 以下を再帰的に集める */
