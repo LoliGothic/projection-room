@@ -481,6 +481,24 @@ describe('フィードが動く', () => {
     expect(screen.getByText('一本も取り違えませんでした。')).toBeTruthy()
   })
 
+  it('最後の1本の下には、次の投稿を覗かせない', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    await toFeed()
+
+    const nextVisible = () =>
+      [...document.querySelectorAll<HTMLElement>('.feed-slot[data-pos="next"]')].some(
+        (el) => el.style.visibility === 'visible',
+      )
+
+    // 7本目まではいつもどおり、下に次の投稿が控えている
+    for (let i = 0; i < RULES.totalStages * RULES.clipsPerStage - 1; i++) {
+      expect(nextVisible()).toBe(true)
+      await answer(true)
+    }
+    // 8本目の下には何も無い
+    expect(nextVisible()).toBe(false)
+  })
+
   it('間違えた動画は振り返りで見られる', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     await toFeed()

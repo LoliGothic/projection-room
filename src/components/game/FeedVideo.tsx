@@ -38,6 +38,12 @@ interface Props {
    */
   renderOverlay?: (clip: Clip, isCurrent: boolean, offset: number) => React.ReactNode
   enabled: boolean
+  /**
+   * いまの1本が最後の出題か。最後なら、その下に続く投稿を見せない。
+   * 送る指に合わせて次の動画が覗くと、8本で終わるはずのフィードに
+   * 9本目があるように見えてしまうため。
+   */
+  endOfFeed?: boolean
   /** 演出中は映像も止める */
   paused?: boolean
   ref?: React.Ref<FeedVideoHandle>
@@ -63,6 +69,7 @@ export function FeedVideo({
   onVideoError,
   renderOverlay,
   enabled,
+  endOfFeed = false,
   paused = false,
   ref,
 }: Props) {
@@ -152,6 +159,8 @@ export function FeedVideo({
         // ids の何番目か＝画面のどこに置くか。0=上へ抜けた 1=表示中 2以降=下に控える
         const offset = id ? ids.indexOf(id) : -1
         const y = offset < 0 ? 100 : (offset - 1) * 100
+        // 最後の1本の下は何も無いことにする。読み込みは止めず、見せないだけ
+        const beyondEnd = endOfFeed && offset >= 2
         return (
           <div
             key={i}
@@ -164,7 +173,7 @@ export function FeedVideo({
               // 追従中は補間しない。離してから動かす
               transitionDuration: dragging ? '0ms' : `${FEED.scrollMs}ms`,
               // 表示中と、その前後だけ見えていればよい
-              visibility: Math.abs(y) <= 100 ? 'visible' : 'hidden',
+              visibility: Math.abs(y) <= 100 && !beyondEnd ? 'visible' : 'hidden',
             }}
           >
             <video

@@ -168,6 +168,10 @@ export function FeedScreen({
         turn={turn}
         preload={preload}
         enabled={interactive && !sheetOpen}
+        endOfFeed={
+          stage >= RULES.totalStages &&
+          session.progress.clearedInStage >= RULES.clipsPerStage - 1
+        }
         paused={!interactive}
         onAdvance={() => answer('keep')}
         onTap={replay}
